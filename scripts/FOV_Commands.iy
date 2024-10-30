@@ -1,0 +1,49 @@
+--// @_x4yz
+--// plugin for infinite yield, https://github.com/EdgeIY/infiniteyield
+local Plugin = {
+    ["PluginName"] = "FOV Commands!";
+    ["PluginDescription"] = "This plugin simply adds 2 extra cmds both related to the camera's field of view. ;loopfov [num] and ;unloopfov";
+    ["Commands"] = {
+        ["loopfov"] = {
+            ["ListName"] = "loopfov [num]";
+            ["Description"] = "Constantly sets your field of view.";
+            ["Aliases"] = {"loopfieldofview", "loopcamerafov"};
+            ["Function"] = function(Args, Speaker)
+                local FOVToUse:number = tonumber(Args[1]) or 70
+                local Camera = workspace.CurrentCamera
+
+                if typeof(FOVToUse) == "number" then 
+                    if _G["__IY_CameraConnection"] ~= nil then 
+                        _G["__IY_CameraConnection"]:Disconnect()
+                        _G["__IY_CameraConnection"] = nil
+                    end
+                    
+                    Camera.FieldOfView = FOVToUse
+
+                    _G["__IY_CameraConnection"] = Camera:GetPropertyChangedSignal("FieldOfView"):Connect(function()
+                        local NewFOV = Camera.FieldOfView
+
+                        if NewFOV ~= FOVToUse then 
+                            Camera.FieldOfView = FOVToUse
+                        end
+                    end)
+
+                    Camera.FieldOfView = FOVToUse
+                end
+            end
+        };
+        ["unloopfov"] = {
+            ["ListName"] = "unloopfov";
+            ["Description"] = "Unloops current field of view loop if active.";
+            ["Aliases"] = {"unloopcamerafov"};
+            ["Function"] = function(Args, Speaker)
+                if _G["__IY_CameraConnection"] ~= nil then 
+                    _G["__IY_CameraConnection"]:Disconnect()
+                    _G["__IY_CameraConnection"] = nil
+                end
+            end
+        };
+    }
+}
+
+return Plugin
