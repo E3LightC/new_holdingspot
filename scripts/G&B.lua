@@ -19,6 +19,8 @@
 --[/////////////////////////////]--
 --[/////////////////////////////]--
 
+local OldTick = tick()
+
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -291,11 +293,6 @@ local function GetMeleeWeapon()
 
     if Character:FindFirstChild(PreferredWeapon) then 
         local Tool = Character:FindFirstChild(PreferredWeapon)
-        return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
-    end
-    if Backpack:FindFirstChild(PreferredWeapon) then 
-        local Tool = Backpack:FindFirstChild(PreferredWeapon)
-        --Tool.Parent = Character
         return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
     end
 
@@ -714,7 +711,11 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 					if WeaponRemote ~= nil and WeaponRemote:IsA("RemoteEvent") then 						
 						if Weapon.Name ~= "Musket" then
-							WeaponRemote:FireServer("Swing", "Over")
+							if Weapon.Name ~= "Spade" then 
+                                WeaponRemote:FireServer("Swing", "Over")
+                            else
+                                WeaponRemote:FireServer("Swing", "Side")
+                            end
 
 							SortFunc(AgentsInRange, function(Key, Agent) 
 								if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent ~= nil and Agent:FindFirstChild("Head") and Agent:FindFirstChild("State") then 
@@ -820,9 +821,8 @@ if _G["AlreadyActive"] == nil then
                             Remote["FireServer"](Remote, ...)
                             return nil
                         elseif Args[1] == "UpdateLook" and RubiksCube then
-                            --// only works with the hammer now as i've let Fezezen know about it - blanklight
                             --// probably a much better way to do this but
-                            --// i got lazy! - blanklight
+                            --// i got lazy!
                             
                             local RandomNum1 = math.random(1, 6)
                             local RandomNum2 = math.random(1, 6)
@@ -889,4 +889,9 @@ if _G["AlreadyActive"] == nil then
 	end)
 end
 
-print("[INFO # END OF SCRIPT]: script successfully executed!")
+warn(
+    ([[ 
+        [INFO # END OF SCRIPT]: script successfully executed!
+           -/ Took %s seconds to run.
+    ]]):format(tostring(tick() - OldTick))
+)
