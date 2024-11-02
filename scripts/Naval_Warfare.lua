@@ -1,3 +1,4 @@
+-- @_x4yz
 -- press L to change the target type (Planes or Players).
 
 -- works with AA guns on battleships, islands, carriers.
