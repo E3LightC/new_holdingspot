@@ -1,12 +1,12 @@
 --//// @_x4yz \\\\--
 
 --//// stuff. \\\\--
---// if you have a axe, and are able to shove with it, press Q \\--
+--// if you have an axe, and can shove with it, press Q \\--
 --// when killing a group/horde of zombies, pressing Z or X will help with it will help clear them out \\--
 --// all hits done with melee will be sent to the server as if you hitting the head \\--
 --// while "RubiksCube" is toggled on, when you have any gun/tool that updates the way you're looking, it will jumble your character up, like a rubik's cube! \\--
 --// this script also blocks out the "OnAFKSignalReceived" remote and "ForceKill" remote if it is called by a non-exploit script \\--
---// for auto repair to work, you must have a hammer and atleast have equipped it once (repair radius seems to based on HumanoidRootPart or something else so you can technically repair something while the hammer is lets say, 3000 studs away, as long as your character is near the building) \\--
+--// for auto repair to work, you must have a hammer and at least have equipped it once (repair radius seems to be based on HumanoidRootPart or something else so you can technically repair something while the hammer is let us say, 3000 studs away, as long as your character is near the building) \\--
 
 --//// binds \\\\--
 --// Q / Shove Bind \\--
@@ -131,7 +131,7 @@ if _G["BuildHighlight"] ~= nil then
 end
 --//
 
-task.wait(0.15) --// attempting to let luau's garbage collect do its cleaning
+task.wait(0.2) --// attempting to let luau's garbage collect do its cleaning
 
 _G["OnClientZombieModelAdded"] = Camera.ChildAdded:Connect(function(NewChild)
     task.spawn(function()
@@ -249,6 +249,17 @@ _G["BuildHighlight"].Enabled = true
 
 local LastBeatTick = 0
 local _TimeSinceLastBeat = 0
+
+--[=[
+    Info: This function uses coroutine functions to create a thread that repeatedly updates the accuracy of an instrument
+        using its remote event emulating the actual system in a way.
+
+    Parameter count: 1
+
+    Parameter types: Instance(RemoteEvent)
+
+    returns: thread
+]=]
 local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent)
     if typeof(RemoteEventToUse) ~= "Instance" or not RemoteEventToUse:IsA("RemoteEvent") then 
         warn("[FAIL # SetupFakeAccuracyBeat]: \"RemoteEventToUse\" is not a Instance, nor a RemoteEvent")
@@ -276,6 +287,18 @@ local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent)
     return NewThread
 end
 
+--[=[
+    Info: This function requires that the local player's character does exist, and not be parented to nothing/nil.
+        This function attempts to find a tool with the same name as whatever the "PreferredWeapon" string variable is equal to.
+        If not found, then it continues to search for any tool that the local player's character contains with a server script named 
+        "MeleeBase" within that said tool, if still not found then, it does the same thing but with the player's backpack.
+
+    Parameter count: 0
+
+    Parameter types: none
+
+    returns: none
+]=]
 local function GetMeleeWeapon()
 	local Character = Player.Character
 
@@ -327,17 +350,28 @@ local function GetMeleeWeapon()
 	return false
 end
 
+--[=[
+    Info: This function attempts to find all agents within the "Zombies" and "Bots" folders ignoring any agent that
+        has an attribute named "Type" that is equal to true in the "ZombieTypesList" table variable that is within the 
+        range of the "Range" number parameter.
+
+    Parameter count: 1
+
+    Parameter types: number
+
+    returns: table
+]=]
 local function GetAgentsInRange(Range:number)
 	if Range == nil then 
 		warn("[FAIL # GetAgentsInRange]: \"Range\" is equal to nil.")
 
-		return
+		return {}
 	end
 
 	if typeof(Range) ~= "number" then 
 		warn("[FAIL # GetAgentsInRange]: \"Range\" is not a number.")
 
-		return
+		return {}
 	end
 
 	if Range == 0 or Range == (0/0) or Range == (-(0/0)) then 
@@ -352,7 +386,7 @@ local function GetAgentsInRange(Range:number)
 	if not CharHRP or CharHRP:IsA("Model") then 
 		warn("[FAIL # GetAgentsInRange]: No HumanoidRootPart/PrimaryPart found inside in the player's character.")
 
-		return
+		return {}
 	end
 
 	local AgentsInRange = {}
@@ -405,9 +439,28 @@ local function GetAgentsInRange(Range:number)
 		return AgentsInRange
 	end
 
-	return
+	return {}
 end
 
+--[=[
+    Info: This function takes a table, and a function, then loops through the table firing said function with 
+        the index and value.
+
+    Example: SortFunc({
+        [1] = "bob",
+        [2] = "Cheese", 
+        ["StringIndex"] = 1
+        }, function(i, v) 
+            print("index: "..tostring(i).."\n value: "..tostring(v))
+        end
+    )
+
+    Parameter count: 2
+
+    Parameter types: table, function
+
+    returns: none
+]=]
 local function SortFunc(Table:{[any]: any}, Func:typeof(function(...) end))
 	if Table ~= nil and Func ~= nil then 
 		if typeof(Table) ~= "table" then 
@@ -441,14 +494,22 @@ local function SortFunc(Table:{[any]: any}, Func:typeof(function(...) end))
 	return
 end
 
+--[=[
+    Info: This function attempts to find the player-made building with the least amount of health in value, by 
+        dividing the max health by the current health returning a value between 1 and 0 which is used to compare all the buildings.
+
+    Parameter count: 0
+
+    Parameter types: none
+
+    returns: Instance(NumberValue)
+]=]
 local function GetBuildingWithLeastHealth()
 	local Healths = {}
-	local Pos = 1
 
-	for i, v in pairs(BuildingsFolder:GetDescendants()) do
+	for _,  v in pairs(BuildingsFolder:GetDescendants()) do
 		if typeof(v) == "Instance" and v.Name == "BuildingHealth" and v:IsA("NumberValue") then 
-			table.insert(Healths, Pos, v)
-			Pos += 1
+			table.insert(Healths, v)
 		end
 	end
 
