@@ -1,12 +1,14 @@
 --//// @_x4yz \\\\--
 
 --//// stuff. \\\\--
---// if you have an axe, and can shove with it, press Q \\--
+--// any weapon that has the ability to shove, press Q \\--
 --// when killing a group/horde of zombies, pressing Z or X will help with it will help clear them out \\--
 --// all hits done with melee will be sent to the server as if you hitting the head \\--
 --// while "RubiksCube" is toggled on, when you have any gun/tool that updates the way you're looking, it will jumble your character up, like a rubik's cube! \\--
 --// this script also blocks out the "OnAFKSignalReceived" remote and "ForceKill" remote if it is called by a non-exploit script \\--
 --// for auto repair to work, you must have a hammer and at least have equipped it once (repair radius seems to be based on HumanoidRootPart or something else so you can technically repair something while the hammer is let us say, 3000 studs away, as long as your character is near the building) \\--
+--// and more! \\--
+
 
 --//// binds \\\\--
 --// Q / Shove Bind \\--
@@ -23,8 +25,8 @@ local OldTick = tick()
 
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-local Backpack = Player.Backpack
+local LocalPlayer = Players.LocalPlayer
+local Backpack = LocalPlayer.Backpack
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -51,8 +53,8 @@ local FakeAccuracyBeatWaitTime = 0.15
 
 local NewChildWaitTime = 0.25
 
-local ShoveRange = 15 --// default range that is always used in this script for shoving.
-local MurderRange = 11 --// Used as a backup if can't find weapon range.
+local ShoveRange = 17 --// default range is always used in this script for shoving.
+local MurderRange = 11 --// used as a backup if can't find weapon range.
 
 local HeadSizeToUse = Vector3.new(6, 9, 4.5)
 local HeadTransparency = 1
@@ -300,7 +302,7 @@ end
     returns: none
 ]=]
 local function GetMeleeWeapon()
-	local Character = Player.Character
+	local Character = LocalPlayer.Character
 
 	if Character == nil then 
 		warn("[FAIL # GetMeleeWeapon]: Your character doesn't exist?")
@@ -380,7 +382,7 @@ local function GetAgentsInRange(Range:number)
 		Range = -Range
 	end
 
-	local Character = Player.Character
+	local Character = LocalPlayer.Character
 	local CharHRP = Character and Character:FindFirstChild("HumanoidRootPart") or Character.PrimaryPart
 
 	if not CharHRP or CharHRP:IsA("Model") then 
@@ -545,8 +547,8 @@ _G["BuildingBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 end)
 
 _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
-	if BuildingBindEnabled and Player.Character ~= nil then 
-		local Character = Player.Character
+	if BuildingBindEnabled and LocalPlayer.Character ~= nil then 
+		local Character = LocalPlayer.Character
 		local Hammer = Backpack:FindFirstChild("Hammer") 
 			or Character:FindFirstChildWhichIsA("Tool")
 			or Character:FindFirstChildWhichIsA("HopperBin")
@@ -597,8 +599,8 @@ end)
 
 -- u f g h j k l
 _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
-	if not Process and Player.Character then 
-        local Character = Player.Character
+	if not Process and LocalPlayer.Character then 
+        local Character = LocalPlayer.Character
 		local KeyCodeName = tostring(Key.KeyCode.Name)
         local SongName = MusicSelections[KeyCodeName]
 
@@ -674,8 +676,8 @@ end)
 _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if Key.KeyCode == Enum.KeyCode.Q then 
-			if Player.Character ~= nil and Player.Character.Parent ~= nil then
-				local Character = Player.Character
+			if LocalPlayer.Character ~= nil and LocalPlayer.Character.Parent ~= nil then
+				local Character = LocalPlayer.Character
 				local HRP = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
 				local AgentsInRange = GetAgentsInRange(ShoveRange)
 
@@ -752,7 +754,7 @@ end)
 _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if Key.KeyCode == Enum.KeyCode.Z or Key.KeyCode == Enum.KeyCode.X then 
-			if Player.Character ~= nil and Player.Character.Parent ~= nil then
+			if LocalPlayer.Character ~= nil and LocalPlayer.Character.Parent ~= nil then
 				local Weapon:boolean, WeaponRemote:RemoteEvent, LimitRange:number = GetMeleeWeapon()
 
 				if Weapon ~= nil and typeof(Weapon) ~= "boolean" then 
@@ -772,7 +774,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 					if WeaponRemote ~= nil and WeaponRemote:IsA("RemoteEvent") then 						
 						if Weapon.Name ~= "Musket" then
-							if Weapon.Name ~= "Spade" then 
+							if Weapon.Name == "Spade" or Weapon.Name == "Heavy Sabre" then 
                                 WeaponRemote:FireServer("Swing", "Over")
                             else
                                 WeaponRemote:FireServer("Swing", "Side")
@@ -827,6 +829,7 @@ local OldNameCall = nil
 if _G["AlreadyActive"] == nil then 
 	_G["AlreadyActive"] = true
 
+    print("[INFO # Namecall Hook]: Attempting to hook \"__namecall\" method.")
 	OldNameCall = hookmetamethod(game, "__namecall", function(Remote, ...)
 		local Args = {...}
 		local NamecallMethod = getnamecallmethod()
@@ -848,7 +851,8 @@ if _G["AlreadyActive"] == nil then
                         if Args[1] == "UpdateAccuracy" then 
                             Args[2] = 100
 
-                            return OldNameCall(Remote, unpack(Args))
+                            Remote["FireServer"](Remote, unpack(Args))
+                            return nil
                         elseif Args[1] == "HitZombie" or Args[1] == "Bayonet_HitZombie" or Args[1] == "ThrustCharge" then 
                             if Args[2] ~= nil and Args[2].Parent ~= nil and (Args[2]:GetAttribute("Type") == "Barrel") then
                                 print("[INFO # Namecall Hook]: Player just attempted to hit a barrel zombie, blocking request and replacing with request with nil.")
@@ -866,12 +870,12 @@ if _G["AlreadyActive"] == nil then
                             print("[INFO # Namecall Hook]: CancelReload argument blocked.")
                             return nil
                         elseif Args[1] == "Swing" then 
-                            local Character = Player.Character
+                            local Character = LocalPlayer.Character
 
                             if Character then 
-                                local Spade:Tool = Character:FindFirstChild("Spade")
+                                local Tool:Tool = Character:FindFirstChild("Spade") or Character:FindFirstChild("Heavy Sabre")
                                 
-                                if Spade then 
+                                if Tool then 
                                     Args[2] = "Over"
 
                                     Remote["FireServer"](Remote, unpack(Args))
@@ -892,51 +896,51 @@ if _G["AlreadyActive"] == nil then
                             Args[2] = math.random(-100, 1000)
 
                             if RandomNum1 == 1 then
-                                Args[3] = Player.Character.Torso["Neck"] or Args[3]
+                                Args[3] = LocalPlayer.Character.Torso["Neck"] or Args[3]
                             elseif RandomNum1 == 2 then
-                                Args[3] = Player.Character.Torso["Right Hip"] or Args[3]
+                                Args[3] = LocalPlayer.Character.Torso["Right Hip"] or Args[3]
                             elseif RandomNum1 == 3 then
-                                Args[3] = Player.Character.Torso["Left Shoulder"] or Args[3]
+                                Args[3] = LocalPlayer.Character.Torso["Left Shoulder"] or Args[3]
                             elseif RandomNum1 == 4 then
-                                Args[3] = Player.Character.Torso["Right Shoulder"] or Args[3]
+                                Args[3] = LocalPlayer.Character.Torso["Right Shoulder"] or Args[3]
                             elseif RandomNum1 == 5 then
-                                Args[3] = Player.Character.Torso["Left Hip"] or Args[3]
+                                Args[3] = LocalPlayer.Character.Torso["Left Hip"] or Args[3]
                             elseif RandomNum1 == 6 then
-                                Args[3] = --[[Player.Character.Torso["Left Shoulder"] or Args[3] ]] Player.Character.HumanoidRootPart and Player.Character.HumanoidRootPart["Root Hip"] or Args[3]
+                                Args[3] = --[[Player.Character.Torso["Left Shoulder"] or Args[3] ]] LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[3]
                             else
-                                Args[3] = Player.Character.Torso["Neck"] or Args[3]
+                                Args[3] = LocalPlayer.Character.Torso["Neck"] or Args[3]
                             end
 
                             if RandomNum2 == 1 then
-                                Args[4] = Player.Character.Torso["Neck"] or Args[4]
+                                Args[4] = LocalPlayer.Character.Torso["Neck"] or Args[4]
                             elseif RandomNum2 == 2 then
-                                Args[4] = Player.Character.Torso["Right Hip"] or Args[4]
+                                Args[4] = LocalPlayer.Character.Torso["Right Hip"] or Args[4]
                             elseif RandomNum2 == 3 then
-                                Args[4] = Player.Character.Torso["Left Shoulder"] or Args[4]
+                                Args[4] = LocalPlayer.Character.Torso["Left Shoulder"] or Args[4]
                             elseif RandomNum2 == 4 then
-                                Args[4] = Player.Character.Torso["Right Shoulder"] or Args[4]
+                                Args[4] = LocalPlayer.Character.Torso["Right Shoulder"] or Args[4]
                             elseif RandomNum2 == 5 then
-                                Args[4] = Player.Character.Torso["Left Hip"] or Args[4]
+                                Args[4] = LocalPlayer.Character.Torso["Left Hip"] or Args[4]
                             elseif RandomNum2 == 6 then
-                                Args[4] = --[[Player.Character.Torso["Left Shoulder"] or Args[4] ]] Player.Character.HumanoidRootPart and Player.Character.HumanoidRootPart["Root Hip"] or Args[4]
+                                Args[4] = --[[Player.Character.Torso["Left Shoulder"] or Args[4] ]] LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[4]
                             else
-                                Args[4] = Player.Character.Torso["Neck"] or Args[4]
+                                Args[4] = LocalPlayer.Character.Torso["Neck"] or Args[4]
                             end
 
                             if RandomNum3 == 1 then
-                                Args[5] = Player.Character.Torso["Neck"] or Args[5]
+                                Args[5] = LocalPlayer.Character.Torso["Neck"] or Args[5]
                             elseif RandomNum3 == 2 then
-                                Args[5] = Player.Character.Torso["Right Hip"] or Args[5]
+                                Args[5] = LocalPlayer.Character.Torso["Right Hip"] or Args[5]
                             elseif RandomNum3 == 3 then
-                                Args[5] = Player.Character.Torso["Left Shoulder"] or Args[5]
+                                Args[5] = LocalPlayer.Character.Torso["Left Shoulder"] or Args[5]
                             elseif RandomNum3 == 4 then
-                                Args[5] = Player.Character.Torso["Right Shoulder"] or Args[5]
+                                Args[5] = LocalPlayer.Character.Torso["Right Shoulder"] or Args[5]
                             elseif RandomNum3 == 5 then
-                                Args[5] = Player.Character.Torso["Left Hip"] or Args[5]
+                                Args[5] = LocalPlayer.Character.Torso["Left Hip"] or Args[5]
                             elseif RandomNum3 == 6 then
-                                Args[5] = --[[Player.Character.Torso["Left Shoulder"] or Args[5] ]] Player.Character.HumanoidRootPart and Player.Character.HumanoidRootPart["Root Hip"] or Args[5]
+                                Args[5] = --[[Player.Character.Torso["Left Shoulder"] or Args[5] ]] LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[5]
                             else
-                                Args[5] = Player.Character.Torso["Neck"] or Args[5]
+                                Args[5] = LocalPlayer.Character.Torso["Neck"] or Args[5]
                             end
 
                             return OldNameCall(Remote, unpack(Args))
@@ -953,6 +957,21 @@ end
 warn(
     ([[ 
         [INFO # END OF SCRIPT]: script successfully executed!
-           -/ Took %s seconds to run.
-    ]]):format(tostring(tick() - OldTick))
+            [INFO # DETAILS]: Took %s seconds to run.
+            [INFO # Music Stuff]: {%s}
+
+    ]]):format(
+        tostring(tick() - OldTick),
+        (function()
+            local ReturnString = "\n                "
+
+            for i, v in pairs(MusicSelections) do 
+                ReturnString = ReturnString..([[Key:  %s   /   Song:  %s            ]].."\n                "):format(
+                    tostring(i), tostring(v)
+                )
+            end
+
+            return ReturnString.."\n            "
+        end)()
+    )
 )
