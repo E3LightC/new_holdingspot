@@ -332,7 +332,7 @@ local function GetMeleeWeapon()
                 if Tool:FindFirstChild("MeleeBase") then 
                     return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
 				else
-					if Tool.Name == "Musket" then 
+					if Tool.Name == "Musket" or Tool.Name == "Shovel" then 
 						return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
 					end
                 end
@@ -346,7 +346,7 @@ local function GetMeleeWeapon()
                 if Tool:FindFirstChild("MeleeBase") then 
                     return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent")
 				else
-					if Tool.Name == "Musket" then 
+					if Tool.Name == "Musket" or Tool.Name == "Shovel" then 
 						return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent")
 					end
                 end
@@ -779,7 +779,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 					if WeaponRemote ~= nil and WeaponRemote:IsA("RemoteEvent") then 						
 						if Weapon.Name ~= "Musket" then
-							if Weapon.Name ~= "Spade" then 
+							if Weapon.Name == "Spade" then 
                                 WeaponRemote:FireServer("Swing", "Over")
                             else
                                 WeaponRemote:FireServer("Swing", "Side")
