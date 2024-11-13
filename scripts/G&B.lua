@@ -459,17 +459,22 @@ end
         ["StringIndex"] = 1
         }, function(i, v) 
             print("index: "..tostring(i).."\n value: "..tostring(v))
-        end
+        end,
+        true
     )
 
-    Parameter count: 2
+    Parameter count: 3
 
-    Parameter types: table, function
+    Parameter types: table, function, boolean or nil/nothing
 
     returns: none
 ]=]
-local function SortFunc(Table:{[any]: any}, Func:typeof(function(...) end))
-	if Table ~= nil and Func ~= nil then 
+local function SortFunc(Table:{[any]: any}, Func:typeof(function(...) end), Instant:boolean?)
+	if typeof(Instant) ~= "boolean" then
+        Instant = true
+    end
+
+    if Table ~= nil and Func ~= nil then 
 		if typeof(Table) ~= "table" then 
 			warn("[FAIL # SortFunc]: \"Table\" is not a table.")
 
@@ -482,9 +487,15 @@ local function SortFunc(Table:{[any]: any}, Func:typeof(function(...) end))
 			return
 		end
 
-		for i, v in pairs(Table) do
-            task.spawn(Func, i, v)
-		end
+		if Instant then 
+            for i, v in pairs(Table) do
+                task.spawn(Func, i, v)
+            end
+        elseif not Instant then
+            for i, v in pairs(Table) do
+                Func(i, v)
+            end
+        end
     else
         if Table == nil then 
             warn("[FAIL # SortFunc]: \"Table\" is equal to nil.")
@@ -536,6 +547,34 @@ local function GetBuildingWithLeastHealth()
 	end 
 
 	return false
+end
+
+local function GetMaxIndexOfTable(Table:{[any]: any})
+    if Table ~= nil then 
+		if typeof(Table) ~= "table" then 
+			warn("[FAIL # GetMaxIndexOfTable]: \"Table\" is not a table.")
+
+			return 0
+		end
+
+		local CountToReturn = 0
+
+        for i, v in pairs(Table) do 
+            if i then
+                CountToReturn += 1
+            end
+        end
+
+        return CountToReturn
+    else
+        if Table == nil then 
+            warn("[FAIL # GetMaxIndexOfTable]: \"Table\" is equal to nil.")
+
+            return 0
+        end
+	end
+
+	return 0
 end
 
 _G["BuildingBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
@@ -729,11 +768,11 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 						end
 
 						SortFunc(AgentsInRange, function(Key, Agent)
-							if Agent ~= nil and Agent:IsA("Model") and Agent.Parent ~= nil and Agent:FindFirstChild("Head") and Agent:FindFirstChild("State") then 
+							if Agent ~= nil and Agent:IsA("Model") and Agent.Parent ~= nil and Agent:FindFirstChild("State") then 
 								local StunArgs = {
 									[1] = "FeedbackStun";
 									[2] = Agent;
-									[3] = Agent:WaitForChild("Head").Position;
+									[3] = Agent.PrimaryPart and Agent.PrimaryPart.Position or Agent:WaitForChild("HumanoidRootPart").Position;
 								}
 
 								Remote:FireServer(unpack(StunArgs))
@@ -786,11 +825,11 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                             end
 
 							SortFunc(AgentsInRange, function(Key, Agent) 
-								if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent ~= nil and Agent:FindFirstChild("Head") and Agent:FindFirstChild("State") then 
+								if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent ~= nil and Agent:FindFirstChild("State") then 
 									local HitArgs = {
 										[1] = "HitZombie";
 										[2] = Agent;
-										[3] = (Agent:WaitForChild("Head", math.huge)::BasePart).Position;
+										[3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or Agent:WaitForChild("HumanoidRootPart").Position;
 										[4] = true;
 									}
 	
@@ -801,11 +840,11 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 							WeaponRemote:FireServer("ThrustBayonet")
 
                             for i, Agent in pairs(AgentsInRange) do 
-                                if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent ~= nil and Agent:FindFirstChild("Head") and Agent:FindFirstChild("State") then 
+                                if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent ~= nil and Agent:FindFirstChild("State") then 
                                     local HitArgs = {
                                         [1] = "Bayonet_HitZombie";
                                         [2] = Agent;
-                                        [3] = (Agent:WaitForChild("Head", math.huge)::BasePart).Position;
+                                        [3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or Agent:WaitForChild("HumanoidRootPart").Position;
                                         [4] = true;
                                     }
                                     
@@ -885,30 +924,37 @@ if _G["AlreadyActive"] == nil then
                 --// (OldNameCall(Remote, unpack(Args)) == nil) = true / (Remote:FireServer(unpack(Args)) == nil) = true
                 if Remote == AFKSignal or Remote.Name == "OnAFKSignalReceived" then
                     print("[INFO # Namecall Hook]: \"OnAFKSignalReceived\" attempted to fire.")
-
                     return nil
                 elseif Remote.Name == "ForceKill" then 
                     print("[INFO # Namecall Hook]: \"ForceKill\" remote attempted to fire.")
-
                     return nil
                 else
                     if Args[1] ~= nil then 
                         if Args[1] == "UpdateAccuracy" then 
                             Args[2] = 100
-
                             Remote["FireServer"](Remote, unpack(Args))
+                            
                             return nil
                         elseif Args[1] == "HitZombie" or Args[1] == "Bayonet_HitZombie" or Args[1] == "ThrustCharge" then 
                             if Args[2] ~= nil and Args[2].Parent ~= nil and (Args[2]:GetAttribute("Type") == "Barrel") then
                                 print("[INFO # Namecall Hook]: Player just attempted to hit a barrel zombie, blocking request and replacing with request with nil.")
-                                
                                 return nil
                             end
 
                             if typeof(Args[4]) == "boolean" then 
-                                Args[4] = true
+                                if Args[4] then
+                                    return Remote["FireServer"](Remote, unpack(Args))
+                                elseif not Args[4] then
+                                    Args[4] = true
+                                    Remote["FireServer"](Remote, unpack(Args))
+                                    
+                                    return nil
+                                end
+
+                                return nil
                             end
 
+                            Args[4] = true
                             Remote["FireServer"](Remote, unpack(Args))
                             return nil
                         elseif Args[1] == "CancelReload" then 
@@ -918,21 +964,25 @@ if _G["AlreadyActive"] == nil then
                             local Character = Player.Character
 
                             if Character then 
-                                local Spade:Tool = Character:FindFirstChild("Spade")
+                                local ToolFound:Tool = Character:FindFirstChild("Spade") 
+                                    or Character:FindFirstChild("Sabre") 
+                                    or Character:FindFirstChild("Officer's Sabre") 
+                                    or Character:FindFirstChild("Heavy Sabre")
+                                    or Character:FindFirstChild("Axe")
                                 
-                                if Spade then 
+                                if ToolFound then 
                                     Args[2] = "Over"
-
                                     Remote["FireServer"](Remote, unpack(Args))
+                                    
                                     return nil
                                 end
                             end
 
-                            Remote["FireServer"](Remote, ...)
-                            return nil
+                            return Remote["FireServer"](Remote, ...)
                         elseif Args[1] == "UpdateLook" and RubiksCube then
                             --// probably a much better way to do this but
                             --// i got lazy!
+                            --// only works with the hammer/claw hammer now
                             
                             local RandomNum1 = math.random(1, 6)
                             local RandomNum2 = math.random(1, 6)
@@ -1003,20 +1053,30 @@ warn(
     ([[ 
         [INFO # END OF SCRIPT]: script successfully executed!
             [INFO # DETAILS]: Took %s seconds to run.
-            [INFO # Music Stuff]: {%s}
-
+            [INFO # Music Bind Info]: {%s}
+        
     ]]):format(
         tostring(tick() - OldTick),
         (function()
             local ReturnString = "\n                "
 
+            local MaxIndexes: number = GetMaxIndexOfTable(MusicSelections)
+            local CurrentIndex = 0
             for i, v in pairs(MusicSelections) do 
-                ReturnString = ReturnString..([[Key:  %s   /   Song:  %s            ]].."\n                "):format(
-                    tostring(i), tostring(v)
-                )
+                CurrentIndex += 1
+
+                if CurrentIndex < MaxIndexes then   
+                    ReturnString = ReturnString..([[Key:  %s   /   Song:  %s            ]].."\n                "):format(
+                        tostring(i), tostring(v)
+                    )
+                elseif CurrentIndex >= MaxIndexes then
+                    ReturnString = ReturnString..([[Key:  %s   /   Song:  %s            ]].."\n             "):format(
+                        tostring(i), tostring(v)
+                    )
+                end
             end
 
-            return ReturnString.."\n            "
+            return ReturnString
         end)()
     )
 )
