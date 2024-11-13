@@ -25,12 +25,13 @@ local OldTick = tick()
 
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-local Backpack = Player.Backpack
-local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local Backpack = LocalPlayer.Backpack
 
 local Remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:WaitForChild("Remotes", math.huge)
 local AFKSignal = Remotes:FindFirstChild("OnAFKSignalReceived") or Remotes:WaitForChild("OnAFKSignalReceived", math.huge)
@@ -38,8 +39,7 @@ local AFKSignal = Remotes:FindFirstChild("OnAFKSignalReceived") or Remotes:WaitF
 local ZombiesFolder = Workspace:FindFirstChild("Zombies") or Workspace:WaitForChild("Zombies", math.huge)
 local BotsFolder = Workspace:FindFirstChild("Bots") or Workspace:WaitForChild("Bots", math.huge)
 local BuildingsFolder = Workspace:FindFirstChild("Buildings") or Workspace:WaitForChild("Buildings", math.huge)
-
-local Camera = Workspace.CurrentCamera
+local Camera = Workspace.CurrentCamera or Workspace:FindFirstChild("Camera")
 
 local RubiksCube = false
 
@@ -57,7 +57,7 @@ local ShoveRange = 15 --// default range that is always used in this script for 
 local MurderRange = 11 --// Used as a backup if can't find weapon range.
 
 local HeadSizeToUse = Vector3.new(6, 9, 4.5)
-local HeadTransparency = 1
+local HeadTransparency = 0.6
 
 --// true = ignore
 --// false = don't ignore
@@ -72,8 +72,6 @@ local ZombieTypesList = {
 	["Bot"] = false;
 	["Headless"] = false;
 }
-local PreferredWeapon = "Pike"
-
 local AllowedInstruments = {
     ["Fife"] = true; --// can play music while inside backpack and give buffs
     ["Drum"] = true; --// only can play while inside character
@@ -87,8 +85,9 @@ local MusicSelections = {
     ["Y"] = "Kolonni Idushej Ataku";
     ["T"] = "Marsh Preobrazhenskogo polka";
 }
+local PreferredWeapon = "Pike"
 
---// Binds.
+--// disconnecting and removing stuff if script already has been executed.
 if _G["ShoveBind"] ~= nil then 
 	_G["ShoveBind"]:Disconnect()
 	_G["ShoveBind"] = nil
@@ -182,6 +181,7 @@ _G["OnClientZombieModelAdded"] = Camera.ChildAdded:Connect(function(NewChild)
                 Head.Massless = true
                 Head.Size = HeadSizeToUse or Vector3.new(3, 3, 3)
                 Head.Transparency = HeadTransparency or 0.6
+                Head.CastShadow = false
 
                 if IsIgniter then
                     --// Igniter
@@ -307,7 +307,7 @@ end
     returns: none
 ]=]
 local function GetMeleeWeapon()
-	local Character = Player.Character
+	local Character = LocalPlayer.Character
 
 	if Character == nil then 
 		warn("[FAIL # GetMeleeWeapon]: Your character doesn't exist?")
@@ -387,7 +387,7 @@ local function GetAgentsInRange(Range:number)
 		Range = -Range
 	end
 
-	local Character = Player.Character
+	local Character = LocalPlayer.Character
 	local CharHRP = Character and Character:FindFirstChild("HumanoidRootPart") or Character.PrimaryPart
 
 	if not CharHRP or CharHRP:IsA("Model") then 
@@ -591,8 +591,8 @@ _G["BuildingBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 end)
 
 _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
-	if BuildingBindEnabled and Player.Character ~= nil then 
-		local Character = Player.Character
+	if BuildingBindEnabled and LocalPlayer.Character ~= nil then 
+		local Character = LocalPlayer.Character
 		local Hammer = Backpack:FindFirstChild("Hammer") 
 			or Character:FindFirstChildWhichIsA("Tool")
 			or Character:FindFirstChildWhichIsA("HopperBin")
@@ -643,8 +643,8 @@ end)
 
 -- u f g h j k l
 _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
-	if not Process and Player.Character then 
-        local Character = Player.Character
+	if not Process and LocalPlayer.Character then 
+        local Character = LocalPlayer.Character
 		local KeyCodeName = tostring(Key.KeyCode.Name)
         local SongName = MusicSelections[KeyCodeName]
 
@@ -720,8 +720,8 @@ end)
 _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if Key.KeyCode == Enum.KeyCode.Q then 
-			if Player.Character ~= nil and Player.Character.Parent ~= nil then
-				local Character = Player.Character
+			if LocalPlayer.Character ~= nil and LocalPlayer.Character.Parent ~= nil then
+				local Character = LocalPlayer.Character
 				local HRP = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
 				local AgentsInRange = GetAgentsInRange(ShoveRange)
 
@@ -798,7 +798,7 @@ end)
 _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if Key.KeyCode == Enum.KeyCode.Z or Key.KeyCode == Enum.KeyCode.X then 
-			if Player.Character ~= nil and Player.Character.Parent ~= nil then
+			if LocalPlayer.Character ~= nil and LocalPlayer.Character.Parent ~= nil then
 				local Weapon:boolean, WeaponRemote:RemoteEvent, LimitRange:number = GetMeleeWeapon()
 
 				if Weapon ~= nil and typeof(Weapon) ~= "boolean" then 
@@ -871,8 +871,8 @@ end)
 
 _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
     if not Process then 
-        if Key.KeyCode == Enum.KeyCode.KeypadOne and Player.Character then
-            local Berezina = workspace:FindFirstChild("Berezina")
+        if Key.KeyCode == Enum.KeyCode.KeypadOne and LocalPlayer.Character then
+            local Berezina = Workspace:FindFirstChild("Berezina")
 
             if Berezina then 
                 local Modes = Berezina:FindFirstChild("Modes") or Berezina:WaitForChild("Modes", 1)
@@ -885,7 +885,6 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                             for _, Log:Model in pairs(Holdout:GetChildren()) do 
                                 if Log and Log:IsA("Model") and Log.Name == "Log" and Log:FindFirstChild("Log") and (Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact") then 
                                     ((Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact")::RemoteEvent):FireServer()
-                                    
                                     return
                                 else
                                     continue
@@ -953,15 +952,13 @@ if _G["AlreadyActive"] == nil then
 
                                 return nil
                             end
-
-                            Args[4] = true
-                            Remote["FireServer"](Remote, unpack(Args))
-                            return nil
+                            
+                            return Remote["FireServer"](Remote, unpack(Args))
                         elseif Args[1] == "CancelReload" then 
                             print("[INFO # Namecall Hook]: CancelReload argument blocked.")
                             return nil
                         elseif Args[1] == "Swing" then 
-                            local Character = Player.Character
+                            local Character = LocalPlayer.Character
 
                             if Character then 
                                 local ToolFound:Tool = Character:FindFirstChild("Spade") 
@@ -991,51 +988,51 @@ if _G["AlreadyActive"] == nil then
                             Args[2] = math.random(-100, 1000)
 
                             if RandomNum1 == 1 then
-                                Args[3] = Player.Character.Torso["Neck"] or Args[3]
+                                Args[3] = LocalPlayer.Character.Torso["Neck"] or Args[3]
                             elseif RandomNum1 == 2 then
-                                Args[3] = Player.Character.Torso["Right Hip"] or Args[3]
+                                Args[3] = LocalPlayer.Character.Torso["Right Hip"] or Args[3]
                             elseif RandomNum1 == 3 then
-                                Args[3] = Player.Character.Torso["Left Shoulder"] or Args[3]
+                                Args[3] = LocalPlayer.Character.Torso["Left Shoulder"] or Args[3]
                             elseif RandomNum1 == 4 then
-                                Args[3] = Player.Character.Torso["Right Shoulder"] or Args[3]
+                                Args[3] = LocalPlayer.Character.Torso["Right Shoulder"] or Args[3]
                             elseif RandomNum1 == 5 then
-                                Args[3] = Player.Character.Torso["Left Hip"] or Args[3]
+                                Args[3] = LocalPlayer.Character.Torso["Left Hip"] or Args[3]
                             elseif RandomNum1 == 6 then
-                                Args[3] = --[[Player.Character.Torso["Left Shoulder"] or Args[3] ]] Player.Character.HumanoidRootPart and Player.Character.HumanoidRootPart["Root Hip"] or Args[3]
+                                Args[3] = --[[Player.Character.Torso["Left Shoulder"] or Args[3] ]] LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[3]
                             else
-                                Args[3] = Player.Character.Torso["Neck"] or Args[3]
+                                Args[3] = LocalPlayer.Character.Torso["Neck"] or Args[3]
                             end
 
                             if RandomNum2 == 1 then
-                                Args[4] = Player.Character.Torso["Neck"] or Args[4]
+                                Args[4] = LocalPlayer.Character.Torso["Neck"] or Args[4]
                             elseif RandomNum2 == 2 then
-                                Args[4] = Player.Character.Torso["Right Hip"] or Args[4]
+                                Args[4] = LocalPlayer.Character.Torso["Right Hip"] or Args[4]
                             elseif RandomNum2 == 3 then
-                                Args[4] = Player.Character.Torso["Left Shoulder"] or Args[4]
+                                Args[4] = LocalPlayer.Character.Torso["Left Shoulder"] or Args[4]
                             elseif RandomNum2 == 4 then
-                                Args[4] = Player.Character.Torso["Right Shoulder"] or Args[4]
+                                Args[4] = LocalPlayer.Character.Torso["Right Shoulder"] or Args[4]
                             elseif RandomNum2 == 5 then
-                                Args[4] = Player.Character.Torso["Left Hip"] or Args[4]
+                                Args[4] = LocalPlayer.Character.Torso["Left Hip"] or Args[4]
                             elseif RandomNum2 == 6 then
-                                Args[4] = --[[Player.Character.Torso["Left Shoulder"] or Args[4] ]] Player.Character.HumanoidRootPart and Player.Character.HumanoidRootPart["Root Hip"] or Args[4]
+                                Args[4] = --[[Player.Character.Torso["Left Shoulder"] or Args[4] ]] LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[4]
                             else
-                                Args[4] = Player.Character.Torso["Neck"] or Args[4]
+                                Args[4] = LocalPlayer.Character.Torso["Neck"] or Args[4]
                             end
 
                             if RandomNum3 == 1 then
-                                Args[5] = Player.Character.Torso["Neck"] or Args[5]
+                                Args[5] = LocalPlayer.Character.Torso["Neck"] or Args[5]
                             elseif RandomNum3 == 2 then
-                                Args[5] = Player.Character.Torso["Right Hip"] or Args[5]
+                                Args[5] = LocalPlayer.Character.Torso["Right Hip"] or Args[5]
                             elseif RandomNum3 == 3 then
-                                Args[5] = Player.Character.Torso["Left Shoulder"] or Args[5]
+                                Args[5] = LocalPlayer.Character.Torso["Left Shoulder"] or Args[5]
                             elseif RandomNum3 == 4 then
-                                Args[5] = Player.Character.Torso["Right Shoulder"] or Args[5]
+                                Args[5] = LocalPlayer.Character.Torso["Right Shoulder"] or Args[5]
                             elseif RandomNum3 == 5 then
-                                Args[5] = Player.Character.Torso["Left Hip"] or Args[5]
+                                Args[5] = LocalPlayer.Character.Torso["Left Hip"] or Args[5]
                             elseif RandomNum3 == 6 then
-                                Args[5] = --[[Player.Character.Torso["Left Shoulder"] or Args[5] ]] Player.Character.HumanoidRootPart and Player.Character.HumanoidRootPart["Root Hip"] or Args[5]
+                                Args[5] = --[[Player.Character.Torso["Left Shoulder"] or Args[5] ]] LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[5]
                             else
-                                Args[5] = Player.Character.Torso["Neck"] or Args[5]
+                                Args[5] = LocalPlayer.Character.Torso["Neck"] or Args[5]
                             end
 
                             return OldNameCall(Remote, unpack(Args))
