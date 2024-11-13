@@ -772,7 +772,7 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 								local StunArgs = {
 									[1] = "FeedbackStun";
 									[2] = Agent;
-									[3] = Agent.PrimaryPart and Agent.PrimaryPart.Position or Agent:WaitForChild("HumanoidRootPart").Position;
+									[3] = Agent.PrimaryPart and Agent.PrimaryPart.Position or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
 								}
 
 								Remote:FireServer(unpack(StunArgs))
@@ -829,7 +829,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 									local HitArgs = {
 										[1] = "HitZombie";
 										[2] = Agent;
-										[3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or Agent:WaitForChild("HumanoidRootPart").Position;
+										[3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
 										[4] = true;
 									}
 	
@@ -844,7 +844,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                                     local HitArgs = {
                                         [1] = "Bayonet_HitZombie";
                                         [2] = Agent;
-                                        [3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or Agent:WaitForChild("HumanoidRootPart").Position;
+                                        [3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
                                         [4] = true;
                                     }
                                     
