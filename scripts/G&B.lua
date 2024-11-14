@@ -53,7 +53,7 @@ local FakeAccuracyBeatWaitTime = 0.15
 
 local NewChildWaitTime = 0.25
 
-local ShoveRange = 15 --// default range that is always used in this script for shoving.
+local ShoveRange = 15 --// range variable that is used for shoving.
 local MurderRange = 11 --// Used as a backup if can't find weapon range.
 
 local HeadSizeToUse = Vector3.new(6, 9, 4.5)
@@ -87,7 +87,7 @@ local MusicSelections = {
 }
 local PreferredWeapon = "Pike"
 
---// disconnecting and removing stuff if script already has been executed.
+--// disconnecting and removing stuff if the script already has been executed.
 if _G["ShoveBind"] ~= nil then 
 	_G["ShoveBind"]:Disconnect()
 	_G["ShoveBind"] = nil
@@ -137,7 +137,7 @@ if _G["GrabLogBind"] ~= nil then
 end
 --//
 
-task.wait(0.2) --// attempting to let luau's garbage collect do its cleaning
+task.wait(0.2) --// attempting to let Luau's garbage collector do its things
 
 _G["OnClientZombieModelAdded"] = Camera.ChildAdded:Connect(function(NewChild)
     task.spawn(function()
@@ -269,7 +269,7 @@ local _TimeSinceLastBeat = 0
 ]=]
 local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent)
     if typeof(RemoteEventToUse) ~= "Instance" or not RemoteEventToUse:IsA("RemoteEvent") then 
-        warn("[FAIL # SetupFakeAccuracyBeat]: \"RemoteEventToUse\" is not a Instance, nor a RemoteEvent")
+        warn("[FAIL # SetupFakeAccuracyBeat]: \"RemoteEventToUse\" is not an Instance, nor a RemoteEvent")
 
         return coroutine.create(function() end)
     end
@@ -621,8 +621,7 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 					CanRepair = true
 				end)
             elseif not Remote then 
-                warn("[FAIL # MusicBind]: Failed to find remote event for hammer.")
-                
+                warn("[FAIL # MusicBind]: Failed to find the hammer's remote event.")
                 return
 			end
         else
@@ -696,11 +695,11 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                     end)
                 elseif not Remote then 
                     warn("[FAIL # MusicBind]: Failed to find instrument remote event for the "..tostring(FoundInstrument.Name)..".")
-
+                    
                     return
                 end
             else
-                warn("[FAIL # MusicBind]: Failed to find a instrument to use.")
+                warn("[FAIL # MusicBind]: Failed to find an instrument to use.")
 
                 return
             end
@@ -891,17 +890,17 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                                 end
                             end
                         elseif not Holdout:FindFirstChild("Log") then 
-                            print("[FAIL # GrabLogBind]: There are no logs to interact with.")
-                        
+                            warn("[FAIL # GrabLogBind]: There are no logs to interact with.")
+                            
                             return
                         end
                     end
                 end
 
-                print("[FAIL # GrabLogBind]: \"Modes\" or \"Holdout\" if statements failed?")
+                warn("[FAIL # GrabLogBind]: \"Modes\" or \"Holdout\" if statements failed?")
                 return
             elseif not Berezina then 
-                print("[FAIL # GrabLogBind]: The current map is not Berezina?")
+                warn("[FAIL # GrabLogBind]: The current map is not Berezina?")
 
                 return
             end
@@ -910,28 +909,33 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 end)
 
 local OldNameCall = nil
+local OldIndex = nil
 if _G["AlreadyActive"] == nil then 
 	_G["AlreadyActive"] = true
 
-	OldNameCall = hookmetamethod(game, "__namecall", function(Remote, ...)
+	OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
 		local Args = {...}
 		local NamecallMethod = getnamecallmethod()
+
+	    if Self == LocalPlayer and (NamecallMethod:lower() == "kick") then
+	        return
+	    end
 
 		if not checkcaller() then
             if NamecallMethod == "FireServer" then
                 --// always returns "nil" technically
                 --// (OldNameCall(Remote, unpack(Args)) == nil) = true / (Remote:FireServer(unpack(Args)) == nil) = true
-                if Remote == AFKSignal or Remote.Name == "OnAFKSignalReceived" then
+                if Self == AFKSignal or Self.Name == "OnAFKSignalReceived" then
                     print("[INFO # Namecall Hook]: \"OnAFKSignalReceived\" attempted to fire.")
                     return nil
-                elseif Remote.Name == "ForceKill" then 
+                elseif Self.Name == "ForceKill" then 
                     print("[INFO # Namecall Hook]: \"ForceKill\" remote attempted to fire.")
                     return nil
                 else
                     if Args[1] ~= nil then 
                         if Args[1] == "UpdateAccuracy" then 
                             Args[2] = 100
-                            Remote["FireServer"](Remote, unpack(Args))
+                            Self["FireServer"](Self, unpack(Args))
                             
                             return nil
                         elseif Args[1] == "HitZombie" or Args[1] == "Bayonet_HitZombie" or Args[1] == "ThrustCharge" then 
@@ -942,10 +946,10 @@ if _G["AlreadyActive"] == nil then
 
                             if typeof(Args[4]) == "boolean" then 
                                 if Args[4] then
-                                    return Remote["FireServer"](Remote, unpack(Args))
+                                    return Self["FireServer"](Self, unpack(Args))
                                 elseif not Args[4] then
                                     Args[4] = true
-                                    Remote["FireServer"](Remote, unpack(Args))
+                                    Self["FireServer"](Self, unpack(Args))
                                     
                                     return nil
                                 end
@@ -953,7 +957,7 @@ if _G["AlreadyActive"] == nil then
                                 return nil
                             end
                             
-                            return Remote["FireServer"](Remote, unpack(Args))
+                            return Self["FireServer"](Self, unpack(Args))
                         elseif Args[1] == "CancelReload" then 
                             print("[INFO # Namecall Hook]: CancelReload argument blocked.")
                             return nil
@@ -969,13 +973,13 @@ if _G["AlreadyActive"] == nil then
                                 
                                 if ToolFound then 
                                     Args[2] = "Over"
-                                    Remote["FireServer"](Remote, unpack(Args))
+                                    Self["FireServer"](Self, unpack(Args))
                                     
                                     return nil
                                 end
                             end
 
-                            return Remote["FireServer"](Remote, ...)
+                            return Self["FireServer"](Self, ...)
                         elseif Args[1] == "UpdateLook" and RubiksCube then
                             --// probably a much better way to do this but
                             --// i got lazy!
@@ -1035,15 +1039,23 @@ if _G["AlreadyActive"] == nil then
                                 Args[5] = LocalPlayer.Character.Torso["Neck"] or Args[5]
                             end
 
-                            return OldNameCall(Remote, unpack(Args))
+                            return OldNameCall(Self, unpack(Args))
                         end
                     end
                 end
             end
 		end
 
-		return OldNameCall(Remote, ...)
+		return OldNameCall(Self, ...)
 	end)
+
+    OldIndex = hookmetamethod(game, "__index", function(Self, Method)
+        if Self == LocalPlayer and (Method:lower() == "kick") then
+            return error("Expected ':' not '.' calling member function Kick", 2)
+        end
+
+        return OldIndex(Self, Method)
+    end)
 end
 
 warn(
