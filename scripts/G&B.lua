@@ -1,3 +1,4 @@
+--!strict
 --//// @_x4yz \\\\--
 
 --//// stuff. \\\\--
@@ -30,16 +31,16 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local UserInputService = game:GetService("UserInputService")
 
-local LocalPlayer = Players.LocalPlayer
-local Backpack = LocalPlayer.Backpack
+local LocalPlayer:Player = Players.LocalPlayer
+local Backpack:Backpack = LocalPlayer.Backpack
 
-local Remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:WaitForChild("Remotes", math.huge)
-local AFKSignal = Remotes:FindFirstChild("OnAFKSignalReceived") or Remotes:WaitForChild("OnAFKSignalReceived", math.huge)
+local Remotes = (ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:WaitForChild("Remotes", math.huge))::Folder
+local AFKSignal = (Remotes:FindFirstChild("OnAFKSignalReceived") or Remotes:WaitForChild("OnAFKSignalReceived", math.huge))::RemoteEvent
 
-local ZombiesFolder = Workspace:FindFirstChild("Zombies") or Workspace:WaitForChild("Zombies", math.huge)
-local BotsFolder = Workspace:FindFirstChild("Bots") or Workspace:WaitForChild("Bots", math.huge)
-local BuildingsFolder = Workspace:FindFirstChild("Buildings") or Workspace:WaitForChild("Buildings", math.huge)
-local Camera = Workspace.CurrentCamera or Workspace:FindFirstChild("Camera")
+local ZombiesFolder = (Workspace:FindFirstChild("Zombies") or Workspace:WaitForChild("Zombies", math.huge))::Folder
+local BotsFolder = (Workspace:FindFirstChild("Bots") or Workspace:WaitForChild("Bots", math.huge))::Folder
+local BuildingsFolder = (Workspace:FindFirstChild("Buildings") or Workspace:WaitForChild("Buildings", math.huge))::Folder
+local Camera = (Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera"))::Camera
 
 local RubiksCube = false
 
@@ -50,8 +51,6 @@ local HammerWarnDelay = 0.25
 local HammerCanWarn = true
 
 local FakeAccuracyBeatWaitTime = 0.15
-
-local NewChildWaitTime = 0.25
 
 local ShoveRange = 15 --// range variable that is used for shoving.
 local MurderRange = 11 --// Used as a backup if can't find weapon range.
@@ -112,9 +111,9 @@ if _G["FakeAccuracyBeat"] ~= nil then
 	_G["FakeAccuracyBeat"] = nil
 end
 
-if _G["OnClientZombieModelAdded"] ~= nil then 
-    _G["OnClientZombieModelAdded"]:Disconnect()
-	_G["OnClientZombieModelAdded"]= nil
+if _G["OnCameraDescendantAdded"] ~= nil then 
+    _G["OnCameraDescendantAdded"]:Disconnect()
+	_G["OnCameraDescendantAdded"]= nil
 end
 
 if _G["BuildingBind"] ~= nil then
@@ -138,110 +137,95 @@ end
 --//
 
 task.wait(0.2) --// attempting to let Luau's garbage collector do its things
-
-_G["OnClientZombieModelAdded"] = Camera.ChildAdded:Connect(function(NewChild)
+_G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Head:Instance)
     task.spawn(function()
-        if NewChild ~= nil and string.find(NewChild.Name, "m_Zombie") or NewChild.Name == "m_Zombie" then 
-            task.wait(NewChildWaitTime)
-            
-            local Head
-            local IsIgniter = false
-            local IsRunner = false
-            local IsSapper = false
-            local IsBomber = false
+        if Head and not Head:IsA("Highlight") and Head:IsA("BasePart") and Head.Name == "Head" then 
+            task.wait()
 
-            for i, v in pairs(NewChild:GetChildren()) do 
-                if typeof(v) == "Instance" and v:IsA("BasePart") and v.Name == "Head" then 
-                    Head = v
+            local Character = Head.Parent
+            if Character then 
+                local IsIgniter = false
+                local IsRunner = false
+                local IsSapper = false
+                local IsBomber = false
 
-                    if Head:FindFirstChild("Eat") then 
-                        IsRunner = true
+                if Head:FindFirstChild("Eat") then 
+                    IsRunner = true
+                end
+                if Character:FindFirstChild("Axe") then 
+                    IsSapper = true
+                end
+                if Character:FindFirstChild("Barrel") then 
+                    IsBomber = true
+                end
+                for i, v in pairs(Character:GetChildren()) do 
+                    if typeof(v) == "Instance" and v:IsA("Model") and v.Name == "Head" then 
+                        IsIgniter = true
                         break
                     end
-                    if NewChild:FindFirstChild("Axe") then 
-                        IsSapper = true
-                        break
-                    end
-                    if NewChild:FindFirstChild("Barrel") then 
-                        IsBomber = true
-                        break
-                    end
-                elseif typeof(v) == "Instance" and v:IsA("Model") and v.Name == "Head" then 
-                    IsIgniter = true
 
-                    if Head ~= nil then 
-                        break
-                    end
+                    task.wait()
                 end
 
-                task.wait()
-            end
-
-            if typeof(Head) == "Instance" and Head:IsA("BasePart") then 
                 Head.Massless = true
                 Head.Size = HeadSizeToUse or Vector3.new(3, 3, 3)
                 Head.Transparency = HeadTransparency or 0.6
                 Head.CastShadow = false
-
                 if IsIgniter then
                     --// Igniter
                     local NewHighlight = Instance.new("Highlight")
+                    Character:AddTag("Highlighted")
                     NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                     NewHighlight.OutlineColor = Color3.fromRGB(255, 255, 0)
                     NewHighlight.FillColor = Color3.fromRGB(255, 255, 0)
-                    NewHighlight.Parent = NewChild
+                    NewHighlight.Parent = Character
                     NewHighlight.FillTransparency = 0.5
                     NewHighlight.Enabled = true
-                    NewHighlight.Adornee = NewChild
+                    NewHighlight.Adornee = Character
                 elseif IsRunner then
                     --// Runner
                     local NewHighlight = Instance.new("Highlight")
+                    Character:AddTag("Highlighted")
                     NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                     NewHighlight.OutlineColor = Color3.fromRGB(0, 255, 255)
                     NewHighlight.FillColor = Color3.fromRGB(0, 255, 255)
-                    NewHighlight.Parent = NewChild
+                    NewHighlight.Parent = Character
                     NewHighlight.FillTransparency = 0.5
                     NewHighlight.Enabled = true
-                    NewHighlight.Adornee = NewChild
+                    NewHighlight.Adornee = Character
                 elseif IsSapper then 
                     --// Sapper
                     local NewHighlight = Instance.new("Highlight")
+                    Character:AddTag("Highlighted")
                     NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                     NewHighlight.OutlineColor = Color3.fromRGB(255, 0, 255)
                     NewHighlight.FillColor = Color3.fromRGB(255, 0, 255)
-                    NewHighlight.Parent = NewChild
+                    NewHighlight.Parent = Character
                     NewHighlight.FillTransparency = 0.5
                     NewHighlight.Enabled = true
-                    NewHighlight.Adornee = NewChild
+                    NewHighlight.Adornee = Character
                 elseif IsBomber then 
                     --// Bomber
                     local NewHighlight = Instance.new("Highlight")
+                    Character:AddTag("Highlighted")
                     NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                     NewHighlight.OutlineColor = Color3.fromRGB(255, 123, 0)
                     NewHighlight.FillColor = Color3.fromRGB(255, 123, 0)
-                    NewHighlight.Parent = NewChild
+                    NewHighlight.Parent = Character
                     NewHighlight.FillTransparency = 0.5
                     NewHighlight.Enabled = true
-                    NewHighlight.Adornee = NewChild
+                    NewHighlight.Adornee = Character
                 end
 
-                for _, ZombPart in pairs(NewChild:GetChildren()) do 
+                for _, ZombPart:any in pairs(Character:GetChildren()) do 
                     if typeof(ZombPart) == "Instance" and ZombPart:IsA("BasePart") and ZombPart.Name ~= "Head" --[[and ZombPart.Name ~= "HumanoidRootPart"]] then 
                         ZombPart.CanQuery = false
+                        ZombPart = nil
                     end
                 end
-                Head = nil
-                
-                return
-            elseif typeof(Head) ~= "Instance" then
-                Head = nil
-                warn("[FAIL # OnClientZombieModelAdded]: Failed to find the head body part in \""..tostring(NewChild:GetFullName()).."\".")
 
                 return
             end
-        else
-            NewChild = nil
-            return
         end
     end)
 end)
@@ -268,7 +252,7 @@ local _TimeSinceLastBeat = 0
     returns: thread
 ]=]
 local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent)
-    if typeof(RemoteEventToUse) ~= "Instance" or not RemoteEventToUse:IsA("RemoteEvent") then 
+    if typeof(RemoteEventToUse) == "Instance" or not RemoteEventToUse:IsA("RemoteEvent") then 
         warn("[FAIL # SetupFakeAccuracyBeat]: \"RemoteEventToUse\" is not an Instance, nor a RemoteEvent")
 
         return coroutine.create(function() end)
@@ -306,29 +290,30 @@ end
 
     returns: none
 ]=]
-local function GetMeleeWeapon()
+local function GetMeleeWeapon():(...any)
 	local Character = LocalPlayer.Character
 
-	if Character == nil then 
+	if not Character then 
 		warn("[FAIL # GetMeleeWeapon]: Your character doesn't exist?")
 
-		return false
+		return
 	end
 
 	if Character.Parent == nil then 
 		warn("[FAIL # GetMeleeWeapon]: Your character's parent is equal to nil.")
 
-		return false
+		return
 	end
 
     if Character:FindFirstChild(PreferredWeapon) then 
-        local Tool = Character:FindFirstChild(PreferredWeapon)
+        local Tool = (Character:FindFirstChild(PreferredWeapon))::Tool
+        
         return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
     end
 
     if Character:FindFirstChildWhichIsA("Tool") then
-        for _, Tool:Tool in ipairs(Character:GetChildren()) do 
-            if Tool ~= nil and Tool:IsA("Tool") and Tool.Parent ~= nil then 
+        for _, Tool in ipairs(Character:GetChildren()) do 
+            if typeof(Tool) == "Instance" and Tool:IsA("Tool") and Tool.Parent then 
                 if Tool:FindFirstChild("MeleeBase") then 
                     return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
 				else
@@ -341,8 +326,8 @@ local function GetMeleeWeapon()
     end
 
     if Backpack:FindFirstChildWhichIsA("Tool") then
-        for _, Tool:Tool in ipairs(Backpack:GetChildren()) do 
-            if Tool ~= nil and Tool:IsA("Tool") and Tool.Parent ~= nil then 
+        for _, Tool in ipairs(Backpack:GetChildren()) do 
+            if typeof(Tool) == "Instance" and Tool:IsA("Tool") and Tool.Parent then 
                 if Tool:FindFirstChild("MeleeBase") then 
                     return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent")
 				else
@@ -354,7 +339,7 @@ local function GetMeleeWeapon()
         end
     end
     
-	return false
+	return
 end
 
 --[=[
@@ -387,9 +372,12 @@ local function GetAgentsInRange(Range:number)
 		Range = -Range
 	end
 
-	local Character = LocalPlayer.Character
-	local CharHRP = Character and Character:FindFirstChild("HumanoidRootPart") or Character.PrimaryPart
+	local Character:Model = LocalPlayer.Character
+    if not Character or not Character.Parent then 
+        return {}
+    end
 
+	local CharHRP = (Character:FindFirstChild("HumanoidRootPart") or Character.PrimaryPart)::BasePart
 	if not CharHRP or CharHRP:IsA("Model") then 
 		warn("[FAIL # GetAgentsInRange]: No HumanoidRootPart/PrimaryPart found inside in the player's character.")
 
@@ -398,10 +386,10 @@ local function GetAgentsInRange(Range:number)
 
 	local AgentsInRange = {}
 
-	if Character ~= nil and Character.Parent ~= nil then 
+
 		if #ZombiesFolder:GetChildren() > 0 then 
-			for _, Agent:Model in ipairs(ZombiesFolder:GetChildren()) do 
-				if Agent ~= nil and Agent.Parent ~= nil then 
+			for _, Agent in ipairs(ZombiesFolder:GetChildren()) do 
+				if typeof(Agent) == "Instance" and Agent.Parent then 
 					local HRP = Agent:FindFirstChild("HumanoidRootPart")
 
 					local ZombieType = Agent:GetAttribute("Type")
@@ -422,8 +410,8 @@ local function GetAgentsInRange(Range:number)
 		end
 
 		if #BotsFolder:GetChildren() > 0 then 
-			for _, Agent:Model in ipairs(BotsFolder:GetChildren()) do 
-				if Agent ~= nil and Agent.Parent ~= nil then 
+			for _, Agent in ipairs(BotsFolder:GetChildren()) do 
+				if typeof(Agent) == "Instance" and Agent.Parent then 
 					local HRP = Agent:FindFirstChild("HumanoidRootPart")
 
 					local BotType = Agent:GetAttribute("Type")
@@ -444,9 +432,6 @@ local function GetAgentsInRange(Range:number)
 		end
 
 		return AgentsInRange
-	end
-
-	return {}
 end
 
 --[=[
@@ -522,10 +507,16 @@ end
 
     returns: Instance(NumberValue)
 ]=]
-local function GetBuildingWithLeastHealth()
+local function GetBuildingWithLeastHealth():any
+    local LocalPlayerUserId:number = LocalPlayer.UserId
 	local Healths = {}
 
-	for _,  v in pairs(BuildingsFolder:GetDescendants()) do
+    local LocalPlayerBuildings = (BuildingsFolder:FindFirstChild(tostring(LocalPlayerUserId)))::Folder
+    if not LocalPlayerBuildings then 
+        return
+    end
+
+	for _,  v in pairs(LocalPlayerBuildings:GetDescendants()) do
 		if typeof(v) == "Instance" and v.Name == "BuildingHealth" and v:IsA("NumberValue") then 
 			table.insert(Healths, v)
 		end
@@ -536,9 +527,9 @@ local function GetBuildingWithLeastHealth()
 			return (Arg1.Value / (Arg1:GetAttribute("MaxHealth") or Arg1.Value) ) < (Arg2.Value / (Arg2:GetAttribute("MaxHealth") or Arg2.Value))
 		end)
 
-		if Healths[1] ~= nil then 
+		if typeof(Healths[1]) == "Instance" then 
             return Healths[1]
-        elseif Healths[1] == nil then 
+        elseif not Healths[1] then 
             warn("[FAIL # GetBuildingWithLeastHealth]: Failed to get a \"BuildingHealth\" NumberValue.")
             return false
         end
@@ -591,7 +582,7 @@ _G["BuildingBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 end)
 
 _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
-	if BuildingBindEnabled and LocalPlayer.Character ~= nil then 
+	if BuildingBindEnabled and LocalPlayer.Character then 
 		local Character = LocalPlayer.Character
 		local Hammer = Backpack:FindFirstChild("Hammer") 
 			or Character:FindFirstChildWhichIsA("Tool")
@@ -652,7 +643,8 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
             for i:string, v:boolean in pairs(AllowedInstruments) do 
                 if typeof(i) == "string" and v then 
-                    FoundInstrument = Character:FindFirstChild(i) or Backpack:FindFirstChild(i)
+                    FoundInstrument = (Character:FindFirstChild(tostring(i)) or Backpack:FindFirstChild(tostring(i)))::Tool
+
                     if FoundInstrument then 
                         print("[INFO # MusicBind]: Found instrument \""..tostring(FoundInstrument.Name).."\".")
                         break
@@ -660,9 +652,9 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                 end
             end
 
-            if FoundInstrument ~= nil and FoundInstrument:IsA("Tool") then                 
-                local Remote = FoundInstrument:FindFirstChild("RemoteEvent")
-
+            if typeof(FoundInstrument) == "Instance" and FoundInstrument:IsA("Tool") then                 
+                local Remote = (FoundInstrument:FindFirstChild("RemoteEvent"))::RemoteEvent
+                
                 if Remote then 
                     if _G["FakeAccuracyBeat"] ~= nil then 
                         coroutine.close(_G["FakeAccuracyBeat"])
@@ -719,7 +711,7 @@ end)
 _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if Key.KeyCode == Enum.KeyCode.Q then 
-			if LocalPlayer.Character ~= nil and LocalPlayer.Character.Parent ~= nil then
+			if LocalPlayer.Character and LocalPlayer.Character.Parent then
 				local Character = LocalPlayer.Character
 				local HRP = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
 				local AgentsInRange = GetAgentsInRange(ShoveRange)
@@ -749,7 +741,7 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                     or Backpack:FindFirstChild("Carbine")
                     or Backpack:FindFirstChild("Navy Pistol")
 
-				if Weapon and typeof(Weapon) == "Instance" and Weapon.Parent ~= nil then
+				if Weapon and typeof(Weapon) == "Instance" and Weapon.Parent then
 					local Remote = Weapon:FindFirstChildWhichIsA("RemoteEvent")
 
 					if Remote then
@@ -758,7 +750,7 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 							task.spawn(function()
 								task.wait(0.25)
-								if Remote ~= nil and Remote.Parent ~= nil then
+								if Remote and Remote.Parent then
 									Remote:FireServer("StopBraceBlock")
 								end
 							end)
@@ -767,7 +759,7 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 						end
 
 						SortFunc(AgentsInRange, function(Key, Agent)
-							if Agent ~= nil and Agent:IsA("Model") and Agent.Parent ~= nil and Agent:FindFirstChild("State") then 
+							if Agent ~= nil and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
 								local StunArgs = {
 									[1] = "FeedbackStun";
 									[2] = Agent;
@@ -797,10 +789,10 @@ end)
 _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if Key.KeyCode == Enum.KeyCode.Z or Key.KeyCode == Enum.KeyCode.X then 
-			if LocalPlayer.Character ~= nil and LocalPlayer.Character.Parent ~= nil then
-				local Weapon:boolean, WeaponRemote:RemoteEvent, LimitRange:number = GetMeleeWeapon()
+			if LocalPlayer.Character and LocalPlayer.Character.Parent then
+				local Weapon:Tool, WeaponRemote:RemoteEvent, LimitRange:number = GetMeleeWeapon()
 
-				if Weapon ~= nil and typeof(Weapon) ~= "boolean" then 
+				if Weapon and typeof(Weapon) == "Instance" then 
                 	local AgentsInRange:{[number]:Model} = GetAgentsInRange(LimitRange and (LimitRange * 1.8) or MurderRange)
 
                     if typeof(AgentsInRange) ~= "table" then 
@@ -815,7 +807,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                         return
                     end
 
-					if WeaponRemote ~= nil and WeaponRemote:IsA("RemoteEvent") then 						
+					if WeaponRemote and WeaponRemote:IsA("RemoteEvent") then 						
 						if Weapon.Name ~= "Musket" then
 							if Weapon.Name == "Spade" then 
                                 WeaponRemote:FireServer("Swing", "Over")
@@ -823,9 +815,9 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                                 WeaponRemote:FireServer("Swing", "Side")
                             end
 
-							SortFunc(AgentsInRange, function(Key, Agent) 
-								if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent ~= nil and Agent:FindFirstChild("State") then 
-									local HitArgs = {
+							SortFunc(AgentsInRange, function(Key:any, Agent:Model) 
+								if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
+									local HitArgs:{[number]:any} = {
 										[1] = "HitZombie";
 										[2] = Agent;
 										[3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
@@ -838,9 +830,9 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 						elseif Weapon.Name == "Musket" then
 							WeaponRemote:FireServer("ThrustBayonet")
 
-                            for i, Agent in pairs(AgentsInRange) do 
-                                if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent ~= nil and Agent:FindFirstChild("State") then 
-                                    local HitArgs = {
+                            for _, Agent in pairs(AgentsInRange) do 
+                                if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
+                                    local HitArgs:{[number]:any} = {
                                         [1] = "Bayonet_HitZombie";
                                         [2] = Agent;
                                         [3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
@@ -881,7 +873,7 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
                     if Holdout then 
                         if Holdout:FindFirstChild("Log") then
-                            for _, Log:Model in pairs(Holdout:GetChildren()) do 
+                            for _, Log in pairs(Holdout:GetChildren()) do 
                                 if Log and Log:IsA("Model") and Log.Name == "Log" and Log:FindFirstChild("Log") and (Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact") then 
                                     ((Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact")::RemoteEvent):FireServer()
                                     return
@@ -939,7 +931,7 @@ if _G["AlreadyActive"] == nil then
                             
                             return nil
                         elseif Args[1] == "HitZombie" or Args[1] == "Bayonet_HitZombie" or Args[1] == "ThrustCharge" then 
-                            if Args[2] ~= nil and Args[2].Parent ~= nil and (Args[2]:GetAttribute("Type") == "Barrel") then
+                            if Args[2] ~= nil and Args[2].Parent and (Args[2]:GetAttribute("Type") == "Barrel") then
                                 print("[INFO # Namecall Hook]: Player just attempted to hit a barrel zombie, blocking request and replacing with request with nil.")
                                 return nil
                             end
@@ -965,11 +957,13 @@ if _G["AlreadyActive"] == nil then
                             local Character = LocalPlayer.Character
 
                             if Character then 
-                                local ToolFound:Tool = Character:FindFirstChild("Spade") 
+                                local ToolFound = (
+                                    Character:FindFirstChild("Spade") 
                                     or Character:FindFirstChild("Sabre") 
                                     or Character:FindFirstChild("Officer's Sabre") 
                                     or Character:FindFirstChild("Heavy Sabre")
                                     or Character:FindFirstChild("Axe")
+                                )::Tool
                                 
                                 if ToolFound then 
                                     Args[2] = "Over"
