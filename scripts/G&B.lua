@@ -4,10 +4,11 @@
 --//// stuff. \\\\--
 --// if you have an axe, and can shove with it, press Q \\--
 --// when killing a group/horde of zombies, pressing Z or X will help with it will help clear them out \\--
---// all hits done with melee will be sent to the server as if you hitting the head \\--
+--// all hits done with melee will be sent to the server as if you are hitting the head \\--
 --// while "RubiksCube" is toggled on, when you have any gun/tool that updates the way you're looking, it will jumble your character up, like a rubik's cube! \\--
 --// this script also blocks out the "OnAFKSignalReceived" remote and "ForceKill" remote if it is called by a non-exploit script \\--
 --// for auto repair to work, you must have a hammer and at least have equipped it once (repair radius seems to be based on HumanoidRootPart or something else so you can technically repair something while the hammer is let us say, 3000 studs away, as long as your character is near the building) \\--
+--// check developer console for errors, or any warning similar to " [FAIL # blahblahblah]: ... " \\--
 --// and a few more things \\--
 
 --//// binds \\\\--
