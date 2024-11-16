@@ -917,8 +917,8 @@ if _G["AlreadyActive"] == nil then
 		local Args = {...}
 		local NamecallMethod = getnamecallmethod()
 
-	    if Self == LocalPlayer and (NamecallMethod:lower() == "kick") then
-	        return
+		if Self == LocalPlayer and (NamecallMethod:lower() == "kick") then
+			return
 	    end
 
 		if not checkcaller() then
@@ -981,7 +981,7 @@ if _G["AlreadyActive"] == nil then
 
                             return Self["FireServer"](Self, ...)
                         elseif Args[1] == "UpdateLook" and RubiksCube then
-                            --// probably a much better way to do this but
+                        	--// probably a much better way to do this but
                             --// i got lazy!
                             --// only works with the hammer/claw hammer now
                             
