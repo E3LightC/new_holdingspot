@@ -46,11 +46,12 @@ local Camera = (Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Cam
 local RubiksCube = false
 
 local CanRepair = true
-local WaitTimeUntilRepair = 0.175
 local BuildingBindEnabled = false
-local HammerWarnDelay = 0.25
 local HammerCanWarn = true
 
+local HammerWarnDelay = 0.25
+local NewZombieHeadWaitTime = 0.25
+local WaitTimeUntilRepair = 0.175
 local FakeAccuracyBeatWaitTime = 0.15
 
 local ShoveRange = 15 --// range variable that is used for shoving.
@@ -141,7 +142,7 @@ task.wait(0.2) --// attempting to let Luau's garbage collector do its things
 _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Head:Instance)
     task.spawn(function()
         if Head and not Head:IsA("Highlight") and Head:IsA("BasePart") and Head.Name == "Head" then 
-            task.wait()
+            task.wait(NewZombieHeadWaitTime)
 
             local Character = Head.Parent
             if Character then 
