@@ -1056,6 +1056,7 @@ end
 
 warn(
     ([[ 
+        [DISCORD]: @_x4yz
         [INFO # END OF SCRIPT]: script successfully executed!
             [INFO # DETAILS]: Took %s seconds to run.
             [INFO # Music Bind Info]: {%s}
