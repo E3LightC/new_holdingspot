@@ -8,7 +8,7 @@
 --// while "RubiksCube" is toggled on, when you have any gun/tool that updates the way you're looking, it will jumble your character up, like a rubik's cube! \\--
 --// this script also blocks out the "OnAFKSignalReceived" remote and "ForceKill" remote if it is called by a non-exploit script \\--
 --// for auto repair to work, you must have a hammer and at least have equipped it once (repair radius seems to be based on HumanoidRootPart or something else so you can technically repair something while the hammer is let us say, 3000 studs away, as long as your character is near the building) \\--
---// check developer console for errors, or any warning similar to " [FAIL # blahblahblah]: ... " \\--
+--// check developer console for errors, or any warnings similar to " [FAIL # blahblahblah]: ... " \\--
 --// and a few more things \\--
 
 --//// binds \\\\--
@@ -17,6 +17,7 @@
 --// Keypad 1 / Grab Log Bind (only works on Berezina) \\--
 --// Keypad 2 to toggle auto repair \\--
 --// Keypad 3 to toggle "RubiksCube" \\--
+--// Keypad 4 to toggle building fetch type \\--
 --// U, F, G, H, J, Y, T to play music with fife or drum. \\--
 
 --[/////////////////////////////]--
@@ -48,10 +49,11 @@ local RubiksCube = false
 local CanRepair = true
 local BuildingBindEnabled = false
 local HammerCanWarn = true
+local BuildingFetchType = "Closest"
 
 local HammerWarnDelay = 0.25
 local NewZombieHeadWaitTime = 0.25
-local WaitTimeUntilRepair = 0.175
+local WaitTimeUntilRepair = 0.125
 local FakeAccuracyBeatWaitTime = 0.15
 
 local ShoveRange = 15 --// range variable that is used for shoving.
@@ -130,6 +132,10 @@ if _G["BuildHighlight"] ~= nil then
 	_G["BuildHighlight"].Enabled = false
     _G["BuildHighlight"]:Destroy()
 	_G["BuildHighlight"] = nil
+end
+if _G["BuildingFetchTypeBind"] ~= nil then 
+    _G["BuildingFetchTypeBind"]:Disconnect()
+	_G["BuildingFetchTypeBind"] = nil
 end
 
 if _G["GrabLogBind"] ~= nil then 
@@ -388,52 +394,51 @@ local function GetAgentsInRange(Range:number)
 
 	local AgentsInRange = {}
 
+	if #ZombiesFolder:GetChildren() > 0 then 
+		for _, Agent in ipairs(ZombiesFolder:GetChildren()) do 
+			if typeof(Agent) == "Instance" and Agent.Parent then 
+				local HRP = Agent:FindFirstChild("HumanoidRootPart")
 
-		if #ZombiesFolder:GetChildren() > 0 then 
-			for _, Agent in ipairs(ZombiesFolder:GetChildren()) do 
-				if typeof(Agent) == "Instance" and Agent.Parent then 
-					local HRP = Agent:FindFirstChild("HumanoidRootPart")
+				local ZombieType = Agent:GetAttribute("Type")
+				local IgnoreVal = ZombieTypesList[ZombieType]
 
-					local ZombieType = Agent:GetAttribute("Type")
-					local IgnoreVal = ZombieTypesList[ZombieType]
+				if HRP and typeof(IgnoreVal) == "boolean" and not IgnoreVal then 
+					local Distance = (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
 
-					if HRP and typeof(IgnoreVal) == "boolean" and not IgnoreVal then 
-						local Distance = (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-
-						if Distance <= Range then 
-							table.insert(AgentsInRange, Agent)
-						end
-					elseif HRP and typeof(IgnoreVal) ~= "boolean" then
-						--// this is incase it is a new type, or renamed type.
+					if Distance <= Range then 
 						table.insert(AgentsInRange, Agent)
 					end
+				elseif HRP and typeof(IgnoreVal) ~= "boolean" then
+					--// this is incase it is a new type, or renamed type.
+					table.insert(AgentsInRange, Agent)
 				end
 			end
 		end
+	end
 
-		if #BotsFolder:GetChildren() > 0 then 
-			for _, Agent in ipairs(BotsFolder:GetChildren()) do 
-				if typeof(Agent) == "Instance" and Agent.Parent then 
-					local HRP = Agent:FindFirstChild("HumanoidRootPart")
+	if #BotsFolder:GetChildren() > 0 then 
+		for _, Agent in ipairs(BotsFolder:GetChildren()) do 
+			if typeof(Agent) == "Instance" and Agent.Parent then 
+				local HRP = Agent:FindFirstChild("HumanoidRootPart")
 
-					local BotType = Agent:GetAttribute("Type")
-					local IgnoreVal = ZombieTypesList[BotType]
+				local BotType = Agent:GetAttribute("Type")
+				local IgnoreVal = ZombieTypesList[BotType]
 
-					if HRP and typeof(IgnoreVal) == "boolean" and not IgnoreVal then 
-						local Distance = (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+				if HRP and typeof(IgnoreVal) == "boolean" and not IgnoreVal then 
+					local Distance = (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
 
-						if Distance <= Range then 
-							table.insert(AgentsInRange, Agent)
-						end
-					elseif HRP and typeof(IgnoreVal) ~= "boolean" then 
-						--// this is incase it is a new type, or renamed type.
+					if Distance <= Range then 
 						table.insert(AgentsInRange, Agent)
 					end
+				elseif HRP and typeof(IgnoreVal) ~= "boolean" then 
+					--// this is incase it is a new type, or renamed type.
+					table.insert(AgentsInRange, Agent)
 				end
 			end
 		end
+	end
 
-		return AgentsInRange
+	return AgentsInRange
 end
 
 --[=[
@@ -542,6 +547,58 @@ local function GetBuildingWithLeastHealth():any
 	return false
 end
 
+--[=[
+    Info: This function attempts to find the closest player-made building.
+    Parameter count: 0
+
+    Parameter types: none
+
+    returns: Instance(NumberValue)
+]=]
+local function GetClosestBuilding():any
+    if not LocalPlayer.Character or not LocalPlayer.Character.Parent then
+        return
+    end
+
+    local LocalPlayerUserId:number = LocalPlayer.UserId
+	local Bounds = {}
+
+    local LocalPlayerBuildings = (BuildingsFolder:FindFirstChild(tostring(LocalPlayerUserId)))::Folder
+    if not LocalPlayerBuildings then 
+        return
+    end
+
+	for _,  v in pairs(LocalPlayerBuildings:GetDescendants()) do
+		if typeof(v) == "Instance" and v.Name == "Bound" and v:IsA("BasePart") then 
+			table.insert(Bounds, v)
+		end
+	end
+
+	if #Bounds > 0 then 
+		table.sort(Bounds, function(Arg1, Arg2)
+			--(Arg1.Value / (Arg1:GetAttribute("MaxHealth") or Arg1.Value) ) < (Arg2.Value / (Arg2:GetAttribute("MaxHealth") or Arg2.Value))
+            return (Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or Vector3.new()) < (Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or Vector3.new())
+		end)
+
+		if typeof(Bounds[1]) == "Instance" and typeof(Bounds[1].Parent) == "Instance" then 
+            local BuildingHealth:NumberValue = (((Bounds[1].Parent)::Part):WaitForChild("BuildingHealth")::NumberValue)
+
+            if ( BuildingHealth.Value >= (BuildingHealth:GetAttribute("MaxHealth") or BuildingHealth.Value) )  then 
+                return false
+            end
+
+            return ((Bounds[1].Parent)::Part):WaitForChild("BuildingHealth")
+        elseif not Bounds[1] then 
+            warn("[FAIL # GetBuildingWithLeastHealth]: Failed to get a find the closest building.")
+            return false
+        end
+    else
+        warn("[FAIL # GetBuildingWithLeastHealth]: No buildings found?")
+	end 
+
+	return false
+end
+
 local function GetMaxIndexOfTable(Table:{[any]: any})
     if Table ~= nil then 
 		if typeof(Table) ~= "table" then 
@@ -594,9 +651,9 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 			local Remote = Hammer:FindFirstChild("RemoteEvent")
 
 			if Remote then 
-				local BuildingWithLeastHealth:NumberValue = GetBuildingWithLeastHealth()
+				local BuildingFound:NumberValue = (BuildingFetchType == "LeastHealth" and GetBuildingWithLeastHealth() or GetClosestBuilding())
 
-				if typeof(BuildingWithLeastHealth) == "boolean" or not CanRepair or ( BuildingWithLeastHealth.Value == BuildingWithLeastHealth:GetAttribute("MaxHealth") ) then 
+				if typeof(BuildingFound) == "boolean" or not CanRepair or ( BuildingFound.Value >= (BuildingFound:GetAttribute("MaxHealth") or BuildingFound.Value) ) then 
 					if not CanRepair then 
 						return
 					end
@@ -606,8 +663,8 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 				end
 				CanRepair = false
 
-				Remote:FireServer("Repair", BuildingWithLeastHealth)
-				_G["BuildHighlight"].Adornee = BuildingWithLeastHealth.Parent
+				Remote:FireServer("Repair", BuildingFound)
+				_G["BuildHighlight"].Adornee = BuildingFound.Parent
 
 				task.spawn(function()
 					task.wait(WaitTimeUntilRepair or 0.175)
@@ -631,6 +688,18 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 	end
 
 	task.wait()
+end)
+
+_G["BuildingFetchTypeBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
+    if not Process and Key.KeyCode == Enum.KeyCode.KeypadFour then 
+        if BuildingFetchType == "Closest" then 
+            BuildingFetchType = "LeastHealth"
+        else
+            BuildingFetchType = "Closest"
+        end
+
+        print("[INFO # BuildingBind]: \"BuildingFetchType\" is now equal to: "..tostring(BuildingFetchType))
+    end
 end)
 
 -- u f g h j k l
