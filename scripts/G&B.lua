@@ -1135,7 +1135,7 @@ warn(
         (function()
             local ReturnString = "\n                "
 
-            local MaxIndexes: number = GetMaxIndexOfTable(MusicSelections)
+            local MaxIndexes:number = GetMaxIndexOfTable(MusicSelections)
             local CurrentIndex = 0
             for i, v in pairs(MusicSelections) do 
                 CurrentIndex += 1
