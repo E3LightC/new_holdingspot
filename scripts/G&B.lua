@@ -658,10 +658,10 @@ _G["OnCharacterAdded"] = LocalPlayer.CharacterAdded:Connect(function(NewCharacte
             task.wait()
         until #(getconnections(GrabRemote.OnClientEvent)) >= 1
 
-        print("[INFO # OnCharacterAdded]: Removing \"OnClientEvent\" connections from the LocalPlayer's \"GrabRemote\".")
+--[[        print("[INFO # OnCharacterAdded]: Removing \"OnClientEvent\" connections from the LocalPlayer's \"GrabRemote\".")
         for _, Connection:Connection in pairs(getconnections(GrabRemote.OnClientEvent)) do 
-            Connection.Disable(Connection)
-        end
+            Connection:Disable()
+        end]]
     end
 end)
 
@@ -1019,6 +1019,7 @@ if _G["AlreadyActive"] == nil then
 		local NamecallMethod = getnamecallmethod()
 
 		if Self == LocalPlayer and (NamecallMethod:lower() == "kick") then
+            print("[INFO # AntiKick]: An attempt to kick the LocalPlayer was just prevented.")
 			return
 	    end
 
@@ -1154,7 +1155,9 @@ if _G["AlreadyActive"] == nil then
 
     OldIndex = hookmetamethod(game, "__index", function(Self, Method)
         if Self == LocalPlayer and (Method:lower() == "kick") then
-            return error("Expected ':' not '.' calling member function Kick", 2)
+            return (function()
+                print("[INFO # AntiKick]: An attempt to kick the LocalPlayer was just prevented.")
+            end)
         end
 
         return OldIndex(Self, Method)
