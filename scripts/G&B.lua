@@ -142,6 +142,11 @@ if _G["GrabLogBind"] ~= nil then
     _G["GrabLogBind"]:Disconnect()
 	_G["GrabLogBind"] = nil
 end
+
+if _G["OnCharacterAdded"] then
+    _G["OnCharacterAdded"]:Disconnect()
+	_G["OnCharacterAdded"] = nil
+end
 --//
 
 task.wait(0.2) --// attempting to let Luau's garbage collector do its things
@@ -626,6 +631,39 @@ local function GetMaxIndexOfTable(Table:{[any]: any})
 
 	return 0
 end
+
+_G["OnCharacterAdded"] = LocalPlayer.CharacterAdded:Connect(function(NewCharacter)
+    if NewCharacter then 
+        local GrabRemote:RemoteEvent
+        local Attempts:number = 0
+        local MaxAttempts:number = 10
+
+        repeat
+            if NewCharacter and NewCharacter:FindFirstChild("GrabRemote") then 
+                GrabRemote = (NewCharacter:FindFirstChild("GrabRemote"))::RemoteEvent
+                break
+            else
+                if not NewCharacter then 
+                    break
+                end
+            end
+            Attempts += 1
+
+            task.wait(0.05)
+        until GrabRemote or Attempts >= MaxAttempts
+
+        task.wait(0.1)
+
+        repeat 
+            task.wait()
+        until #(getconnections(GrabRemote.OnClientEvent)) >= 1
+
+        print("[INFO # OnCharacterAdded]: Removing \"OnClientEvent\" connections from the LocalPlayer's \"GrabRemote\".")
+        for _, Connection:Connection in pairs(getconnections(GrabRemote.OnClientEvent)) do 
+            Connection.Disable(Connection)
+        end
+    end
+end)
 
 _G["BuildingBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
