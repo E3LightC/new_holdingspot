@@ -44,6 +44,8 @@ local BotsFolder = (Workspace:FindFirstChild("Bots") or Workspace:WaitForChild("
 local BuildingsFolder = (Workspace:FindFirstChild("Buildings") or Workspace:WaitForChild("Buildings", math.huge))::Folder
 local Camera = (Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera"))::Camera
 
+local Debug = true
+
 local RubiksCube = false
 
 local CanRepair = true
@@ -91,6 +93,11 @@ local MusicSelections = {
 local PreferredWeapon = "Pike"
 
 --// disconnecting and removing stuff if the script already has been executed.
+if _G["FlameTouchRemover"] ~= nil then 
+    _G["FlameTouchRemover"]:Disconnect()
+    _G["FlameTouchRemover"] = nil
+end
+
 if _G["ShoveBind"] ~= nil then 
 	_G["ShoveBind"]:Disconnect()
 	_G["ShoveBind"] = nil
@@ -1008,6 +1015,41 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
         end
     end
 end)
+
+if Debug then
+    print("[INFO # DEBUG]: The \"Debug\" variable is active.")
+    _G["FlameTouchRemover"] = Workspace.DescendantAdded:Connect(function(NewWorkspaceChild)
+        if NewWorkspaceChild then
+            if NewWorkspaceChild.Name == "IgniterFire" and NewWorkspaceChild:IsA("BasePart") then
+                NewWorkspaceChild.CanTouch = false
+
+                local TouchInterest = NewWorkspaceChild:WaitForChild("TouchInterest", 3)
+
+                if TouchInterest then
+                    TouchInterest:Destroy()
+                end
+            elseif NewWorkspaceChild.Name == "Thrown" and NewWorkspaceChild:IsA("Model") then
+                NewWorkspaceChild:WaitForChild("Bound"):WaitForChild("TouchInterest"):Destroy()
+                NewWorkspaceChild:Destroy()
+            elseif NewWorkspaceChild.Name == "FirePartTest" then
+                NewWorkspaceChild:WaitForChild("TouchInterest"):Destroy()
+                print(NewWorkspaceChild:GetFullName())
+            elseif NewWorkspaceChild.Name == "Part" and NewWorkspaceChild:GetAttribute("ArchimedesID") == "260ADDE6-B486-415B-B8E2-84C3963351A5" or NewWorkspaceChild:GetAttribute("ArchimedesID") == "FF1F6119-BA61-488B-98BB-A00D06567A35" then
+                NewWorkspaceChild:WaitForChild("TouchInterest"):Destroy()
+                print(NewWorkspaceChild:GetFullName())
+            elseif NewWorkspaceChild.Name == "Part" and NewWorkspaceChild:FindFirstChild("Sound") and NewWorkspaceChild:FindFirstChild("PathfindingModifier") then
+                NewWorkspaceChild:WaitForChild("TouchInterest"):Destroy()
+                print(NewWorkspaceChild:GetFullName())
+            elseif NewWorkspaceChild.Name == "FireHazard" then
+                NewWorkspaceChild:WaitForChild("TouchInterest"):Destroy()
+                print(NewWorkspaceChild:GetFullName())
+            elseif NewWorkspaceChild.Name == "Fire" and typeof(NewWorkspaceChild:GetAttribute("DoNot")) == "boolean" then
+                NewWorkspaceChild:WaitForChild("TouchInterest"):Destroy()
+                print(NewWorkspaceChild:GetFullName())
+            end
+        end
+    end)
+end
 
 local OldNameCall = nil
 local OldIndex = nil
