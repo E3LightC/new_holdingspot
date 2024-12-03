@@ -191,6 +191,12 @@ local function HandleItem(Item:Model):boolean
                     print(("[FAIL # HandleItem]: Failed to pickup item \"%s\"."):format(ItemName))
                 elseif Response then
                     print(("[FAIL # HandleItem]: Successfully to picked up item \"%s\"."):format(ItemName))
+                    Item:SetAttribute("AlreadyTeleported", true)
+
+                    task.spawn(function()
+                        task.wait(3)
+                        Item:SetAttribute("AlreadyTeleported", nil)
+                    end)
                 end
 
                 return Response, ActionRemote
@@ -208,7 +214,7 @@ local function HandleItem(Item:Model):boolean
 end
 
 local function HandleItemWithTeleport(Item:Model):(boolean)
-    if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+    if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" then
         local ItemLastPosition:Vector3 = Item:GetAttribute("LastPosition")
         
         local Character = LocalPlayer.Character
@@ -307,7 +313,7 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
     return false
 end
 
-local founditem, item = GetItem("TV")
+local founditem, item = GetItem("Crowbar")
 if founditem then
     HandleItemWithTeleport(item)
 end
