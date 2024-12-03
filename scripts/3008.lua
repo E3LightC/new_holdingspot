@@ -431,7 +431,7 @@ local Window = Rayfield:CreateWindow({
    Name = "Roblox - 3008";
    Icon = "moon-star"; -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
    LoadingTitle = "3008 Script - Rayfield UI";
-   LoadingSubtitle = "      By @_x4yz";
+   LoadingSubtitle = "         By @_x4yz";
    Theme = "Amber Glow"; -- Check https://docs.sirius.menu/rayfield/configuration/themes
 
    DisableRayfieldPrompts = false;
@@ -448,6 +448,7 @@ local Window = Rayfield:CreateWindow({
 
 local MainTab = Window:CreateTab("Main", 4483362458)
 do 
+    MainTab:CreateSection("Storable Items")
     MainTab:CreateDropdown({
         Name = "Selected Item";
         Options = table.clone(StorableItems);
@@ -487,6 +488,7 @@ do
         end;
     })
 
+    MainTab:CreateSection("Non-Storable Items")
     local ObjectDropdown 
     ObjectDropdown = MainTab:CreateDropdown({
         Name = "Selected Object";
@@ -504,8 +506,19 @@ do
             ObjectDropdown.Options = GetItems(false)
         end
     })
-    ObjectDropdown.Options = GetItems(false)
-    print(#GetItems(false))
+    MainTab:CreateButton({
+        Name = "Attempt to pick up selected object";
+        Callback = function()
+            local FoundItem:boolean, Item:Model = GetItem(SelectedObject, false)
+            
+            if FoundItem then
+                local Success, Error = pcall(HandleItemWithTeleport, Item)
+                if not Success then
+                    warn(Error)
+                end
+            end
+        end;
+    })
 end
 
 local SettingsTab = Window:CreateTab("Settings", 4483362458)
