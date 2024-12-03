@@ -493,7 +493,10 @@ do
                         }
                     }
 
-                    EventRemote:FireServer(unpack(Arguments))
+                    for _ = 1, 3 do 
+                        EventRemote:FireServer(unpack(Arguments))
+                        task.wait()
+                    end
                 end
 
                 FoundRemote = nil
