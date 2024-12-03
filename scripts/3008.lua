@@ -226,6 +226,8 @@ local function StoreItemWithTeleport(Item:Model):(boolean)
 
         if not ItemPrimaryPart then
             task.wait(0.4)
+        elseif ItemPrimaryPart then
+            task.wait(0.025)
         end
 
         local TimesAttempted:number = 0
@@ -251,7 +253,7 @@ local function StoreItemWithTeleport(Item:Model):(boolean)
 
         for _ = 1, 3 do
             CharacterPrimaryPart.CFrame = _G["__OldPos"]
-            task.wait(0.1)
+            task.wait(0.05)
         end
 
         _G["__OldPos"] = nil
@@ -264,7 +266,7 @@ local function StoreItemWithTeleport(Item:Model):(boolean)
     return false
 end
 
-local founditem, item = GetItem("Backyard Chair")
+local founditem, item = GetItem("Lemon")
 if founditem then
     StoreItemWithTeleport(item)
 end
