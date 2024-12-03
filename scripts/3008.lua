@@ -20,13 +20,19 @@ local function GetCharacterActionRemote():(boolean, any)
         local Character:Model = LocalPlayer.Character
         local System = GetInstance("System", Character, 3)
 
-        if not System then 
+        if not System then
+            print("[FAIL # GetCharacterActionRemote]: The LocalPlayer's character doesn't contain a \"System\" instance.")
             return false, nil
         end
         
         local ActionRemote:RemoteFunction = GetInstance("Action", System, 3)
+        if ActionRemote == nil then
+            print("[FAIL # GetCharacterActionRemote]: Failed to find \"ActionRemote\" in the Character's \"System\" instance.")
+        end
 
         return (ActionRemote ~= nil), ActionRemote
+    else
+        print("[FAIL # GetCharacterActionRemote]: The LocalPlayer's character doesn't exist.")
     end
 
     return false, nil
@@ -67,21 +73,46 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
         end
     end
 
+    print(
+        ((ItemFound ~= nil) and ("[INFO # GetItem]: Successfully found item \"%s\"."):format(ItemName))
+            or
+        (("[FAIL # GetItem]: Failed to find item \"%s\"."):format(ItemName)) 
+    )
+
     return (ItemFound ~= nil), ItemFound
 end
 
-local function StoreItem(Item:Model)
+local function StoreItem(Item:Model):boolean
     if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
         local FoundRemote:boolean, ActionRemote:RemoteFunction = GetCharacterActionRemote()
 
         if FoundRemote and typeof(ActionRemote) == "Instance" then 
-            return ActionRemote:InvokeServer(
-                "Store",
-                {
-                    ["Model"] = Item;
-                }
-            )
+            local ItemName = ((Item and Item.Name) or "Unknown")
+            local Response
+            
+            if (ItemName ~= "Unknown") then 
+                Response = ActionRemote:InvokeServer(
+                    "Store",
+                    {
+                        ["Model"] = Item;
+                    }
+                )
+            end
+
+            if not Response then 
+                print(("[FAIL # StoreItem]: Failed to store item \"%s\"."):format(ItemName))
+            elseif Response then
+                print(("[INFO # StoreItem]: Successfully stored item \"%s\"."):format(ItemName))
+            end
+
+            return Response
+        else
+            if typeof(ActionRemote) ~= "Instance" then
+                print("[FAIL # StoreItem]: \"ActionRemote\" variable is invalid.")
+            end
         end
+    else
+        print("[FAIL # StoreItem]: Invalid \"Item\" parameter.")
     end
 
     return false
