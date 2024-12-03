@@ -1,13 +1,19 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 
-local LocalPlayer = Players.LocalPlayer
+local LocalPlayer:Player = Players.LocalPlayer
+local Backpack:Backpack = LocalPlayer.Backpack
+
+local Rayfield = loadstring(
+    tostring(game:HttpGet('https://sirius.menu/rayfield'))
+)()
 
 local MaxAttemptsToPickup = 5
 local TeleportOffset = Vector3.new(0, 2.5, 0)
 
+local CheckEnabled:boolean = true
 local MaxPartsForCheck:number = 150
-local RadiusToCheck:number = 230
+local RadiusToCheck:number = 250
 local CheckForEmployees:boolean = true
 
 local StorableItems = {
@@ -37,6 +43,8 @@ local StorableItems = {
 	"Pizza";
 	"Striped Donut";
 }
+local SelectedStorableItem = "Medkit"
+local SelectedObject = "GameCube"
 
 local function GetInstance(InstanceName:string|number?, Parent:Instance, Timeout:number?)
     if typeof(Parent) == "Instance" and type(InstanceName) == "string" or type(InstanceName) == "number" then
@@ -81,6 +89,10 @@ local function GetCharacterActionRemote():(boolean, any)
 end
 
 local function IsItemSafe(Item:Model):boolean
+    if not CheckEnabled then
+        return true
+    end
+
     if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
         local ItemPosition = (Item:GetAttribute("LastPosition") or Vector3.new())
         local ItemPrimaryPart = Item.PrimaryPart
@@ -195,7 +207,42 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
         (("[FAIL # GetItem]: Failed to find item \"%s\"."):format(ItemName)) 
     )
 
+    if (ItemFound == nil) then 
+        Rayfield:Notify({
+            Title = "GetItem Fail";
+            Content = (("Failed to find any item named \"%s\" that matched criteria."):format(ItemName));
+            Duration = 6;
+            Image = 4483362458;
+        })
+    end
+
     return (ItemFound ~= nil), ItemFound
+end
+
+local function GetItems(FromFloorAndItems:boolean)
+    if type(FromFloorAndItems) ~= "boolean" then
+        FromFloorAndItems = false
+    end
+    local Table = {}
+
+    for _, Item in pairs(Floor:GetDescendants()) do 
+        if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+            if not table.find(Table, Item.Name) and not table.find(StorableItems, Item.Name) then
+                table.insert(Table, Item.Name)
+            end
+        end
+    end
+    if FromFloorAndItems then
+        for _, Item in pairs(Items:GetDescendants()) do 
+            if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+                if not table.find(Table, Item.Name) and not table.find(StorableItems, Item.Name) then
+                    table.insert(Table, Item.Name)
+                end
+            end
+        end
+    end
+
+    return Table
 end
 
 local function HandleItem(Item:Model):boolean
@@ -267,9 +314,9 @@ local function HandleItem(Item:Model):boolean
 end
 
 local function HandleItemWithTeleport(Item:Model):(boolean)
-    if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" then
+    if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
         local ItemLastPosition:Vector3 = Item:GetAttribute("LastPosition")
-        
+
         local Character = LocalPlayer.Character
         if not Character then
             print("[FAIL # HandleItemWithTeleport]: The LocalPlayer's character doesn't exist.")
@@ -373,7 +420,146 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
     return false
 end
 
+--[[
 local founditem, item = GetItem("Medkit", false)
 if founditem then
     HandleItemWithTeleport(item)
+end
+]]
+
+local Window = Rayfield:CreateWindow({
+   Name = "Roblox - 3008";
+   Icon = "moon-star"; -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
+   LoadingTitle = "3008 Script - Rayfield UI";
+   LoadingSubtitle = "      By @_x4yz";
+   Theme = "Amber Glow"; -- Check https://docs.sirius.menu/rayfield/configuration/themes
+
+   DisableRayfieldPrompts = false;
+   DisableBuildWarnings = false; -- Prevents Rayfield from warning when the script has a version mismatch with the interface
+
+   ConfigurationSaving = {
+      Enabled = true;
+      FolderName = nil; -- Create a custom folder for your hub/game
+      FileName = "3008Hub";
+   };
+
+   KeySystem = false; -- Set this to true to use our key system
+})
+
+local MainTab = Window:CreateTab("Main", 4483362458)
+do 
+    MainTab:CreateDropdown({
+        Name = "Selected Item";
+        Options = table.clone(StorableItems);
+        CurrentOption = {tostring(SelectedStorableItem)};
+        MultipleOptions = false;
+        Flag = "StorableItemDropdown"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Callback = function(Options)
+            if table.find(StorableItems, tostring(Options[1])) then
+                SelectedStorableItem = tostring(Options[1])
+            end
+        end
+    })
+    MainTab:CreateButton({
+        Name = "Attempt to store selected item";
+        Callback = function()
+            if (#Backpack:GetChildren() >= 16) then
+                Rayfield:Notify({
+                    Title = "Fail";
+                    Content = ("Backpack is at full capacity.");
+                    Duration = 6;
+                    Image = 4483362458;
+                })
+
+                return
+            end
+
+            if table.find(StorableItems, SelectedStorableItem) then
+                local FoundItem:boolean, Item:Model = GetItem(SelectedStorableItem, false)
+
+                if FoundItem then
+                    local Success, Error = pcall(HandleItemWithTeleport, Item)
+                    if not Success then
+                        warn(Error)
+                    end
+                end
+            end
+        end;
+    })
+
+    local ObjectDropdown 
+    ObjectDropdown = MainTab:CreateDropdown({
+        Name = "Selected Object";
+        Options = GetItems(false);
+        CurrentOption = {tostring(SelectedObject)};
+        MultipleOptions = false;
+        Flag = "PickupObjectFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Callback = function(Options:{string})
+            local ObjectNames = GetItems(false)
+            print(#ObjectNames)
+            if table.find(ObjectNames, tostring(Options[1])) then
+                SelectedObject = tostring(Options[1])
+            end
+
+            ObjectDropdown.Options = GetItems(false)
+        end
+    })
+    ObjectDropdown.Options = GetItems(false)
+    print(#GetItems(false))
+end
+
+local SettingsTab = Window:CreateTab("Settings", 4483362458)
+do 
+    SettingsTab:CreateSection("Safe Check Settings")
+    SettingsTab:CreateToggle({
+        Name = "Safe Check Enabled";
+        CurrentValue = CheckEnabled;
+        Flag = "SafeCheckEnabledFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Callback = function(Value:boolean)
+            CheckEnabled = Value
+        end;
+    })
+    SettingsTab:CreateToggle({
+        Name = "Check for Employees";
+        CurrentValue = CheckForEmployees;
+        Flag = "CheckForEmployeesFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Callback = function(Value:boolean)
+            CheckForEmployees = Value
+        end;
+    })
+    SettingsTab:CreateSlider({
+        Name = "Check Radius";
+        Range = {0, 500};
+        Increment = 10;
+        Suffix = "Stud(s)";
+        CurrentValue = RadiusToCheck;
+        Flag = "CheckRadiusFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Callback = function(Value:number)
+            RadiusToCheck = Value
+        end;
+    })
+    SettingsTab:CreateSlider({
+        Name = "Max Parts To Fetch";
+        Range = {50, 250};
+        Increment = 10;
+        Suffix = "Part(s)";
+        CurrentValue = MaxPartsForCheck;
+        Flag = "MaxPartsToFetchFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Callback = function(Value:number)
+            MaxPartsForCheck = Value
+        end;
+    })
+
+    SettingsTab:CreateSection("Pickup Settings")
+    SettingsTab:CreateSlider({
+        Name = "Max Attempts for Pickup";
+        Range = {1, 15};
+        Increment = 1;
+        Suffix = "";
+        CurrentValue = MaxAttemptsToPickup;
+        Flag = "MaxPickupAttemptsFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Callback = function(Value:number)
+            MaxAttemptsToPickup = Value
+        end;
+    })
 end
