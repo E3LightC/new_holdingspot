@@ -314,7 +314,6 @@ local function HandleItem(Item):boolean
             if typeof(ActionRemote) ~= "Instance" then
                 print("[FAIL # HandleItem]: \"ActionRemote\" variable is invalid.")
             end
-            ActionRemote = nil
         end
     else
         print("[FAIL # HandleItem]: Invalid \"Item\" parameter.")
