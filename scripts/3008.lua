@@ -401,7 +401,7 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
             CharacterPrimaryPart.Anchored = false
             CharacterPrimaryPart.CFrame = (_G["__OldPos"] - Vector3.new(0, 1, 0))
             CharacterPrimaryPart.AssemblyLinearVelocity = Vector3.new()
-            task.wait(0.05)
+            task.wait(0.025)
         end
         CharacterPrimaryPart.Anchored = true
 
@@ -448,21 +448,21 @@ end
 
 local Window = Rayfield:CreateWindow({
    Name = "Roblox - 3008 - @_x4yz";
-   Icon = "moon-star"; -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
+   Icon = "moon-star";
    LoadingTitle = "3008 Script - Rayfield UI";
    LoadingSubtitle = "         By @_x4yz";
-   Theme = "Amber Glow"; -- Check https://docs.sirius.menu/rayfield/configuration/themes
+   Theme = "Amber Glow";
 
    DisableRayfieldPrompts = false;
-   DisableBuildWarnings = false; -- Prevents Rayfield from warning when the script has a version mismatch with the interface
+   DisableBuildWarnings = false;
 
    ConfigurationSaving = {
       Enabled = true;
-      FolderName = nil; -- Create a custom folder for your hub/game
+      FolderName = nil;
       FileName = "3008Hub";
    };
 
-   KeySystem = false; -- Set this to true to use our key system
+   KeySystem = false;
 })
 
 local MainTab = Window:CreateTab("Main", 4483362458)
@@ -473,7 +473,7 @@ do
         Options = table.clone(StorableItems);
         CurrentOption = {tostring(SelectedStorableItem)};
         MultipleOptions = false;
-        Flag = "StorableItemDropdown"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Flag = "StorableItemDropdown";
         Callback = function(Options)
             if table.find(StorableItems, tostring(Options[1])) then
                 SelectedStorableItem = tostring(Options[1])
@@ -522,7 +522,7 @@ do
         Options = GetItems(false);
         CurrentOption = {tostring(SelectedObject)};
         MultipleOptions = false;
-        Flag = "PickupObjectFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Flag = "PickupObjectFlag";
         Callback = function(Options)
             local ObjectNames = GetItems(false)
             if table.find(ObjectNames, tostring(Options[1])) then
@@ -569,7 +569,7 @@ do
     MainTab:CreateToggle({
         Name = "Toggle Fall Damage";
         CurrentValue = ( ((_G["FallDamageEnabled"] == nil) and false) or _G["FallDamageEnabled"] );
-        Flag = "FallDamageFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Flag = "FallDamageFlag";
         Callback = function(Value)
             _G["FallDamageEnabled"] = Value
             Value = nil
@@ -594,7 +594,7 @@ do
     SettingsTab:CreateToggle({
         Name = "Safe Check Enabled";
         CurrentValue = CheckEnabled;
-        Flag = "SafeCheckEnabledFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Flag = "SafeCheckEnabledFlag";
         Callback = function(Value): ()
             CheckEnabled = Value
             Value = nil
@@ -603,7 +603,7 @@ do
     SettingsTab:CreateToggle({
         Name = "Check For Employees";
         CurrentValue = CheckForEmployees;
-        Flag = "CheckForEmployeesFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Flag = "CheckForEmployeesFlag";
         Callback = function(Value)
             CheckForEmployees = Value
             Value = nil
@@ -615,7 +615,7 @@ do
         Increment = 10;
         Suffix = "Stud(s)";
         CurrentValue = RadiusToCheck;
-        Flag = "CheckRadiusFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Flag = "CheckRadiusFlag";
         Callback = function(Value)
             RadiusToCheck = Value
             Value = nil
@@ -627,7 +627,7 @@ do
         Increment = 10;
         Suffix = "Part(s)";
         CurrentValue = MaxPartsForCheck;
-        Flag = "MaxPartsToFetchFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Flag = "MaxPartsToFetchFlag";
         Callback = function(Value)
             MaxPartsForCheck = Value
             Value = nil
@@ -641,7 +641,7 @@ do
         Increment = 1;
         Suffix = "";
         CurrentValue = MaxAttemptsToPickup;
-        Flag = "MaxPickupAttemptsFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Flag = "MaxPickupAttemptsFlag";
         Callback = function(Value)
             MaxAttemptsToPickup = Value
             Value = nil
