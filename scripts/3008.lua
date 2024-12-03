@@ -98,7 +98,7 @@ local function IsItemSafe(Item:Model):boolean
     end
 
     if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
-        local ItemPosition = (Item:GetAttribute("LastPosition") or Vector3.new())
+        local ItemPosition = (Item:GetPivot().Position or Vector3.new())
         local ItemPrimaryPart = Item.PrimaryPart
 
         if ItemPrimaryPart then
@@ -473,7 +473,7 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 do 
     MainTab:CreateSection("General")
     MainTab:CreateButton({
-        Name = "God Mode / No Target (No turning back.)";
+        Name = "God Mode (Infinite Health, Energy, and Hunger) / No Target (No turning back)";
         Callback = function()
             if LocalPlayer.Character then 
                 local FoundRemote, EventRemote:RemoteEvent = GetCharacterSystemRemote("Event")
