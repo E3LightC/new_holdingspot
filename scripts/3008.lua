@@ -65,7 +65,11 @@ local Map:Folder = GetInstance("Map", Physical)
 local Employees:Folder = GetInstance("Employees", Physical)
 local Floor:Folder = GetInstance("Floor", Map)
 
-local function GetCharacterActionRemote():(boolean, any)
+local function GetCharacterSystemRemote(RemoteName:string):(boolean, any)
+    if type(RemoteName) ~= "string" then
+        return false, nil
+    end
+
     if LocalPlayer.Character then 
         local Character:Model = LocalPlayer.Character
         local System = GetInstance("System", Character, 3)
@@ -75,7 +79,7 @@ local function GetCharacterActionRemote():(boolean, any)
             return false, nil
         end
         
-        local ActionRemote:RemoteFunction = GetInstance("Action", System, 3)
+        local ActionRemote:RemoteFunction = GetInstance(RemoteName, System, 3)
         if ActionRemote == nil then
             print("[FAIL # GetCharacterActionRemote]: Failed to find \"ActionRemote\" in the Character's \"System\" instance.")
         end
@@ -253,7 +257,7 @@ end
 
 local function HandleItem(Item):boolean
     if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
-        local FoundRemote, ActionRemote:RemoteFunction = GetCharacterActionRemote()
+        local FoundRemote, ActionRemote:RemoteFunction = GetCharacterSystemRemote("Action")
 
         if FoundRemote and typeof(ActionRemote) == "Instance" then 
             local ItemName = ((Item and Item.Name) or "Unknown")
@@ -467,6 +471,36 @@ local Window = Rayfield:CreateWindow({
 
 local MainTab = Window:CreateTab("Main", 4483362458)
 do 
+    MainTab:CreateSection("General")
+    MainTab:CreateButton({
+        Name = "God Mode / No Target (No turning back.)";
+        Callback = function()
+            if LocalPlayer.Character then 
+                local FoundRemote, EventRemote:RemoteEvent = GetCharacterSystemRemote("Event")
+
+                if FoundRemote and typeof(EventRemote) == "Instance" then
+                    local Arguments = {
+                        [1] = "FallDamage",
+                        [2] = {
+                            ["Sliding"] = false,
+                            ["OriginalDamage"] = 0/0,
+                            ["Range"] = 0,
+                            ["Softened"] = false,
+                            ["Broken"] = false,
+                            ["Model"] = LocalPlayer.Character,
+                            ["Sound"] = "medium",
+                            ["Damage"] = 0/0
+                        }
+                    }
+
+                    EventRemote:FireServer(unpack(Arguments))
+                end
+
+                FoundRemote = nil
+            end
+        end;
+    })
+
     MainTab:CreateSection("Storable Items")
     MainTab:CreateDropdown({
         Name = "Selected Item";
