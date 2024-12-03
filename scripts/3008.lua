@@ -85,7 +85,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
     if type(ItemName) == "string" then
         if not FromFloorAndItems then
             for _, Item:Instance in pairs(Floor:GetDescendants()) do 
-                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart then
+                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" then
                     ItemFound = Item
                     break
                 end
@@ -93,7 +93,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
             
             if (ItemFound == nil) then
                 for _, Item:Instance in pairs(Floor:GetDescendants()) do 
-                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" then
                         ItemFound = Item
                         break
                     end
@@ -101,7 +101,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
             end
         elseif FromFloorAndItems then
             for _, Item:Instance in pairs(Floor:GetDescendants()) do 
-                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart then
+                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" then
                     ItemFound = Item
                     break
                 end
@@ -109,7 +109,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
 
             if (ItemFound == nil) then
                 for _, Item:Instance in pairs(Items:GetDescendants()) do 
-                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart then
+                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" then
                         ItemFound = Item
                         break
                     end
@@ -118,7 +118,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
 
             if (ItemFound == nil) then
                 for _, Item:Instance in pairs(Floor:GetDescendants()) do 
-                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" then
                         ItemFound = Item
                         break
                     end
@@ -126,7 +126,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
 
                 if (ItemFound == nil) then
                     for _, Item:Instance in pairs(Floor:GetDescendants()) do 
-                        if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+                        if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" then
                             ItemFound = Item
                             break
                         end
@@ -194,7 +194,7 @@ local function HandleItem(Item:Model):boolean
                     Item:SetAttribute("AlreadyTeleported", true)
 
                     task.spawn(function()
-                        task.wait(3)
+                        task.wait(15)
                         Item:SetAttribute("AlreadyTeleported", nil)
                     end)
                 end
@@ -289,7 +289,7 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
                 Response = ActionRemote:InvokeServer(
                     "Drop",
                     {
-                        ["EndCFrame"] = (_G["__OldPos"] + TeleportOffset),
+                        ["EndCFrame"] = (_G["__OldPos"] + (TeleportOffset + Vector3.new(0, 3, 0))),
                         ["CameraCFrame"] = Workspace.CurrentCamera.CFrame.LookVector,
                         ["ThrowPower"] = 0
                     }
@@ -313,7 +313,7 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
     return false
 end
 
-local founditem, item = GetItem("Crowbar")
+local founditem, item = GetItem("TV")
 if founditem then
     HandleItemWithTeleport(item)
 end
