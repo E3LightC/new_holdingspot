@@ -9,7 +9,7 @@ local Rayfield = loadstring(
 )()
 
 local MaxAttemptsToPickup = 5
-local TeleportOffset = Vector3.new(0, 2.5, 0)
+local TeleportOffset:Vector3 = Vector3.new(0, 2.5, 0)
 
 local CheckEnabled:boolean = true
 local MaxPartsForCheck:number = 150
@@ -245,9 +245,9 @@ local function GetItems(FromFloorAndItems:boolean)
     return Table
 end
 
-local function HandleItem(Item:Model):boolean
+local function HandleItem(Item):boolean
     if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
-        local FoundRemote:boolean, ActionRemote:RemoteFunction = GetCharacterActionRemote()
+        local FoundRemote, ActionRemote:RemoteFunction = GetCharacterActionRemote()
 
         if FoundRemote and typeof(ActionRemote) == "Instance" then 
             local ItemName = ((Item and Item.Name) or "Unknown")
@@ -285,6 +285,10 @@ local function HandleItem(Item:Model):boolean
                     print(("[INFO # HandleItem]: Successfully stored item \"%s\"."):format(ItemName))
                 end
 
+                IsNormalItem = nil
+                ItemName = nil
+                FoundRemote = nil
+
                 return Response
             elseif IsNormalItem then
                 if not Response then
@@ -296,8 +300,13 @@ local function HandleItem(Item:Model):boolean
                     task.spawn(function()
                         task.wait(15)
                         Item:SetAttribute("AlreadyTeleported", nil)
+                        Item = nil
                     end)
                 end
+
+                IsNormalItem = nil
+                ItemName = nil
+                FoundRemote = nil
 
                 return Response, ActionRemote
             end
@@ -305,6 +314,7 @@ local function HandleItem(Item:Model):boolean
             if typeof(ActionRemote) ~= "Instance" then
                 print("[FAIL # HandleItem]: \"ActionRemote\" variable is invalid.")
             end
+            ActionRemote = nil
         end
     else
         print("[FAIL # HandleItem]: Invalid \"Item\" parameter.")
@@ -315,7 +325,7 @@ end
 
 local function HandleItemWithTeleport(Item:Model):(boolean)
     if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
-        local ItemLastPosition:Vector3 = Item:GetAttribute("LastPosition")
+        local ItemLastPosition = Item:GetAttribute("LastPosition")
 
         local Character = LocalPlayer.Character
         if not Character then
@@ -323,7 +333,7 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
             return false
         end
 
-        local CharacterPrimaryPart:BasePart = Character.PrimaryPart
+        local CharacterPrimaryPart = Character.PrimaryPart
         if not CharacterPrimaryPart then
             print("[FAIL # HandleItemWithTeleport]: The character's \"PrimaryPart\" doesn't exist?")
             return false
@@ -343,10 +353,11 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
             IsNormalItem = true
         end
 
-        local ItemPrimaryPart:BasePart = Item.PrimaryPart
+        local ItemPrimaryPart = Item.PrimaryPart
         if ItemPrimaryPart then
-            local ItemPosition:Vector3 = ItemPrimaryPart.Position
+            local ItemPosition = ItemPrimaryPart.Position
             CharacterPrimaryPart.CFrame = (CFrame.new(ItemPosition.X, ItemPosition.Y, ItemPosition.Z) + TeleportOffset)
+            ItemPosition = nil
         elseif not ItemPrimaryPart then
             CharacterPrimaryPart.CFrame = (CFrame.new(ItemLastPosition) + TeleportOffset)
         end
@@ -357,13 +368,14 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
             task.wait(0.025)
         end
 
-        local TimesAttempted:number = 0
+        local TimesAttempted = 0
         local Response = false
-        local ActionRemote:RemoteFunction
+        local ActionRemote
         repeat
             if ItemPrimaryPart then
                 local ItemPosition = ItemPrimaryPart.Position
                 CharacterPrimaryPart.CFrame = (CFrame.new(ItemPosition.X, ItemPosition.Y, ItemPosition.Z) + TeleportOffset)
+                ItemPosition = nil
             elseif not ItemPrimaryPart then
                 CharacterPrimaryPart.CFrame = (CFrame.new(ItemLastPosition) + TeleportOffset)
             end
@@ -410,6 +422,15 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
         CharacterPrimaryPart.AssemblyLinearVelocity = Vector3.new()
         task.wait(0.025)
         CharacterPrimaryPart.Anchored = false
+
+        CharacterPrimaryPart = nil
+        Response = nil
+        IsNormalItem = nil
+        ActionRemote = nil
+        TimesAttempted = nil
+        Character = nil
+        ItemName = nil
+        ItemLastPosition = nil
         _G["__OldPos"] = nil
 
         return true
@@ -420,15 +441,8 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
     return false
 end
 
---[[
-local founditem, item = GetItem("Medkit", false)
-if founditem then
-    HandleItemWithTeleport(item)
-end
-]]
-
 local Window = Rayfield:CreateWindow({
-   Name = "Roblox - 3008";
+   Name = "Roblox - 3008 - @_x4yz";
    Icon = "moon-star"; -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
    LoadingTitle = "3008 Script - Rayfield UI";
    LoadingSubtitle = "         By @_x4yz";
@@ -455,10 +469,12 @@ do
         CurrentOption = {tostring(SelectedStorableItem)};
         MultipleOptions = false;
         Flag = "StorableItemDropdown"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-        Callback = function(Options:{string})
+        Callback = function(Options)
             if table.find(StorableItems, tostring(Options[1])) then
                 SelectedStorableItem = tostring(Options[1])
             end
+
+            Options = nil
         end
     })
     MainTab:CreateButton({
@@ -476,14 +492,20 @@ do
             end
 
             if table.find(StorableItems, SelectedStorableItem) then
-                local FoundItem:boolean, Item:Model = GetItem(SelectedStorableItem, false)
+                local FoundItem, Item = GetItem(SelectedStorableItem, false)
 
                 if FoundItem then
                     local Success, Error = pcall(HandleItemWithTeleport, Item)
                     if not Success then
                         warn(Error)
                     end
+
+                    Success = nil
+                    Error = nil
                 end
+
+                FoundItem = nil
+                Item = nil
             end
         end;
     })
@@ -496,13 +518,14 @@ do
         CurrentOption = {tostring(SelectedObject)};
         MultipleOptions = false;
         Flag = "PickupObjectFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-        Callback = function(Options:{string})
+        Callback = function(Options)
             local ObjectNames = GetItems(false)
-            print(#ObjectNames)
             if table.find(ObjectNames, tostring(Options[1])) then
                 SelectedObject = tostring(Options[1])
             end
 
+            ObjectNames = nil
+            Options = nil
             ObjectDropdown.Options = GetItems(false)
         end
     })
@@ -512,7 +535,7 @@ do
             local FoundItem:boolean, Item:Model = GetItem(SelectedObject, false)
             
             if FoundItem then
-                local HandleItemSuccess:boolean = false
+                local HandleItemSuccess = false
                 local Success, Error = pcall(function()
                     HandleItemSuccess = HandleItemWithTeleport(Item)
                 end)
@@ -529,6 +552,10 @@ do
                         Image = 4483362458;
                     })
                 end
+
+                HandleItemSuccess = nil
+                Success = nil 
+                Error = nil
             end
         end;
     })
@@ -536,19 +563,21 @@ do
     MainTab:CreateSection("Toggles")
     MainTab:CreateToggle({
         Name = "Toggle Fall Damage";
-        CurrentValue = false;
+        CurrentValue = ( ((_G["FallDamageEnabled"] == nil) and false) or _G["FallDamageEnabled"] );
         Flag = "FallDamageFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-        Callback = function(Value:boolean)
+        Callback = function(Value)
             _G["FallDamageEnabled"] = Value
+            Value = nil
             local Character = LocalPlayer.Character
 
             if Character then
-                local FallDamageScript:LocalScript = GetInstance("FallDamage", Character, 3)
+                local FallDamageScript = GetInstance("FallDamage", Character, 3)
 
                 if FallDamageScript then
                     FallDamageScript.Enabled = not _G["FallDamageEnabled"]
                     FallDamageScript.Disabled = _G["FallDamageEnabled"]
                 end
+                FallDamageScript = nil
             end
         end;
     })
@@ -561,16 +590,18 @@ do
         Name = "Safe Check Enabled";
         CurrentValue = CheckEnabled;
         Flag = "SafeCheckEnabledFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-        Callback = function(Value:boolean)
+        Callback = function(Value): ()
             CheckEnabled = Value
+            Value = nil
         end;
     })
     SettingsTab:CreateToggle({
         Name = "Check for Employees";
         CurrentValue = CheckForEmployees;
         Flag = "CheckForEmployeesFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-        Callback = function(Value:boolean)
+        Callback = function(Value)
             CheckForEmployees = Value
+            Value = nil
         end;
     })
     SettingsTab:CreateSlider({
@@ -580,8 +611,9 @@ do
         Suffix = "Stud(s)";
         CurrentValue = RadiusToCheck;
         Flag = "CheckRadiusFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-        Callback = function(Value:number)
+        Callback = function(Value)
             RadiusToCheck = Value
+            Value = nil
         end;
     })
     SettingsTab:CreateSlider({
@@ -591,8 +623,9 @@ do
         Suffix = "Part(s)";
         CurrentValue = MaxPartsForCheck;
         Flag = "MaxPartsToFetchFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-        Callback = function(Value:number)
+        Callback = function(Value)
             MaxPartsForCheck = Value
+            Value = nil
         end;
     })
 
@@ -604,8 +637,9 @@ do
         Suffix = "";
         CurrentValue = MaxAttemptsToPickup;
         Flag = "MaxPickupAttemptsFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-        Callback = function(Value:number)
+        Callback = function(Value)
             MaxAttemptsToPickup = Value
+            Value = nil
         end;
     })
 end
@@ -619,11 +653,13 @@ _G["FallDamageDisabler"] = LocalPlayer.CharacterAdded:Connect(function(NewCharac
             _G["FallDamageEnabled"] = false
         end
 
-        local FallDamageScript:LocalScript = GetInstance("FallDamage", NewCharacter, 5)
+        local FallDamageScript = GetInstance("FallDamage", NewCharacter, 5)
 
         if FallDamageScript then
             FallDamageScript.Enabled = not _G["FallDamageEnabled"]
             FallDamageScript.Disabled = _G["FallDamageEnabled"]
         end
+        
+        FallDamageScript = nil
     end
 end)
