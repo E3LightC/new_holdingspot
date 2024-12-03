@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer:Player = Players.LocalPlayer
 local Backpack:Backpack = LocalPlayer.Backpack
@@ -45,6 +46,10 @@ local StorableItems = {
 }
 local SelectedStorableItem = "Medkit"
 local SelectedObject = "GameCube"
+
+if not _G["AttributeTable"] then
+    _G["AttributeTable"] = {}
+end
 
 local function GetInstance(InstanceName:string|number?, Parent:Instance, Timeout:number?)
     if typeof(Parent) == "Instance" and type(InstanceName) == "string" or type(InstanceName) == "number" then
@@ -307,12 +312,7 @@ local function HandleItem(Item):boolean
                 elseif Response then
                     print(("[FAIL # HandleItem]: Successfully to picked up item \"%s\"."):format(ItemName))
                     Item:SetAttribute("AlreadyTeleported", true)
-
-                    task.spawn(function()
-                        task.wait(60)
-                        Item:SetAttribute("AlreadyTeleported", nil)
-                        Item = nil
-                    end)
+                    table.insert(_G["AttributeTable"], Item)
                 end
 
                 IsNormalItem = nil
@@ -473,6 +473,25 @@ local Window = Rayfield:CreateWindow({
 local MainTab = Window:CreateTab("Main", 4483362458)
 do 
     MainTab:CreateSection("General")
+    MainTab:CreateKeybind({
+        Name = "Remove Teleport Attributes";
+        CurrentKeybind = "KeypadOne";
+        HoldToInteract = false;
+        Flag = "RemoveTeleportAttributesFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Callback = function(Keybind)
+            if Keybind then
+                if _G["AttributeTable"] ~= {} then
+                    for i, Item in pairs(_G["AttributeTable"]) do 
+                        if typeof(Item) == "Instance" and Item:IsA("Model") and Item.Parent then
+                            Item:SetAttribute("AlreadyTeleported", nil)
+                        end
+                    end
+                    
+                    _G["AttributeTable"] = {}
+                end
+            end
+        end;
+    })
     MainTab:CreateButton({
         Name = "God Mode(Infinite Health, Energy, and Hunger) (No turning back)";
         Callback = function()
