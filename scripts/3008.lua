@@ -209,7 +209,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
 
     if (ItemFound == nil) then 
         Rayfield:Notify({
-            Title = "GetItem Fail";
+            Title = "Fail";
             Content = (("Failed to find any item named \"%s\" that matched criteria."):format(ItemName));
             Duration = 6;
             Image = 4483362458;
@@ -455,7 +455,7 @@ do
         CurrentOption = {tostring(SelectedStorableItem)};
         MultipleOptions = false;
         Flag = "StorableItemDropdown"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-        Callback = function(Options)
+        Callback = function(Options:{string})
             if table.find(StorableItems, tostring(Options[1])) then
                 SelectedStorableItem = tostring(Options[1])
             end
@@ -512,9 +512,42 @@ do
             local FoundItem:boolean, Item:Model = GetItem(SelectedObject, false)
             
             if FoundItem then
-                local Success, Error = pcall(HandleItemWithTeleport, Item)
+                local HandleItemSuccess:boolean = false
+                local Success, Error = pcall(function()
+                    HandleItemSuccess = HandleItemWithTeleport(Item)
+                end)
+
                 if not Success then
                     warn(Error)
+                end
+
+                if not HandleItemSuccess then
+                    Rayfield:Notify({
+                        Title = "Fail";
+                        Content = ("Failed to store/pickup item.");
+                        Duration = 6;
+                        Image = 4483362458;
+                    })
+                end
+            end
+        end;
+    })
+
+    MainTab:CreateSection("Toggles")
+    MainTab:CreateToggle({
+        Name = "Toggle Fall Damage";
+        CurrentValue = false;
+        Flag = "FallDamageFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Callback = function(Value:boolean)
+            _G["FallDamageEnabled"] = Value
+            local Character = LocalPlayer.Character
+
+            if Character then
+                local FallDamageScript:LocalScript = GetInstance("FallDamage", Character, 3)
+
+                if FallDamageScript then
+                    FallDamageScript.Enabled = not _G["FallDamageEnabled"]
+                    FallDamageScript.Disabled = _G["FallDamageEnabled"]
                 end
             end
         end;
@@ -576,3 +609,21 @@ do
         end;
     })
 end
+
+if _G["FallDamageDisabler"] then
+    _G["FallDamageDisabler"]:Disconnect()
+end
+_G["FallDamageDisabler"] = LocalPlayer.CharacterAdded:Connect(function(NewCharacter)
+    if NewCharacter then
+        if _G["FallDamageEnabled"] == nil then
+            _G["FallDamageEnabled"] = false
+        end
+
+        local FallDamageScript:LocalScript = GetInstance("FallDamage", NewCharacter, 5)
+
+        if FallDamageScript then
+            FallDamageScript.Enabled = not _G["FallDamageEnabled"]
+            FallDamageScript.Disabled = _G["FallDamageEnabled"]
+        end
+    end
+end)
