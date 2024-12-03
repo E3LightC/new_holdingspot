@@ -47,7 +47,7 @@ local Map:Folder = GetInstance("Map", Physical)
 local Floor:Folder = GetInstance("Floor", Map)
 
 local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
-    if typeof(FromFloorAndItems) ~= "boolean" then
+    if type(FromFloorAndItems) ~= "boolean" then
         FromFloorAndItems = false
     end
 
@@ -191,3 +191,5 @@ local function StoreItemWithTeleport(Item:Model):(boolean)
 
     return false
 end
+
+StoreItemWithTeleport(workspace.GameObjects.Physical.Map.Floor:GetChildren()[557].Items.Medkit)
