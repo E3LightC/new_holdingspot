@@ -131,6 +131,7 @@ local function IsItemSafe(Item:Model):boolean
         if (#Parts >= 1) then
             for i, v in pairs(Parts) do 
                 if v and v.Parent and Players:GetPlayerFromCharacter(v.Parent) and (Players:GetPlayerFromCharacter(v.Parent) ~= LocalPlayer) then
+                    print("danger")
                     return false
                 end
             end
@@ -473,7 +474,7 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 do 
     MainTab:CreateSection("General")
     MainTab:CreateButton({
-        Name = "God Mode (Infinite Health, Energy, and Hunger) / No Target (No turning back)";
+        Name = "God Mode(Infinite Health, Energy, and Hunger) (No turning back)";
         Callback = function()
             if LocalPlayer.Character then 
                 local FoundRemote, EventRemote:RemoteEvent = GetCharacterSystemRemote("Event")
