@@ -134,14 +134,7 @@ local function IsItemSafe(Item:Model):boolean
         ItemPrimaryPart = nil
 
         if (#Parts >= 1) then
-            for i, v in pairs(Parts) do 
-                if v and v.Parent and Players:GetPlayerFromCharacter(v.Parent) and (Players:GetPlayerFromCharacter(v.Parent) ~= LocalPlayer) then
-                    print("danger")
-                    return false
-                end
-            end
-
-            return true
+            return false
         elseif (#Parts == 0) then
             Parts = nil
             return true
