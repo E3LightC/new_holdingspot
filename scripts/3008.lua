@@ -4,6 +4,35 @@ local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
 local MaxAttemptsToPickup = 5
+local TeleportOffset = Vector3.new(0, 2.5, 0)
+
+local StorableItems = {
+	"Water";
+	"Medkit";
+	"Burger Car";
+	"Jeff";
+	"2 Litre Dr. Bob";
+	"Apple";
+	"Banana";
+	"Beans";
+	"Bloxy Soda";
+	"Burger";
+	"Cake";
+	"Candy Corn";
+	"Chips";
+	"Chocolate";
+	"Cookie";
+	"Dr. Bob Soda";
+	"Fish Crackers";
+	"Glass Shard";
+	"Hotdog";
+	"Ice Cream";
+	"Lemon";
+	"Lemon Slice";
+	"Meatballs";
+	"Pizza";
+	"Striped Donut";
+}
 
 local function GetInstance(InstanceName:string|number?, Parent:Instance, Timeout:number?)
     if typeof(Parent) == "Instance" and type(InstanceName) == "string" or type(InstanceName) == "number" then
@@ -122,6 +151,12 @@ local function StoreItem(Item:Model):boolean
 
         if FoundRemote and typeof(ActionRemote) == "Instance" then 
             local ItemName = ((Item and Item.Name) or "Unknown")
+            if not table.find(StorableItems, ItemName) then
+                print("[FAIL # StoreItem]: Invalid item to store.")
+
+                return false
+            end
+
             local Response
             
             if (ItemName ~= "Unknown") then 
@@ -170,14 +205,23 @@ local function StoreItemWithTeleport(Item:Model):(boolean)
         
         if not _G["__OldPos"] then
             _G["__OldPos"] = CharacterPrimaryPart.CFrame
+        elseif _G["__OldPos"] then
+            return false
+        end
+
+        local ItemName = ((Item and Item.Name) or "Unknown")
+        if not table.find(StorableItems, ItemName) then
+            print("[FAIL # StoreItem]: Invalid item to store.")
+
+            return false
         end
 
         local ItemPrimaryPart:BasePart = Item.PrimaryPart
         if ItemPrimaryPart then
-            local ItemPosition = ItemPrimaryPart.Position
-            CharacterPrimaryPart.CFrame = (CFrame.new(ItemPosition.X, ItemPosition.Y, ItemPosition.Z) + Vector3.new(0, 3, 0))
+            local ItemPosition:Vector3 = ItemPrimaryPart.Position
+            CharacterPrimaryPart.CFrame = (CFrame.new(ItemPosition.X, ItemPosition.Y, ItemPosition.Z) + TeleportOffset)
         elseif not ItemPrimaryPart then
-            CharacterPrimaryPart.CFrame = (CFrame.new(ItemLastPosition) + Vector3.new(0, 3, 0))
+            CharacterPrimaryPart.CFrame = (CFrame.new(ItemLastPosition) + TeleportOffset)
         end
 
         if not ItemPrimaryPart then
@@ -189,9 +233,9 @@ local function StoreItemWithTeleport(Item:Model):(boolean)
         repeat
             if ItemPrimaryPart then
                 local ItemPosition = ItemPrimaryPart.Position
-                CharacterPrimaryPart.CFrame = (CFrame.new(ItemPosition.X, ItemPosition.Y, ItemPosition.Z) + Vector3.new(0, 3, 0))
+                CharacterPrimaryPart.CFrame = (CFrame.new(ItemPosition.X, ItemPosition.Y, ItemPosition.Z) + TeleportOffset)
             elseif not ItemPrimaryPart then
-                CharacterPrimaryPart.CFrame = (CFrame.new(ItemLastPosition) + Vector3.new(0, 3, 0))
+                CharacterPrimaryPart.CFrame = (CFrame.new(ItemLastPosition) + TeleportOffset)
             end
 
             task.wait(0.1)
@@ -220,7 +264,7 @@ local function StoreItemWithTeleport(Item:Model):(boolean)
     return false
 end
 
-local founditem, item = GetItem("Beans")
+local founditem, item = GetItem("Backyard Chair")
 if founditem then
     StoreItemWithTeleport(item)
 end
