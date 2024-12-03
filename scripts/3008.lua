@@ -51,25 +51,57 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
         FromFloorAndItems = false
     end
 
-    local ItemFound
+    local ItemFound = nil
     
     if type(ItemName) == "string" then
         if not FromFloorAndItems then
             for _, Item:Instance in pairs(Floor:GetDescendants()) do 
-                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart then
                     ItemFound = Item
+                    break
+                end
+            end
+            
+            if (ItemFound == nil) then
+                for _, Item:Instance in pairs(Floor:GetDescendants()) do 
+                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+                        ItemFound = Item
+                        break
+                    end
                 end
             end
         elseif FromFloorAndItems then
             for _, Item:Instance in pairs(Floor:GetDescendants()) do 
-                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart then
                     ItemFound = Item
+                    break
                 end
             end
 
-            for _, Item:Instance in pairs(Items:GetDescendants()) do 
-                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
-                    ItemFound = Item
+            if (ItemFound == nil) then
+                for _, Item:Instance in pairs(Items:GetDescendants()) do 
+                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart then
+                        ItemFound = Item
+                        break
+                    end
+                end
+            end
+
+            if (ItemFound == nil) then
+                for _, Item:Instance in pairs(Floor:GetDescendants()) do 
+                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+                        ItemFound = Item
+                        break
+                    end
+                end
+
+                if (ItemFound == nil) then
+                    for _, Item:Instance in pairs(Floor:GetDescendants()) do 
+                        if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+                            ItemFound = Item
+                            break
+                        end
+                    end
                 end
             end
         end
@@ -122,7 +154,6 @@ end
 
 local function StoreItemWithTeleport(Item:Model):(boolean)
     if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
-        local ItemName = ((Item and Item.Name) or "Unknown")
         local ItemLastPosition:Vector3 = Item:GetAttribute("LastPosition")
         
         local Character = LocalPlayer.Character
@@ -143,9 +174,10 @@ local function StoreItemWithTeleport(Item:Model):(boolean)
 
         local ItemPrimaryPart:BasePart = Item.PrimaryPart
         if ItemPrimaryPart then
-            CharacterPrimaryPart.CFrame = ItemPrimaryPart.CFrame
+            local ItemPosition = ItemPrimaryPart.Position
+            CharacterPrimaryPart.CFrame = (CFrame.new(ItemPosition.X, ItemPosition.Y, ItemPosition.Z) + Vector3.new(0, 3, 0))
         elseif not ItemPrimaryPart then
-            CharacterPrimaryPart.CFrame = CFrame.new(ItemLastPosition)
+            CharacterPrimaryPart.CFrame = (CFrame.new(ItemLastPosition) + Vector3.new(0, 3, 0))
         end
 
         if not ItemPrimaryPart then
@@ -156,9 +188,10 @@ local function StoreItemWithTeleport(Item:Model):(boolean)
         local Response = false
         repeat
             if ItemPrimaryPart then
-                CharacterPrimaryPart.CFrame = ItemPrimaryPart.CFrame
+                local ItemPosition = ItemPrimaryPart.Position
+                CharacterPrimaryPart.CFrame = (CFrame.new(ItemPosition.X, ItemPosition.Y, ItemPosition.Z) + Vector3.new(0, 3, 0))
             elseif not ItemPrimaryPart then
-                CharacterPrimaryPart.CFrame = CFrame.new(ItemLastPosition)
+                CharacterPrimaryPart.CFrame = (CFrame.new(ItemLastPosition) + Vector3.new(0, 3, 0))
             end
 
             task.wait(0.1)
@@ -167,19 +200,14 @@ local function StoreItemWithTeleport(Item:Model):(boolean)
             if Response then
                 break
             end
+            Response = StoreItem(Item)
 
             TimesAttempted += 1
         until (TimesAttempted >= MaxAttemptsToPickup) or Response
 
-        for _ = 1, 3 do 
+        for _ = 1, 3 do
             CharacterPrimaryPart.CFrame = _G["__OldPos"]
             task.wait(0.1)
-        end
-
-        if not Response then
-            print(("[FAIL # StoreItemWithTeleport]: Failed to pickup item \"%s\"."):format(ItemName))
-        else
-            print(("[Info # StoreItemWithTeleport]: Successfully picked up item \"%s\"."):format(ItemName))
         end
 
         _G["__OldPos"] = nil
@@ -192,4 +220,7 @@ local function StoreItemWithTeleport(Item:Model):(boolean)
     return false
 end
 
-StoreItemWithTeleport(workspace.GameObjects.Physical.Map.Floor:GetChildren()[557].Items.Medkit)
+local founditem, item = GetItem("Beans")
+if founditem then
+    StoreItemWithTeleport(item)
+end
