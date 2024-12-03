@@ -1,5 +1,3 @@
---// @_x4yz \\--
-
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 
@@ -7,6 +5,10 @@ local LocalPlayer = Players.LocalPlayer
 
 local MaxAttemptsToPickup = 5
 local TeleportOffset = Vector3.new(0, 2.5, 0)
+
+local MaxPartsForCheck:number = 150
+local RadiusToCheck:number = 230
+local CheckForEmployees:boolean = true
 
 local StorableItems = {
 	"Water";
@@ -48,6 +50,13 @@ local function GetInstance(InstanceName:string|number?, Parent:Instance, Timeout
     return
 end
 
+local GameObjects:Folder = GetInstance("GameObjects", Workspace)
+local Physical:Folder = GetInstance("Physical", GameObjects)
+local Items:Folder = GetInstance("Items", Physical)
+local Map:Folder = GetInstance("Map", Physical)
+local Employees:Folder = GetInstance("Employees", Physical)
+local Floor:Folder = GetInstance("Floor", Map)
+
 local function GetCharacterActionRemote():(boolean, any)
     if LocalPlayer.Character then 
         local Character:Model = LocalPlayer.Character
@@ -71,11 +80,50 @@ local function GetCharacterActionRemote():(boolean, any)
     return false, nil
 end
 
-local GameObjects:Folder = GetInstance("GameObjects", Workspace)
-local Physical:Folder = GetInstance("Physical", GameObjects)
-local Items:Folder = GetInstance("Items", Physical)
-local Map:Folder = GetInstance("Map", Physical)
-local Floor:Folder = GetInstance("Floor", Map)
+local function IsItemSafe(Item:Model):boolean
+    if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+        local ItemPosition = (Item:GetAttribute("LastPosition") or Vector3.new())
+        local ItemPrimaryPart = Item.PrimaryPart
+
+        if ItemPrimaryPart then
+            ItemPosition = ItemPrimaryPart.Position
+        end
+
+        local NewOverlapParams = OverlapParams.new()
+        NewOverlapParams.FilterType = Enum.RaycastFilterType.Exclude
+        NewOverlapParams.MaxParts = MaxPartsForCheck
+
+        if not CheckForEmployees then
+            NewOverlapParams.FilterDescendantsInstances = {
+                Items;
+                Map;
+                Employees;
+            }
+        elseif CheckForEmployees then
+            NewOverlapParams.FilterDescendantsInstances = {
+                Items;
+                Map;
+            }
+        end
+
+        local Parts = Workspace:GetPartBoundsInRadius(ItemPosition, RadiusToCheck, NewOverlapParams)
+
+        NewOverlapParams = nil
+        ItemPosition = nil
+        ItemPrimaryPart = nil
+
+        if (#Parts >= 1) then
+            Parts = nil
+        elseif (#Parts == 0) then
+            Parts = nil
+            return true
+        end
+    else
+        print("[FAIL # HandleItem]: Invalid \"Item\" parameter.")
+    end
+
+    return false
+end
 
 local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
     if type(FromFloorAndItems) ~= "boolean" then
@@ -87,7 +135,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
     if type(ItemName) == "string" then
         if not FromFloorAndItems then
             for _, Item:Instance in pairs(Floor:GetDescendants()) do 
-                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" then
+                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                     ItemFound = Item
                     break
                 end
@@ -95,7 +143,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
             
             if (ItemFound == nil) then
                 for _, Item:Instance in pairs(Floor:GetDescendants()) do 
-                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" then
+                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                         ItemFound = Item
                         break
                     end
@@ -103,7 +151,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
             end
         elseif FromFloorAndItems then
             for _, Item:Instance in pairs(Floor:GetDescendants()) do 
-                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" then
+                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                     ItemFound = Item
                     break
                 end
@@ -111,7 +159,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
 
             if (ItemFound == nil) then
                 for _, Item:Instance in pairs(Items:GetDescendants()) do 
-                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" then
+                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                         ItemFound = Item
                         break
                     end
@@ -120,7 +168,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
 
             if (ItemFound == nil) then
                 for _, Item:Instance in pairs(Floor:GetDescendants()) do 
-                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" then
+                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                         ItemFound = Item
                         break
                     end
@@ -128,7 +176,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
 
                 if (ItemFound == nil) then
                     for _, Item:Instance in pairs(Floor:GetDescendants()) do 
-                        if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" then
+                        if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                             ItemFound = Item
                             break
                         end
@@ -136,6 +184,9 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
                 end
             end
         end
+    elseif type(ItemName) ~= "string" then
+        print("[FAIL # GetItem]: Invalid \"ItemName\" parameter.")
+        return false
     end
 
     print(
@@ -254,7 +305,7 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
         end
 
         if not ItemPrimaryPart then
-            task.wait(0.4)
+            task.wait(0.5)
         elseif ItemPrimaryPart then
             task.wait(0.025)
         end
@@ -269,8 +320,10 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
             elseif not ItemPrimaryPart then
                 CharacterPrimaryPart.CFrame = (CFrame.new(ItemLastPosition) + TeleportOffset)
             end
+            CharacterPrimaryPart.AssemblyLinearVelocity = Vector3.new()
 
             task.wait(0.1)
+            CharacterPrimaryPart.Anchored = true
 
             Response, ActionRemote = HandleItem(Item)
             if Response then
@@ -281,10 +334,12 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
         until (TimesAttempted >= MaxAttemptsToPickup) or Response
 
         for _ = 1, 3 do
-            CharacterPrimaryPart.CFrame = _G["__OldPos"]
+            CharacterPrimaryPart.Anchored = false
+            CharacterPrimaryPart.CFrame = (_G["__OldPos"] - Vector3.new(0, 1, 0))
             CharacterPrimaryPart.AssemblyLinearVelocity = Vector3.new()
             task.wait(0.05)
         end
+        CharacterPrimaryPart.Anchored = true
 
         if Response and IsNormalItem and ActionRemote then
             for _ = 1, 3 do 
@@ -301,10 +356,13 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
                     break
                 end
 
-                task.wait(0.05)
+                task.wait(0.025)
             end
         end
 
+        CharacterPrimaryPart.AssemblyLinearVelocity = Vector3.new()
+        task.wait(0.025)
+        CharacterPrimaryPart.Anchored = false
         _G["__OldPos"] = nil
 
         return true
@@ -315,7 +373,7 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
     return false
 end
 
-local founditem, item = GetItem("TV")
+local founditem, item = GetItem("Medkit", false)
 if founditem then
     HandleItemWithTeleport(item)
 end
