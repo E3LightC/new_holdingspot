@@ -3,9 +3,11 @@ local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 
+local MaxAttemptsToPickup = 5
+
 local function GetInstance(InstanceName:string|number?, Parent:Instance, Timeout:number?)
-    if typeof(Parent) == "Instance" and typeof(InstanceName) == "string" or typeof(InstanceName) == "number" then
-        if typeof(Timeout) ~= "number" then
+    if typeof(Parent) == "Instance" and type(InstanceName) == "string" or type(InstanceName) == "number" then
+        if type(Timeout) ~= "number" then
             return Parent:FindFirstChild(tostring(InstanceName)) or Parent:WaitForChild(tostring(InstanceName))
         else
             return Parent:FindFirstChild(tostring(InstanceName)) or Parent:WaitForChild(tostring(InstanceName), (tonumber(Timeout) or 3))
@@ -51,7 +53,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
 
     local ItemFound
     
-    if typeof(ItemName) == "string" then
+    if type(ItemName) == "string" then
         if not FromFloorAndItems then
             for _, Item:Instance in pairs(Floor:GetDescendants()) do 
                 if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
@@ -113,6 +115,78 @@ local function StoreItem(Item:Model):boolean
         end
     else
         print("[FAIL # StoreItem]: Invalid \"Item\" parameter.")
+    end
+
+    return false
+end
+
+local function StoreItemWithTeleport(Item:Model):(boolean)
+    if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+        local ItemName = ((Item and Item.Name) or "Unknown")
+        local ItemLastPosition:Vector3 = Item:GetAttribute("LastPosition")
+        
+        local Character = LocalPlayer.Character
+        if not Character then
+            print("[FAIL # StoreItemWithTeleport]: The LocalPlayer's character doesn't exist.")
+            return false
+        end
+
+        local CharacterPrimaryPart:BasePart = Character.PrimaryPart
+        if not CharacterPrimaryPart then
+            print("[FAIL # StoreItemWithTeleport]: The character's \"PrimaryPart\" doesn't exist?")
+            return false
+        end
+        
+        if not _G["__OldPos"] then
+            _G["__OldPos"] = CharacterPrimaryPart.CFrame
+        end
+
+        local ItemPrimaryPart:BasePart = Item.PrimaryPart
+        if ItemPrimaryPart then
+            CharacterPrimaryPart.CFrame = ItemPrimaryPart.CFrame
+        elseif not ItemPrimaryPart then
+            CharacterPrimaryPart.CFrame = CFrame.new(ItemLastPosition)
+        end
+
+        if not ItemPrimaryPart then
+            task.wait(0.4)
+        end
+
+        local TimesAttempted:number = 0
+        local Response = false
+        repeat
+            if ItemPrimaryPart then
+                CharacterPrimaryPart.CFrame = ItemPrimaryPart.CFrame
+            elseif not ItemPrimaryPart then
+                CharacterPrimaryPart.CFrame = CFrame.new(ItemLastPosition)
+            end
+
+            task.wait(0.1)
+
+            Response = StoreItem(Item)
+            if Response then
+                break
+            end
+
+            TimesAttempted += 1
+        until (TimesAttempted >= MaxAttemptsToPickup) or Response
+
+        for _ = 1, 3 do 
+            CharacterPrimaryPart.CFrame = _G["__OldPos"]
+            task.wait(0.1)
+        end
+
+        if not Response then
+            print(("[FAIL # StoreItemWithTeleport]: Failed to pickup item \"%s\"."):format(ItemName))
+        else
+            print(("[Info # StoreItemWithTeleport]: Successfully picked up item \"%s\"."):format(ItemName))
+        end
+
+        _G["__OldPos"] = nil
+
+        return true
+    else
+        print("[FAIL # StoreItemWithTeleport]: Invalid \"Item\" parameter.")
     end
 
     return false
