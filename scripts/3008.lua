@@ -145,75 +145,96 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
     return (ItemFound ~= nil), ItemFound
 end
 
-local function StoreItem(Item:Model):boolean
+local function HandleItem(Item:Model):boolean
     if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
         local FoundRemote:boolean, ActionRemote:RemoteFunction = GetCharacterActionRemote()
 
         if FoundRemote and typeof(ActionRemote) == "Instance" then 
             local ItemName = ((Item and Item.Name) or "Unknown")
-            if not table.find(StorableItems, ItemName) then
-                print("[FAIL # StoreItem]: Invalid item to store.")
+            local IsNormalItem = false
 
-                return false
+            if not table.find(StorableItems, ItemName) then
+                print("[FAIL # HandleItem]: Invalid item to store.")
+                IsNormalItem = true
             end
 
             local Response
             
             if (ItemName ~= "Unknown") then 
-                Response = ActionRemote:InvokeServer(
-                    "Store",
-                    {
-                        ["Model"] = Item;
-                    }
-                )
+                if not IsNormalItem then
+                    Response = ActionRemote:InvokeServer(
+                        "Store",
+                        {
+                            ["Model"] = Item;
+                        }
+                    )
+                elseif IsNormalItem then
+                    Response = ActionRemote:InvokeServer(
+                        "Pickup",
+                        {
+                            ["Model"] = Item;
+                        }
+                    )
+                end
             end
 
-            if not Response then 
-                print(("[FAIL # StoreItem]: Failed to store item \"%s\"."):format(ItemName))
-            elseif Response then
-                print(("[INFO # StoreItem]: Successfully stored item \"%s\"."):format(ItemName))
-            end
+            if not IsNormalItem then
+                if not Response then 
+                    print(("[FAIL # HandleItem]: Failed to store item \"%s\"."):format(ItemName))
+                elseif Response then
+                    print(("[INFO # HandleItem]: Successfully stored item \"%s\"."):format(ItemName))
+                end
 
-            return Response
+                return Response
+            elseif IsNormalItem then
+                if not Response then
+                    print(("[FAIL # HandleItem]: Failed to pickup item \"%s\"."):format(ItemName))
+                elseif Response then
+                    print(("[FAIL # HandleItem]: Successfully to picked up item \"%s\"."):format(ItemName))
+                end
+
+                return Response, ActionRemote
+            end
         else
             if typeof(ActionRemote) ~= "Instance" then
-                print("[FAIL # StoreItem]: \"ActionRemote\" variable is invalid.")
+                print("[FAIL # HandleItem]: \"ActionRemote\" variable is invalid.")
             end
         end
     else
-        print("[FAIL # StoreItem]: Invalid \"Item\" parameter.")
+        print("[FAIL # HandleItem]: Invalid \"Item\" parameter.")
     end
 
     return false
 end
 
-local function StoreItemWithTeleport(Item:Model):(boolean)
+local function HandleItemWithTeleport(Item:Model):(boolean)
     if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
         local ItemLastPosition:Vector3 = Item:GetAttribute("LastPosition")
         
         local Character = LocalPlayer.Character
         if not Character then
-            print("[FAIL # StoreItemWithTeleport]: The LocalPlayer's character doesn't exist.")
+            print("[FAIL # HandleItemWithTeleport]: The LocalPlayer's character doesn't exist.")
             return false
         end
 
         local CharacterPrimaryPart:BasePart = Character.PrimaryPart
         if not CharacterPrimaryPart then
-            print("[FAIL # StoreItemWithTeleport]: The character's \"PrimaryPart\" doesn't exist?")
+            print("[FAIL # HandleItemWithTeleport]: The character's \"PrimaryPart\" doesn't exist?")
             return false
         end
         
         if not _G["__OldPos"] then
             _G["__OldPos"] = CharacterPrimaryPart.CFrame
         elseif _G["__OldPos"] then
-            print("[FAIL # StoreItemWithTeleport]: Teleport already happening, please wait.")
+            print("[FAIL # HandleItemWithTeleport]: Teleport already happening, please wait.")
             return false
         end
 
         local ItemName = ((Item and Item.Name) or "Unknown")
+        local IsNormalItem = false
+        
         if not table.find(StorableItems, ItemName) then
-            print("[FAIL # StoreItemWithTeleport]: Invalid item to store.")
-            return false
+            IsNormalItem = true
         end
 
         local ItemPrimaryPart:BasePart = Item.PrimaryPart
@@ -232,6 +253,7 @@ local function StoreItemWithTeleport(Item:Model):(boolean)
 
         local TimesAttempted:number = 0
         local Response = false
+        local ActionRemote:RemoteFunction
         repeat
             if ItemPrimaryPart then
                 local ItemPosition = ItemPrimaryPart.Position
@@ -242,31 +264,50 @@ local function StoreItemWithTeleport(Item:Model):(boolean)
 
             task.wait(0.1)
 
-            Response = StoreItem(Item)
+            Response, ActionRemote = HandleItem(Item)
             if Response then
                 break
             end
-            Response = StoreItem(Item)
 
             TimesAttempted += 1
         until (TimesAttempted >= MaxAttemptsToPickup) or Response
 
         for _ = 1, 3 do
             CharacterPrimaryPart.CFrame = _G["__OldPos"]
+            CharacterPrimaryPart.AssemblyLinearVelocity = Vector3.new()
             task.wait(0.05)
+        end
+
+        if Response and IsNormalItem and ActionRemote then
+            for _ = 1, 3 do 
+                Response = ActionRemote:InvokeServer(
+                    "Drop",
+                    {
+                        ["EndCFrame"] = (_G["__OldPos"] + TeleportOffset),
+                        ["CameraCFrame"] = Workspace.CurrentCamera.CFrame.LookVector,
+                        ["ThrowPower"] = 0
+                    }
+                )
+
+                if Response then
+                    break
+                end
+
+                task.wait(0.05)
+            end
         end
 
         _G["__OldPos"] = nil
 
         return true
     else
-        print("[FAIL # StoreItemWithTeleport]: Invalid \"Item\" parameter.")
+        print("[FAIL # HandleItemWithTeleport]: Invalid \"Item\" parameter.")
     end
 
     return false
 end
 
-local founditem, item = GetItem("Lemon")
+local founditem, item = GetItem("TV")
 if founditem then
-    StoreItemWithTeleport(item)
+    HandleItemWithTeleport(item)
 end
