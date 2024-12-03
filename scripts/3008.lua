@@ -206,13 +206,13 @@ local function StoreItemWithTeleport(Item:Model):(boolean)
         if not _G["__OldPos"] then
             _G["__OldPos"] = CharacterPrimaryPart.CFrame
         elseif _G["__OldPos"] then
+            print("[FAIL # StoreItemWithTeleport]: Teleport already happening, please wait.")
             return false
         end
 
         local ItemName = ((Item and Item.Name) or "Unknown")
         if not table.find(StorableItems, ItemName) then
-            print("[FAIL # StoreItem]: Invalid item to store.")
-
+            print("[FAIL # StoreItemWithTeleport]: Invalid item to store.")
             return false
         end
 
