@@ -125,7 +125,13 @@ local function IsItemSafe(Item:Model):boolean
         ItemPrimaryPart = nil
 
         if (#Parts >= 1) then
-            Parts = nil
+            for i, v in pairs(Parts) do 
+                if v and v.Parent and Players:GetPlayerFromCharacter(v.Parent) and (Players:GetPlayerFromCharacter(v.Parent) ~= LocalPlayer) then
+                    return false
+                end
+            end
+
+            return true
         elseif (#Parts == 0) then
             Parts = nil
             return true
@@ -298,7 +304,7 @@ local function HandleItem(Item):boolean
                     Item:SetAttribute("AlreadyTeleported", true)
 
                     task.spawn(function()
-                        task.wait(15)
+                        task.wait(60)
                         Item:SetAttribute("AlreadyTeleported", nil)
                         Item = nil
                     end)
@@ -477,7 +483,7 @@ do
         end
     })
     MainTab:CreateButton({
-        Name = "Attempt to store selected item";
+        Name = "Store Item";
         Callback = function()
             if (#Backpack:GetChildren() >= 16) then
                 Rayfield:Notify({
@@ -529,7 +535,7 @@ do
         end
     })
     MainTab:CreateButton({
-        Name = "Attempt to pick up selected object";
+        Name = "Teleport Object";
         Callback = function()
             local FoundItem:boolean, Item:Model = GetItem(SelectedObject, false)
             
@@ -595,7 +601,7 @@ do
         end;
     })
     SettingsTab:CreateToggle({
-        Name = "Check for Employees";
+        Name = "Check For Employees";
         CurrentValue = CheckForEmployees;
         Flag = "CheckForEmployeesFlag"; -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
         Callback = function(Value)
