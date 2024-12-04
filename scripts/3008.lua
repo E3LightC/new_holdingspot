@@ -1,6 +1,5 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
-local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer:Player = Players.LocalPlayer
 local Backpack:Backpack = LocalPlayer.Backpack
