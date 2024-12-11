@@ -327,8 +327,6 @@ end
 
 local function HandleItemWithTeleport(Item:Model):(boolean)
     if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
-        local ItemLastPosition = Item:GetPivot().Position
-
         local Character = LocalPlayer.Character
         if not Character then
             print("[FAIL # HandleItemWithTeleport]: The LocalPlayer's character doesn't exist.")
@@ -354,8 +352,10 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
         if not table.find(StorableItems, ItemName) then
             IsNormalItem = true
         end
-
+        
+        local ItemLastPosition = Item:GetPivot().Position
         local ItemPrimaryPart = Item.PrimaryPart
+
         if ItemPrimaryPart then
             local ItemPosition = ItemPrimaryPart.Position
             CharacterPrimaryPart.CFrame = (CFrame.new(ItemPosition.X, ItemPosition.Y, ItemPosition.Z) + TeleportOffset)
@@ -445,8 +445,6 @@ end
 
 local function TeleportToItem(Item:Model):(boolean)
     if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
-        local ItemLastPosition = Item:GetPivot().Position
-
         local Character = LocalPlayer.Character
         if not Character then
             print("[FAIL # TeleportToItem]: The LocalPlayer's character doesn't exist.")
@@ -466,7 +464,9 @@ local function TeleportToItem(Item:Model):(boolean)
             return false
         end
 
+        local ItemLastPosition = Item:GetPivot().Position
         local ItemPrimaryPart = Item.PrimaryPart
+
         if ItemPrimaryPart then
             local ItemPosition = ItemPrimaryPart.Position
             CharacterPrimaryPart.CFrame = (CFrame.new(ItemPosition) + TeleportOffset)
@@ -669,8 +669,38 @@ do
             end
         end;
     })
+    MainTab:CreateButton({
+        Name = "Teleport To Item";
+        Callback = function()
+            local FoundItem:boolean, Item:Model = GetItem(SelectedStorableItem, false)
+            
+            if FoundItem then
+                local HandleItemSuccess = false
+                local Success, Error = pcall(function()
+                    HandleItemSuccess = TeleportToItem(Item)
+                end)
 
-    MainTab:CreateSection("General Item Features")
+                if not Success then
+                    warn(Error)
+                end
+
+                if not HandleItemSuccess then
+                    Rayfield:Notify({
+                        Title = "Fail";
+                        Content = ("Failed to teleport to item.");
+                        Duration = 6;
+                        Image = 4483362458;
+                    })
+                end
+
+                HandleItemSuccess = nil
+                Success = nil 
+                Error = nil
+            end
+        end;
+    })
+
+    MainTab:CreateSection("General Object Features")
     local ObjectDropdown 
     ObjectDropdown = MainTab:CreateDropdown({
         Name = "Selected Object";
@@ -707,7 +737,7 @@ do
                 if not HandleItemSuccess then
                     Rayfield:Notify({
                         Title = "Fail";
-                        Content = ("Failed to store/pickup item.");
+                        Content = ("Failed to store/pickup object.");
                         Duration = 6;
                         Image = 4483362458;
                     })
