@@ -327,7 +327,7 @@ end
 
 local function HandleItemWithTeleport(Item:Model):(boolean)
     if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
-        local ItemLastPosition = Item:GetAttribute("LastPosition")
+        local ItemLastPosition = Item:GetPivot().Position
 
         local Character = LocalPlayer.Character
         if not Character then
@@ -443,6 +443,60 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
     return false
 end
 
+local function TeleportToItem(Item:Model):(boolean)
+    if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
+        local ItemLastPosition = Item:GetPivot().Position
+
+        local Character = LocalPlayer.Character
+        if not Character then
+            print("[FAIL # TeleportToItem]: The LocalPlayer's character doesn't exist.")
+            return false
+        end
+
+        local CharacterPrimaryPart = Character.PrimaryPart
+        if not CharacterPrimaryPart then
+            print("[FAIL # TeleportToItem]: The character's \"PrimaryPart\" doesn't exist?")
+            return false
+        end
+        
+        if not _G["__OldPos"] then
+            _G["__OldPos"] = CharacterPrimaryPart.CFrame
+        elseif _G["__OldPos"] then
+            print("[FAIL # TeleportToItem]: Teleport already happening, please wait.")
+            return false
+        end
+
+        local ItemPrimaryPart = Item.PrimaryPart
+        if ItemPrimaryPart then
+            local ItemPosition = ItemPrimaryPart.Position
+            CharacterPrimaryPart.CFrame = (CFrame.new(ItemPosition) + TeleportOffset)
+            ItemPosition = nil
+        elseif not ItemPrimaryPart then
+            CharacterPrimaryPart.CFrame = (CFrame.new(ItemLastPosition) + TeleportOffset)
+        end
+
+        CharacterPrimaryPart.Anchored = true
+        if not ItemPrimaryPart then
+            task.wait(0.4)
+        elseif ItemPrimaryPart then
+            task.wait(0.15)
+        end
+        CharacterPrimaryPart.Anchored = false
+
+        Character = nil
+        CharacterPrimaryPart = nil
+        ItemLastPosition = nil
+        ItemPrimaryPart = nil
+        _G["__OldPos"] = nil
+
+        return true
+    else
+        print("[FAIL # TeleportToItem]: Invalid \"Item\" parameter.")
+    end
+
+    return false
+end
+
 local Window = Rayfield:CreateWindow({
    Name = "Roblox - 3008 - @_x4yz";
    Icon = "moon-star";
@@ -485,7 +539,7 @@ do
         end;
     })
     MainTab:CreateButton({
-        Name = "God Mode(Infinite Health, Energy, and Hunger) (No turning back)";
+        Name = "God Mode (Infinite Health, Energy, and Hunger) (No turning back)";
         Callback = function()
             if LocalPlayer.Character then 
                 local FoundRemote, EventRemote:RemoteEvent = GetCharacterSystemRemote("Event")
@@ -503,6 +557,58 @@ do
                             ["Sound"] = "medium",
                             ["Damage"] = 0/0
                         }
+                    }
+
+                    for _ = 1, 3 do 
+                        EventRemote:FireServer(unpack(Arguments))
+                        task.wait()
+                    end
+                end
+
+                FoundRemote = nil
+            end
+        end;
+    })
+    MainTab:CreateButton({
+        Name = "Infinite Energy";
+        Callback = function()
+            if LocalPlayer.Character then 
+                local FoundRemote, EventRemote:RemoteEvent = GetCharacterSystemRemote("Event")
+
+                if FoundRemote and typeof(EventRemote) == "Instance" then
+                    local Arguments = {
+                        [1] = "DecreaseStat";
+                        [2] = {
+                            ["Stats"] = {
+                                ["Energy"] = 0/0;
+                            };
+                        };
+                    }
+
+                    for _ = 1, 3 do 
+                        EventRemote:FireServer(unpack(Arguments))
+                        task.wait()
+                    end
+                end
+
+                FoundRemote = nil
+            end
+        end;
+    })
+    MainTab:CreateButton({
+        Name = "Infinite Hunger";
+        Callback = function()
+            if LocalPlayer.Character then 
+                local FoundRemote, EventRemote:RemoteEvent = GetCharacterSystemRemote("Event")
+
+                if FoundRemote and typeof(EventRemote) == "Instance" then
+                    local Arguments = {
+                        [1] = "DecreaseStat";
+                        [2] = {
+                            ["Stats"] = {
+                                ["Hunger"] = 0/0;
+                            };
+                        };
                     }
 
                     for _ = 1, 3 do 
@@ -564,23 +670,23 @@ do
         end;
     })
 
-    MainTab:CreateSection("Non-Storable Items")
+    MainTab:CreateSection("General Item Features")
     local ObjectDropdown 
     ObjectDropdown = MainTab:CreateDropdown({
         Name = "Selected Object";
-        Options = GetItems(false);
+        Options = GetItems(true);
         CurrentOption = {tostring(SelectedObject)};
         MultipleOptions = false;
         Flag = "PickupObjectFlag";
         Callback = function(Options)
-            local ObjectNames = GetItems(false)
+            local ObjectNames = GetItems(true)
             if table.find(ObjectNames, tostring(Options[1])) then
                 SelectedObject = tostring(Options[1])
             end
 
             ObjectNames = nil
             Options = nil
-            ObjectDropdown.Options = GetItems(false)
+            ObjectDropdown.Options = GetItems(true)
         end
     })
     MainTab:CreateButton({
@@ -602,6 +708,36 @@ do
                     Rayfield:Notify({
                         Title = "Fail";
                         Content = ("Failed to store/pickup item.");
+                        Duration = 6;
+                        Image = 4483362458;
+                    })
+                end
+
+                HandleItemSuccess = nil
+                Success = nil 
+                Error = nil
+            end
+        end;
+    })
+    MainTab:CreateButton({
+        Name = "Teleport To Object";
+        Callback = function()
+            local FoundItem:boolean, Item:Model = GetItem(SelectedObject, false)
+            
+            if FoundItem then
+                local HandleItemSuccess = false
+                local Success, Error = pcall(function()
+                    HandleItemSuccess = TeleportToItem(Item)
+                end)
+
+                if not Success then
+                    warn(Error)
+                end
+
+                if not HandleItemSuccess then
+                    Rayfield:Notify({
+                        Title = "Fail";
+                        Content = ("Failed to teleport to item.");
                         Duration = 6;
                         Image = 4483362458;
                     })
