@@ -154,7 +154,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
     
     if type(ItemName) == "string" then
         if not FromFloorAndItems then
-            for _, Item:Instance in pairs(Floor:GetDescendants()) do 
+            for _, Item:Instance in pairs(FloorOrGround:GetDescendants()) do 
                 if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                     ItemFound = Item
                     break
@@ -162,15 +162,17 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
             end
             
             if (ItemFound == nil) then
-                for _, Item:Instance in pairs(Floor:GetDescendants()) do 
+                for _, Item:Instance in pairs(FloorOrGround:GetDescendants()) do 
                     if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                         ItemFound = Item
                         break
                     end
+
+                    task.wait()
                 end
             end
         elseif FromFloorAndItems then
-            for _, Item:Instance in pairs(Floor:GetDescendants()) do 
+            for _, Item:Instance in pairs(FloorOrGround:GetDescendants()) do 
                 if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                     ItemFound = Item
                     break
@@ -187,19 +189,23 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
             end
 
             if (ItemFound == nil) then
-                for _, Item:Instance in pairs(Floor:GetDescendants()) do 
+                for _, Item:Instance in pairs(FloorOrGround:GetDescendants()) do 
                     if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                         ItemFound = Item
                         break
                     end
+
+                    task.wait()
                 end
 
                 if (ItemFound == nil) then
-                    for _, Item:Instance in pairs(Floor:GetDescendants()) do 
+                    for _, Item:Instance in pairs(FloorOrGround:GetDescendants()) do 
                         if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                             ItemFound = Item
                             break
                         end
+
+                        task.wait()
                     end
                 end
             end
@@ -233,7 +239,7 @@ local function GetItems(FromFloorAndItems:boolean)
     end
     local Table = {}
 
-    for _, Item in pairs(Floor:GetDescendants()) do 
+    for _, Item in pairs(FloorOrGround:GetDescendants()) do 
         if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
             if not table.find(Table, Item.Name) and not table.find(StorableItems, Item.Name) then
                 table.insert(Table, Item.Name)
