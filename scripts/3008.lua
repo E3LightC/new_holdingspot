@@ -67,7 +67,7 @@ local Physical:Folder = GetInstance("Physical", GameObjects)
 local Items:Folder = GetInstance("Items", Physical)
 local Map:Folder = GetInstance("Map", Physical)
 local Employees:Folder = GetInstance("Employees", Physical)
-local Floor:Folder = GetInstance("Floor", Map, 1) or GetInstance("Ground", Map, 1)
+local FloorOrGround:Folder = GetInstance("Floor", Map, 1) or GetInstance("Ground", Map, 1)
 
 local function GetCharacterSystemRemote(RemoteName:string):(boolean, any)
     if type(RemoteName) ~= "string" then
