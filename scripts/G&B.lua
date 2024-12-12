@@ -1,3 +1,4 @@
+
 --!strict
 --//// @_x4yz \\\\--
 
@@ -188,7 +189,7 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Head:Ins
                 end
 
                 Head.Massless = true
-                Head.Size = HeadSizeToUse or Vector3.new(3, 3, 3)
+                --Head.Size = HeadSizeToUse or Vector3.new(3, 3, 3)
                 Head.Transparency = HeadTransparency or 0.6
                 Head.CastShadow = false
                 if IsIgniter then
@@ -239,7 +240,7 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Head:Ins
 
                 for _, ZombPart:any in pairs(Character:GetChildren()) do 
                     if typeof(ZombPart) == "Instance" and ZombPart:IsA("BasePart") and ZombPart.Name ~= "Head" --[[and ZombPart.Name ~= "HumanoidRootPart"]] then 
-                        ZombPart.CanQuery = false
+                        --ZombPart.CanQuery = false
                         ZombPart = nil
                     end
                 end
@@ -938,6 +939,9 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 										[2] = Agent;
 										[3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
 										[4] = true;
+                                        [5] = Vector3.new(0, 70, 0);
+                                        [6] = "HumanoidRootPart";
+                                        [7] = Vector3.new(0, 0, 0);
 									}
 	
 									WeaponRemote:FireServer(unpack(HitArgs))
@@ -1093,6 +1097,8 @@ if _G["AlreadyActive"] == nil then
                                     return Self["FireServer"](Self, unpack(Args))
                                 elseif not Args[4] then
                                     Args[4] = true
+                                    Args[6] = "Head"
+                                    Args[5] = Vector3.new(25, 0, 0)
                                     Self["FireServer"](Self, unpack(Args))
                                     
                                     return nil
