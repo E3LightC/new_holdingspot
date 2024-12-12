@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer:Player = Players.LocalPlayer
 local Backpack:Backpack = LocalPlayer.Backpack
@@ -62,12 +63,15 @@ local function GetInstance(InstanceName:string|number?, Parent:Instance, Timeout
     return
 end
 
-local GameObjects:Folder = GetInstance("GameObjects", Workspace)
-local Physical:Folder = GetInstance("Physical", GameObjects)
+local GameObjects:Folder = GetInstance("GameObjects", Workspace, 0.25) or Workspace
+local Physical:Folder = GetInstance("Physical", GameObjects, 0.25) or Workspace
 local Items:Folder = GetInstance("Items", Physical)
 local Map:Folder = GetInstance("Map", Physical)
 local Employees:Folder = GetInstance("Employees", Physical)
 local FloorOrGround:Folder = GetInstance("Floor", Map, 1) or GetInstance("Ground", Map, 1)
+
+local ServerSettings:Folder = GetInstance("ServerSettings", ReplicatedStorage, 0.25)
+local ItemModels:Folder = GetInstance( (ServerSettings ~= nil) and "ItemModels" or "Normal_ItemModels", ServerSettings or ReplicatedStorage)
 
 local function GetCharacterSystemRemote(RemoteName:string):(boolean, any)
     if type(RemoteName) ~= "string" then
@@ -101,7 +105,7 @@ local function IsItemSafe(Item:Model):boolean
         return true
     end
 
-    if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+    if typeof(Item) == "Instance" and Item:IsA("Model") and (typeof(Item:GetAttribute("LastPosition")) == "Vector3" or Item:FindFirstChild("PickupTag")) then
         local ItemPosition = (Item:GetPivot().Position or Vector3.new())
         local ItemPrimaryPart = Item.PrimaryPart
 
@@ -155,7 +159,7 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
     if type(ItemName) == "string" then
         if not FromFloorAndItems then
             for _, Item:Instance in pairs(FloorOrGround:GetDescendants()) do 
-                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
+                if Item and Item:IsA("Model") and (Item.Name == ItemName) and (typeof(Item:GetAttribute("LastPosition")) == "Vector3" or Item:FindFirstChild("PickupTag")) and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                     ItemFound = Item
                     break
                 end
@@ -163,49 +167,41 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
             
             if (ItemFound == nil) then
                 for _, Item:Instance in pairs(FloorOrGround:GetDescendants()) do 
-                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
+                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and (typeof(Item:GetAttribute("LastPosition")) == "Vector3" or Item:FindFirstChild("PickupTag")) and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                         ItemFound = Item
                         break
                     end
-
-                    task.wait()
                 end
             end
         elseif FromFloorAndItems then
             for _, Item:Instance in pairs(FloorOrGround:GetDescendants()) do 
-                if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
+                if Item and Item:IsA("Model") and (Item.Name == ItemName) and (typeof(Item:GetAttribute("LastPosition")) == "Vector3" or Item:FindFirstChild("PickupTag")) and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                     ItemFound = Item
                     break
                 end
             end
 
             if (ItemFound == nil) then
-                for _, Item:Instance in pairs(Items:GetDescendants()) do 
-                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
-                        ItemFound = Item
-                        break
-                    end
+                local Item = Items:FindFirstChild(ItemName)
+
+                if Item and Item:IsA("Model") and (typeof(Item:GetAttribute("LastPosition")) == "Vector3" or Item:FindFirstChild("PickupTag")) and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
+                    ItemFound = Item
                 end
             end
 
             if (ItemFound == nil) then
                 for _, Item:Instance in pairs(FloorOrGround:GetDescendants()) do 
-                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
+                    if Item and Item:IsA("Model") and (Item.Name == ItemName) and (typeof(Item:GetAttribute("LastPosition")) == "Vector3" or Item:FindFirstChild("PickupTag")) and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
                         ItemFound = Item
                         break
                     end
-
-                    task.wait()
                 end
 
                 if (ItemFound == nil) then
-                    for _, Item:Instance in pairs(FloorOrGround:GetDescendants()) do 
-                        if Item and Item:IsA("Model") and (Item.Name == ItemName) and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
-                            ItemFound = Item
-                            break
-                        end
+                    local Item = Items:FindFirstChild(ItemName)
 
-                        task.wait()
+                    if Item and Item:IsA("Model") and (typeof(Item:GetAttribute("LastPosition")) == "Vector3" or Item:FindFirstChild("PickupTag")) and Item.PrimaryPart and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
+                        ItemFound = Item
                     end
                 end
             end
@@ -233,25 +229,13 @@ local function GetItem(ItemName:string, FromFloorAndItems:boolean?)
     return (ItemFound ~= nil), ItemFound
 end
 
-local function GetItems(FromFloorAndItems:boolean)
-    if type(FromFloorAndItems) ~= "boolean" then
-        FromFloorAndItems = false
-    end
-    local Table = {}
+local function GetItems()
+    local Table:{string} = {}
 
-    for _, Item in pairs(FloorOrGround:GetDescendants()) do 
-        if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+    for _, Item in pairs(ItemModels:GetDescendants()) do 
+        if typeof(Item) == "Instance" and Item:IsA("Model") then
             if not table.find(Table, Item.Name) and not table.find(StorableItems, Item.Name) then
                 table.insert(Table, Item.Name)
-            end
-        end
-    end
-    if FromFloorAndItems then
-        for _, Item in pairs(Items:GetDescendants()) do 
-            if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
-                if not table.find(Table, Item.Name) and not table.find(StorableItems, Item.Name) then
-                    table.insert(Table, Item.Name)
-                end
             end
         end
     end
@@ -260,7 +244,7 @@ local function GetItems(FromFloorAndItems:boolean)
 end
 
 local function HandleItem(Item):boolean
-    if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" then
+    if typeof(Item) == "Instance" and Item:IsA("Model") and (typeof(Item:GetAttribute("LastPosition")) == "Vector3" or Item:FindFirstChild("PickupTag")) then
         local FoundRemote, ActionRemote:RemoteFunction = GetCharacterSystemRemote("Action")
 
         if FoundRemote and typeof(ActionRemote) == "Instance" then 
@@ -332,7 +316,7 @@ local function HandleItem(Item):boolean
 end
 
 local function HandleItemWithTeleport(Item:Model):(boolean)
-    if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
+    if typeof(Item) == "Instance" and Item:IsA("Model") and (typeof(Item:GetAttribute("LastPosition")) == "Vector3" or Item:FindFirstChild("PickupTag")) and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
         local Character = LocalPlayer.Character
         if not Character then
             print("[FAIL # HandleItemWithTeleport]: The LocalPlayer's character doesn't exist.")
@@ -450,7 +434,7 @@ local function HandleItemWithTeleport(Item:Model):(boolean)
 end
 
 local function TeleportToItem(Item:Model):(boolean)
-    if typeof(Item) == "Instance" and Item:IsA("Model") and typeof(Item:GetAttribute("LastPosition")) == "Vector3" and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
+    if typeof(Item) == "Instance" and Item:IsA("Model") and (typeof(Item:GetAttribute("LastPosition")) == "Vector3" or Item:FindFirstChild("PickupTag")) and typeof(Item:GetAttribute("AlreadyTeleported")) ~= "boolean" and IsItemSafe(Item) then
         local Character = LocalPlayer.Character
         if not Character then
             print("[FAIL # TeleportToItem]: The LocalPlayer's character doesn't exist.")
@@ -707,22 +691,14 @@ do
     })
 
     MainTab:CreateSection("General Object Features")
-    local ObjectDropdown 
-    ObjectDropdown = MainTab:CreateDropdown({
+    MainTab:CreateDropdown({
         Name = "Selected Object";
-        Options = GetItems(true);
+        Options = GetItems();
         CurrentOption = {tostring(SelectedObject)};
         MultipleOptions = false;
         Flag = "PickupObjectFlag";
         Callback = function(Options)
-            local ObjectNames = GetItems(true)
-            if table.find(ObjectNames, tostring(Options[1])) then
-                SelectedObject = tostring(Options[1])
-            end
-
-            ObjectNames = nil
-            Options = nil
-            ObjectDropdown.Options = GetItems(true)
+            SelectedObject = tostring(Options[1])
         end
     })
     MainTab:CreateButton({
