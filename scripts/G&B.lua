@@ -188,7 +188,7 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Head:Ins
                 end
 
                 Head.Massless = true
-                Head.Size = HeadSizeToUse or Vector3.new(3, 3, 3)
+                --Head.Size = HeadSizeToUse or Vector3.new(3, 3, 3)
                 Head.Transparency = HeadTransparency or 0.6
                 Head.CastShadow = false
                 if IsIgniter then
@@ -937,9 +937,9 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 										[2] = Agent;
 										[3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
 										[4] = true;
-                                        [5] = Vector3.new(0/0, 0/0, 0/0);
+                                        [5] = Vector3.new(0, 4096, 0);
                                         [6] = "HumanoidRootPart";
-                                        [7] = (Agent.PrimaryPart and Agent.PrimaryPart.CFrame.LookVector) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).CFrame.LookVector;
+                                        [7] = (Agent.PrimaryPart and Agent.PrimaryPart.CFrame.LookVector * 5) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).CFrame.LookVector * 5;
 									}
 	
 									WeaponRemote:FireServer(unpack(HitArgs))
