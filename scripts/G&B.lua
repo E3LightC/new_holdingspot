@@ -1,4 +1,3 @@
-
 --!strict
 --//// @_x4yz \\\\--
 
@@ -941,7 +940,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 										[4] = true;
                                         [5] = Vector3.new(0, 70, 0);
                                         [6] = "HumanoidRootPart";
-                                        [7] = Vector3.new(0, 0, 0);
+                                        [7] = (Agent.PrimaryPart and Agent.PrimaryPart.CFrame.LookVector) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).CFrame.LookVector;
 									}
 	
 									WeaponRemote:FireServer(unpack(HitArgs))
