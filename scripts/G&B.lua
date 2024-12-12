@@ -5,7 +5,7 @@
 --// if you have an axe, and can shove with it, press Q \\--
 --// when killing a group/horde of zombies, pressing Z or X will help with it will help clear them out \\--
 --// all hits done with melee will be sent to the server as if you are hitting the head \\--
---// while "RubiksCube" is toggled on, when you have any gun/tool that updates the way you're looking, it will jumble your character up, like a rubik's cube! \\--
+--// while "RubiksCube" is toggled on, when you have any gun/tool that updates how you're looking, it will jumble your character up, like a rubik's cube! \\--
 --// this script also blocks out the "OnAFKSignalReceived" remote and "ForceKill" remote if it is called by a non-exploit script \\--
 --// for auto repair to work, you must have a hammer and at least have equipped it once (repair radius seems to be based on HumanoidRootPart or something else so you can technically repair something while the hammer is let us say, 3000 studs away, as long as your character is near the building) \\--
 --// check developer console for errors, or any warnings similar to " [FAIL # blahblahblah]: ... " \\--
@@ -58,7 +58,7 @@ local NewZombieHeadWaitTime = 0.25
 local WaitTimeUntilRepair = 0.125
 local FakeAccuracyBeatWaitTime = 0.15
 
-local ShoveRange = 15 --// range variable that is used for shoving.
+local ShoveRange = 15 --// default range variable used for shoving.
 local MurderRange = 11 --// Used as a backup if can't find weapon range.
 
 local HeadSizeToUse = Vector3.new(6, 9, 4.5)
@@ -588,7 +588,6 @@ local function GetClosestBuilding():any
 
 	if #Bounds > 0 then 
 		table.sort(Bounds, function(Arg1, Arg2)
-			--(Arg1.Value / (Arg1:GetAttribute("MaxHealth") or Arg1.Value) ) < (Arg2.Value / (Arg2:GetAttribute("MaxHealth") or Arg2.Value))
             return (Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or Vector3.new()) < (Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or Vector3.new())
 		end)
 
@@ -601,7 +600,7 @@ local function GetClosestBuilding():any
 
             return ((Bounds[1].Parent)::Part):WaitForChild("BuildingHealth")
         elseif not Bounds[1] then 
-            warn("[FAIL # GetBuildingWithLeastHealth]: Failed to get a find the closest building.")
+            warn("[FAIL # GetBuildingWithLeastHealth]: Failed to find the closest building.")
             return false
         end
     else
@@ -665,7 +664,7 @@ _G["OnCharacterAdded"] = LocalPlayer.CharacterAdded:Connect(function(NewCharacte
             task.wait()
         until #(getconnections(GrabRemote.OnClientEvent)) >= 1
 
---[[        print("[INFO # OnCharacterAdded]: Removing \"OnClientEvent\" connections from the LocalPlayer's \"GrabRemote\".")
+--[[    print("[INFO # OnCharacterAdded]: Removing \"OnClientEvent\" connections from the LocalPlayer's \"GrabRemote\".")
         for _, Connection:Connection in pairs(getconnections(GrabRemote.OnClientEvent)) do 
             Connection:Disable()
         end]]
@@ -1097,7 +1096,8 @@ if _G["AlreadyActive"] == nil then
                                 elseif not Args[4] then
                                     Args[4] = true
                                     Args[6] = "Head"
-                                    Args[5] = Vector3.new(25, 0, 0)
+                                    Args[5] = (Args[5] * 50)
+                                    Args[7] = (Args[7] * 50)
                                     Self["FireServer"](Self, unpack(Args))
                                     
                                     return nil
@@ -1208,7 +1208,7 @@ if _G["AlreadyActive"] == nil then
         end
 
         return OldIndex(Self, Method)
-    end)
+	end)
 end
 
 warn(
