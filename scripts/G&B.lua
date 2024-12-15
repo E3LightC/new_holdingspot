@@ -188,7 +188,7 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Head:Ins
                 end
 
                 Head.Massless = true
-                --Head.Size = HeadSizeToUse or Vector3.new(3, 3, 3)
+                Head.Size = HeadSizeToUse or Vector3.new(3, 3, 3)
                 Head.Transparency = HeadTransparency or 0.6
                 Head.CastShadow = false
                 if IsIgniter then
