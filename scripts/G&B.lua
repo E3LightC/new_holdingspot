@@ -280,16 +280,17 @@ local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent)
     
     local NewThread = coroutine.create(function()
         while true do
-            if LastBeatTick ~= 0 then 
-                _TimeSinceLastBeat = (tick() - LastBeatTick)
-                --//--[[warn("[DEBUG # Fake Accuracy Beat Thread]: _TimeSinceLastBeat = "..tostring(_TimeSinceLastBeat)..".")]]
-                LastBeatTick = tick()
-            elseif LastBeatTick == 0 then 
-                LastBeatTick = tick()
+            if Debug then
+                if LastBeatTick ~= 0 then 
+                    _TimeSinceLastBeat = (tick() - LastBeatTick)
+                    --// warn("[DEBUG # Fake Accuracy Beat Thread]: _TimeSinceLastBeat = "..tostring(_TimeSinceLastBeat)..".")
+                    LastBeatTick = tick()
+                elseif LastBeatTick == 0 then 
+                    LastBeatTick = tick()
+                end
             end
 
             RemoteEventToUse:FireServer("UpdateAccuracy", 100)
-            
             task.wait(FakeAccuracyBeatWaitTime)
         end
     end)
@@ -380,7 +381,7 @@ local function GetAgentsInRange(Range:number)
 		return {}
 	end
 
-	if typeof(Range) ~= "number" then 
+	if type(Range) ~= "number" then 
 		warn("[FAIL # GetAgentsInRange]: \"Range\" is not a number.")
 
 		return {}
@@ -414,13 +415,13 @@ local function GetAgentsInRange(Range:number)
 				local ZombieType = Agent:GetAttribute("Type")
 				local IgnoreVal = ZombieTypesList[ZombieType]
 
-				if HRP and typeof(IgnoreVal) == "boolean" and not IgnoreVal then 
+				if HRP and type(IgnoreVal) == "boolean" and not IgnoreVal then 
 					local Distance = (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
 
 					if Distance <= Range then 
 						table.insert(AgentsInRange, Agent)
 					end
-				elseif HRP and typeof(IgnoreVal) ~= "boolean" then
+				elseif HRP and type(IgnoreVal) ~= "boolean" then
 					--// this is incase it is a new type, or renamed type.
 					table.insert(AgentsInRange, Agent)
 				end
@@ -436,13 +437,13 @@ local function GetAgentsInRange(Range:number)
 				local BotType = Agent:GetAttribute("Type")
 				local IgnoreVal = ZombieTypesList[BotType]
 
-				if HRP and typeof(IgnoreVal) == "boolean" and not IgnoreVal then 
+				if HRP and type(IgnoreVal) == "boolean" and not IgnoreVal then 
 					local Distance = (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
 
 					if Distance <= Range then 
 						table.insert(AgentsInRange, Agent)
 					end
-				elseif HRP and typeof(IgnoreVal) ~= "boolean" then 
+				elseif HRP and type(IgnoreVal) ~= "boolean" then 
 					--// this is incase it is a new type, or renamed type.
 					table.insert(AgentsInRange, Agent)
 				end
@@ -474,18 +475,18 @@ end
     returns: none
 ]=]
 local function SortFunc(Table:{[any]: any}, Func:typeof(function(...) end), Instant:boolean?)
-	if typeof(Instant) ~= "boolean" then
+	if type(Instant) ~= "boolean" then
         Instant = true
     end
 
     if Table ~= nil and Func ~= nil then 
-		if typeof(Table) ~= "table" then 
+		if type(Table) ~= "table" then 
 			warn("[FAIL # SortFunc]: \"Table\" is not a table.")
 
 			return
 		end
 
-		if typeof(Func) ~= "function" then 
+		if type(Func) ~= "function" then 
 			warn("[FAIL # SortFunc]: \"Func\" is not a function.")
 
 			return
@@ -612,7 +613,7 @@ end
 
 local function GetMaxIndexOfTable(Table:{[any]: any})
     if Table ~= nil then 
-		if typeof(Table) ~= "table" then 
+		if type(Table) ~= "table" then 
 			warn("[FAIL # GetMaxIndexOfTable]: \"Table\" is not a table.")
 
 			return 0
@@ -697,7 +698,7 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 			if Remote then 
 				local BuildingFound:NumberValue = (BuildingFetchType == "LeastHealth" and GetBuildingWithLeastHealth() or GetClosestBuilding())
 
-				if typeof(BuildingFound) == "boolean" or not CanRepair or ( BuildingFound.Value >= (BuildingFound:GetAttribute("MaxHealth") or BuildingFound.Value) ) then 
+				if type(BuildingFound) == "boolean" or not CanRepair or ( BuildingFound.Value >= (BuildingFound:GetAttribute("MaxHealth") or BuildingFound.Value) ) then 
 					if not CanRepair then 
 						return
 					end
@@ -753,11 +754,11 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 		local KeyCodeName = tostring(Key.KeyCode.Name)
         local SongName = MusicSelections[KeyCodeName]
 
-        if typeof(SongName) == "string" then 
+        if type(SongName) == "string" then 
             local FoundInstrument:Tool
 
             for i:string, v:boolean in pairs(AllowedInstruments) do 
-                if typeof(i) == "string" and v then 
+                if type(i) == "string" and v then 
                     FoundInstrument = (Character:FindFirstChild(tostring(i)) or Backpack:FindFirstChild(tostring(i)))::Tool
 
                     if FoundInstrument then 
@@ -831,7 +832,7 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 				local HRP = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
 				local AgentsInRange = GetAgentsInRange(ShoveRange)
 
-				if typeof(AgentsInRange) ~= "table" then 
+				if type(AgentsInRange) ~= "table" then 
                     warn("[FAIL # ShoveBind]: \"AgentsInRange\" is not a table.")
 
 					return
@@ -910,7 +911,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 				if Weapon and typeof(Weapon) == "Instance" then 
                 	local AgentsInRange:{[number]:Model} = GetAgentsInRange(LimitRange and (LimitRange * 1.8) or MurderRange)
 
-                    if typeof(AgentsInRange) ~= "table" then 
+                    if type(AgentsInRange) ~= "table" then 
                         warn("[FAIL # MurderBind]: \"AgentsInRange\" is not a table.")
                         
                         return
@@ -1045,7 +1046,7 @@ if Debug then
             elseif NewWorkspaceChild.Name == "FireHazard" then
                 NewWorkspaceChild:WaitForChild("TouchInterest"):Destroy()
                 print(NewWorkspaceChild:GetFullName())
-            elseif NewWorkspaceChild.Name == "Fire" and typeof(NewWorkspaceChild:GetAttribute("DoNot")) == "boolean" then
+            elseif NewWorkspaceChild.Name == "Fire" and type(NewWorkspaceChild:GetAttribute("DoNot")) == "boolean" then
                 NewWorkspaceChild:WaitForChild("TouchInterest"):Destroy()
                 print(NewWorkspaceChild:GetFullName())
             end
@@ -1090,7 +1091,7 @@ if _G["AlreadyActive"] == nil then
                                 return nil
                             end
 
-                            if typeof(Args[4]) == "boolean" then 
+                            if type(Args[4]) == "boolean" then 
                                 if Args[4] then
                                     return Self["FireServer"](Self, unpack(Args))
                                 elseif not Args[4] then
