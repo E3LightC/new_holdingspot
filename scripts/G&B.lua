@@ -178,6 +178,7 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Head:Ins
                 if Character:FindFirstChild("Barrel") then 
                     IsBomber = true
                 end
+
                 for i, v in pairs(Character:GetChildren()) do 
                     if typeof(v) == "Instance" and v:IsA("Model") and v.Name == "Head" then 
                         IsIgniter = true
@@ -807,7 +808,7 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                     return
                 end
             else
-                warn("[FAIL # MusicBind]: Failed to find an instrument to use.")
+                --warn("[FAIL # MusicBind]: Failed to find an instrument to use.")
 
                 return
             end
