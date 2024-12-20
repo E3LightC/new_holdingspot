@@ -162,7 +162,7 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Head:Ins
         if Head and not Head:IsA("Highlight") and Head:IsA("BasePart") and Head.Name == "Head" then 
             task.wait(NewZombieHeadWaitTime)
 
-            local Character = Head.Parent
+            local Character = Head and Head.Parent or nil
             if Character then 
                 local IsIgniter = false
                 local IsRunner = false
