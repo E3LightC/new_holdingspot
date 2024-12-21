@@ -16,8 +16,8 @@
 --// Z or X / Murder Bind \\--
 --// Keypad 1 / Grab Log Bind (only works on Berezina) \\--
 --// Keypad 2 to toggle auto repair \\--
---// Keypad 3 to toggle "RubiksCube" \\--
---// Keypad 4 to toggle building fetch type \\--
+--// Keypad 3 to toggle building fetch type \\--
+--// Keypad 4 to toggle "RubiksCube" \\--
 --// U, F, G, H, J, Y, T to play music with fife or drum. \\--
 
 --[/////////////////////////////]--
@@ -53,7 +53,7 @@ local BuildingBindEnabled = false
 local HammerCanWarn = true
 local BuildingFetchType = "Closest"
 
-local HammerWarnDelay = 0.25
+local HammerWarnDelay = 0.5
 local NewZombieHeadWaitTime = 0.25
 local WaitTimeUntilRepair = 0.125
 local FakeAccuracyBeatWaitTime = 0.15
@@ -310,7 +310,7 @@ end
 
     Parameter types: none
 
-    returns: none
+    returns: void
 ]=]
 local function GetMeleeWeapon():(...any)
 	local Character = LocalPlayer.Character
@@ -375,7 +375,7 @@ end
 
     returns: table
 ]=]
-local function GetAgentsInRange(Range:number)
+local function GetAgentsInRange(Range:number):{[number]:any}
 	if Range == nil then 
 		warn("[FAIL # GetAgentsInRange]: \"Range\" is equal to nil.")
 
@@ -406,11 +406,11 @@ local function GetAgentsInRange(Range:number)
 		return {}
 	end
 
-	local AgentsInRange = {}
+	local AgentsInRange:{[number]:any} = {}
 
 	if #ZombiesFolder:GetChildren() > 0 then 
 		for _, Agent in ipairs(ZombiesFolder:GetChildren()) do 
-			if typeof(Agent) == "Instance" and Agent.Parent then 
+			if typeof(Agent) == "Instance" and Agent.Parent and not Agent:FindFirstChildWhichIsA("ForceField") then 
 				local HRP = Agent:FindFirstChild("HumanoidRootPart")
 
 				local ZombieType = Agent:GetAttribute("Type")
@@ -426,13 +426,15 @@ local function GetAgentsInRange(Range:number)
 					--// this is incase it is a new type, or renamed type.
 					table.insert(AgentsInRange, Agent)
 				end
+            else
+                table.insert(AgentsInRange, false)
 			end
 		end
 	end
 
 	if #BotsFolder:GetChildren() > 0 then 
 		for _, Agent in ipairs(BotsFolder:GetChildren()) do 
-			if typeof(Agent) == "Instance" and Agent.Parent then 
+			if typeof(Agent) == "Instance" and Agent.Parent and not Agent:FindFirstChildWhichIsA("ForceField") then 
 				local HRP = Agent:FindFirstChild("HumanoidRootPart")
 
 				local BotType = Agent:GetAttribute("Type")
@@ -445,9 +447,11 @@ local function GetAgentsInRange(Range:number)
 						table.insert(AgentsInRange, Agent)
 					end
 				elseif HRP and type(IgnoreVal) ~= "boolean" then 
-					--// this is incase it is a new type, or renamed type.
+					--// this is incase it is a newx type, or renamed type.
 					table.insert(AgentsInRange, Agent)
 				end
+            else
+                table.insert(AgentsInRange, false)
 			end
 		end
 	end
@@ -456,10 +460,10 @@ local function GetAgentsInRange(Range:number)
 end
 
 --[=[
-    Info: This function takes a table, and a function, then loops through the table firing said function with 
-        the index and value.
+    Info: This function takes a table, and a function, and loops through the table executing the function sent with the
+        current table index, and value of the key.
 
-    Example: SortFunc({
+    Example: IterateWithFunction({
         [1] = "bob",
         [2] = "Cheese", 
         ["StringIndex"] = 1
@@ -473,43 +477,43 @@ end
 
     Parameter types: table, function, boolean or nil/nothing
 
-    returns: none
+    returns: void
 ]=]
-local function SortFunc(Table:{[any]: any}, Func:typeof(function(...) end), Instant:boolean?)
+local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(...) end), Instant:boolean?)
 	if type(Instant) ~= "boolean" then
         Instant = true
     end
 
-    if Table ~= nil and Func ~= nil then 
+    if Table ~= nil and Function ~= nil then 
 		if type(Table) ~= "table" then 
-			warn("[FAIL # SortFunc]: \"Table\" is not a table.")
+			warn("[FAIL # IterateWithFunction]: \"Table\" is not a table.")
 
 			return
 		end
 
-		if type(Func) ~= "function" then 
-			warn("[FAIL # SortFunc]: \"Func\" is not a function.")
+		if type(Function) ~= "function" then 
+			warn("[FAIL # IterateWithFunction]: \"Function\" is not a function.")
 
 			return
 		end
 
 		if Instant then 
-            for i, v in pairs(Table) do
-                task.spawn(Func, i, v)
+            for Index:any, Key:any in pairs(Table) do
+                task.spawn(Function, Index, Key)
             end
         elseif not Instant then
-            for i, v in pairs(Table) do
-                Func(i, v)
+            for Index:any, Key:any in pairs(Table) do
+                Function(Index, Key)
             end
         end
     else
         if Table == nil then 
-            warn("[FAIL # SortFunc]: \"Table\" is equal to nil.")
+            warn("[FAIL # IterateWithFunction]: \"Table\" is equal to nil.")
 
             return
         end
-        if Func == nil then 
-            warn("[FAIL # SortFunc]: \"Func\" is equal to nil.")
+        if Function == nil then 
+            warn("[FAIL # IterateWithFunction]: \"Function\" is equal to nil.")
 
             return
         end
@@ -526,7 +530,7 @@ end
 
     Parameter types: none
 
-    returns: Instance(NumberValue)
+    returns: Instance<NumberValue>
 ]=]
 local function GetBuildingWithLeastHealth():any
     local LocalPlayerUserId:number = LocalPlayer.UserId
@@ -567,7 +571,7 @@ end
 
     Parameter types: none
 
-    returns: Instance(NumberValue)
+    returns: Instance<NumberValue>
 ]=]
 local function GetClosestBuilding():any
     if not LocalPlayer.Character or not LocalPlayer.Character.Parent then
@@ -615,7 +619,7 @@ end
 local function GetMaxIndexOfTable(Table:{[any]: any})
     if Table ~= nil then 
 		if type(Table) ~= "table" then 
-			warn("[FAIL # GetMaxIndexOfTable]: \"Table\" is not a table.")
+			warn("[FAIL # GetMaxIndexOfTable]: \"Table\" is not a table. Returning 0")
 
 			return 0
 		end
@@ -631,7 +635,7 @@ local function GetMaxIndexOfTable(Table:{[any]: any})
         return CountToReturn
     else
         if Table == nil then 
-            warn("[FAIL # GetMaxIndexOfTable]: \"Table\" is equal to nil.")
+            warn("[FAIL # GetMaxIndexOfTable]: \"Table\" is equal to nil. Returning 0")
 
             return 0
         end
@@ -717,12 +721,13 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 					CanRepair = true
 				end)
             elseif not Remote then 
-                warn("[FAIL # MusicBind]: Failed to find the hammer's remote event.")
+                warn("[FAIL # BuildingBindFunc]: Failed to find the hammer's remote event.")
                 return
 			end
         else
             if HammerCanWarn then
                 HammerCanWarn = false
+                print(Backpack, Hammer)
                 warn("[FAIL # BuildingBindFunc]: Failed to find a hammer to use.")
 
                 task.wait(HammerWarnDelay)
@@ -737,7 +742,7 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 end)
 
 _G["BuildingFetchTypeBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
-    if not Process and Key.KeyCode == Enum.KeyCode.KeypadFour then 
+    if not Process and Key.KeyCode == Enum.KeyCode.KeypadThree then 
         if BuildingFetchType == "Closest" then 
             BuildingFetchType = "LeastHealth"
         else
@@ -818,7 +823,7 @@ end)
 
 _G["RubiksCubeBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
-		if Key.KeyCode == Enum.KeyCode.KeypadThree then 
+		if Key.KeyCode == Enum.KeyCode.KeypadFour then 
             RubiksCube = not RubiksCube
             print("[INFO # RubiksCubeBind]: \"RubiksCube\" is now equal to: "..tostring(RubiksCube))
         end
@@ -839,30 +844,33 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 					return
 				end
 
-				if not HRP then 
-					warn("[FAIL # ShoveBind]: Character has no HumanoidRootPart/Torso?")
-
-					return
-				end
-
 				if (#AgentsInRange <= 0) then
 					warn("[FAIL # ShoveBind]: No agents found within a range of "..tostring(ShoveRange).." studs.")
                     
 					return
 				end
 
+				if not HRP then 
+					warn("[FAIL # ShoveBind]: Character has no HumanoidRootPart/Torso?")
+                    
+                    table.clear(AgentsInRange)
+					return
+				end
+
 				local Weapon = Character:FindFirstChild("Axe") 
                     or Character:FindFirstChild("Carbine") 
                     or Character:FindFirstChild("Navy Pistol")
+                    or Character:FindFirstChild("Pickaxe")
                     or Backpack:FindFirstChild("Axe") 
                     or Backpack:FindFirstChild("Carbine")
                     or Backpack:FindFirstChild("Navy Pistol")
+                    or Backpack:FindFirstChild("Pickaxe")
 
 				if Weapon and typeof(Weapon) == "Instance" and Weapon.Parent then
 					local Remote = Weapon:FindFirstChildWhichIsA("RemoteEvent")
 
 					if Remote then
-						if Weapon.Name == "Axe" then
+						if Weapon.Name == "Axe" or Weapon.Name == "Pickaxe" then
 							Remote:FireServer("BraceBlock")
 
 							task.spawn(function()
@@ -875,9 +883,9 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 							Remote:FireServer("Shove")
 						end
 
-						SortFunc(AgentsInRange, function(Key, Agent)
-							if Agent ~= nil and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
-								local StunArgs = {
+						IterateWithFunction(AgentsInRange, function(Key, Agent)
+							if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
+								local StunArgs:{[number]:any} = {
 									[1] = "FeedbackStun";
 									[2] = Agent;
 									[3] = Agent.PrimaryPart and Agent.PrimaryPart.Position or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
@@ -888,14 +896,18 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 							task.wait()
 						end)
+
+                        table.clear(AgentsInRange)
                     elseif not Remote then 
                         warn("[FAIL # ShoveBind]: \"Remote\" if statement failed.")
 
+                        table.clear(AgentsInRange)
                         return
 					end
                 else
                     warn("[FAIL # ShoveBind]: \"Weapon\" if statement failed.")
 
+                    table.clear(AgentsInRange)
                     return
 				end
 			end
@@ -914,7 +926,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
                     if type(AgentsInRange) ~= "table" then 
                         warn("[FAIL # MurderBind]: \"AgentsInRange\" is not a table.")
-                        
+
                         return
                     end
 
@@ -932,7 +944,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                                 WeaponRemote:FireServer("Swing", "Side")
                             end
 
-							SortFunc(AgentsInRange, function(Key:any, Agent:Model) 
+							IterateWithFunction(AgentsInRange, function(Key:any, Agent:Model) 
 								if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
 									local HitArgs:{[number]:any} = {
 										[1] = "HitZombie";
@@ -965,9 +977,12 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                                 end
                             end
 						end
+
+                        table.clear(AgentsInRange)
                     else
                         warn("[FAIL # MurderBind]: \"WeaponRemote\" if statement failed.")
 
+                        table.clear(AgentsInRange)
                         return
 					end
                 else
@@ -1060,30 +1075,30 @@ local OldIndex = nil
 if _G["AlreadyActive"] == nil then 
 	_G["AlreadyActive"] = true
 
-	OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
+	OldNameCall = hookmetamethod(game, "__namecall", function(Remote, ...)
 		local Args = {...}
 		local NamecallMethod = getnamecallmethod()
 
-		if Self == LocalPlayer and (NamecallMethod:lower() == "kick") then
+		if Remote == LocalPlayer and (NamecallMethod:lower() == "kick") then
             print("[INFO # AntiKick]: An attempt to kick the LocalPlayer was just prevented.")
 			return
 	    end
 
 		if not checkcaller() then
             if NamecallMethod == "FireServer" then
-                --// always returns "nil" technically
+                --// always returns nil technically
                 --// (OldNameCall(Remote, unpack(Args)) == nil) = true / (Remote:FireServer(unpack(Args)) == nil) = true
-                if Self == AFKSignal or Self.Name == "OnAFKSignalReceived" then
+                if Remote == AFKSignal or Remote.Name == "OnAFKSignalReceived" then
                     print("[INFO # Namecall Hook]: \"OnAFKSignalReceived\" attempted to fire.")
                     return nil
-                elseif Self.Name == "ForceKill" then 
+                elseif Remote.Name == "ForceKill" then 
                     print("[INFO # Namecall Hook]: \"ForceKill\" remote attempted to fire.")
                     return nil
                 else
                     if Args[1] ~= nil then 
                         if Args[1] == "UpdateAccuracy" then 
                             Args[2] = 100
-                            Self["FireServer"](Self, unpack(Args))
+                            Remote["FireServer"](Remote, unpack(Args))
                             
                             return nil
                         elseif Args[1] == "HitZombie" or Args[1] == "Bayonet_HitZombie" or Args[1] == "ThrustCharge" then 
@@ -1094,13 +1109,13 @@ if _G["AlreadyActive"] == nil then
 
                             if type(Args[4]) == "boolean" then 
                                 if Args[4] then
-                                    return Self["FireServer"](Self, unpack(Args))
+                                    return Remote["FireServer"](Remote, unpack(Args))
                                 elseif not Args[4] then
                                     Args[4] = true
                                     Args[6] = "Head"
                                     Args[5] = (Args[5] * 50)
                                     Args[7] = (Args[7] * 50)
-                                    Self["FireServer"](Self, unpack(Args))
+                                    Remote["FireServer"](Remote, unpack(Args))
                                     
                                     return nil
                                 end
@@ -1108,7 +1123,7 @@ if _G["AlreadyActive"] == nil then
                                 return nil
                             end
                             
-                            return Self["FireServer"](Self, unpack(Args))
+                            return Remote["FireServer"](Remote, unpack(Args))
                         elseif Args[1] == "CancelReload" then 
                             print("[INFO # Namecall Hook]: CancelReload argument blocked.")
                             return nil
@@ -1126,13 +1141,13 @@ if _G["AlreadyActive"] == nil then
                                 
                                 if ToolFound then 
                                     Args[2] = "Over"
-                                    Self["FireServer"](Self, unpack(Args))
+                                    Remote["FireServer"](Remote, unpack(Args))
                                     
                                     return nil
                                 end
                             end
 
-                            return Self["FireServer"](Self, ...)
+                            return Remote["FireServer"](Remote, ...)
                         elseif Args[1] == "UpdateLook" and RubiksCube then
                         	--// probably a much better way to do this but
                             --// i got lazy!
@@ -1192,14 +1207,14 @@ if _G["AlreadyActive"] == nil then
                                 Args[5] = LocalPlayer.Character.Torso["Neck"] or Args[5]
                             end
 
-                            return OldNameCall(Self, unpack(Args))
+                            return OldNameCall(Remote, unpack(Args))
                         end
                     end
                 end
             end
 		end
 
-		return OldNameCall(Self, ...)
+		return OldNameCall(Remote, ...)
 	end)
 
     OldIndex = hookmetamethod(game, "__index", function(Self, Method)
