@@ -66,7 +66,7 @@ local HeadTransparency = 0.6
 
 --// true = ignore
 --// false = don't ignore
-local ZombieTypesList = {
+local AgentTypeList = {
 	["Barrel"] = true;
 	["BigBoy"] = false;
 	["Crawler"] = false;
@@ -366,7 +366,7 @@ end
 
 --[=[
     Info: This function attempts to find all agents within the "Zombies" and "Bots" folders ignoring any agent that
-        has an attribute named "Type" that is equal to true in the "ZombieTypesList" table variable that is within the 
+        has an attribute named "Type" that is equal to true in the "AgentTypeList" table variable that is within the 
         range of the "Range" number parameter.
 
     Parameter count: 1
@@ -375,17 +375,13 @@ end
 
     returns: table
 ]=]
-local function GetAgentsInRange(Range:number):{[number]:any}
-	if Range == nil then 
-		warn("[FAIL # GetAgentsInRange]: \"Range\" is equal to nil.")
-
-		return {}
-	end
-
-	if type(Range) ~= "number" then 
+local function GetAgentsInRange(Position:Vector3|boolean, Range:number):{[number]:any}
+	local AgentsInRange:{[number]:any} = {}
+    
+    if type(Range) ~= "number" then 
 		warn("[FAIL # GetAgentsInRange]: \"Range\" is not a number.")
 
-		return {}
+		return AgentsInRange
 	end
 
 	if Range == 0 or Range == (0/0) or Range == (-(0/0)) then 
@@ -394,36 +390,44 @@ local function GetAgentsInRange(Range:number):{[number]:any}
 		Range = -Range
 	end
 
-	local Character:Model = LocalPlayer.Character
-    if not Character or not Character.Parent then 
-        return {}
+    local UsePosition = typeof(Position) == "Vector3"
+    local CharHRP:any
+    if not UsePosition then
+        local Character:Model = LocalPlayer.Character
+        if not Character or not Character.Parent then
+            warn("[FAIL # GetAgentsInRange]: You do not have a character?")
+            
+            return AgentsInRange
+        end
+        
+        CharHRP = (Character:FindFirstChild("HumanoidRootPart") or Character.PrimaryPart)::BasePart
+        if not CharHRP or CharHRP:IsA("Model") then 
+            warn("[FAIL # GetAgentsInRange]: No HumanoidRootPart/PrimaryPart found inside in the player's character.")
+
+            return AgentsInRange
+        end
+    elseif UsePosition then
+        CharHRP = Position
     end
-
-	local CharHRP = (Character:FindFirstChild("HumanoidRootPart") or Character.PrimaryPart)::BasePart
-	if not CharHRP or CharHRP:IsA("Model") then 
-		warn("[FAIL # GetAgentsInRange]: No HumanoidRootPart/PrimaryPart found inside in the player's character.")
-
-		return {}
-	end
-
-	local AgentsInRange:{[number]:any} = {}
 
 	if #ZombiesFolder:GetChildren() > 0 then 
 		for _, Agent in ipairs(ZombiesFolder:GetChildren()) do 
-			if typeof(Agent) == "Instance" and Agent.Parent and not Agent:FindFirstChildWhichIsA("ForceField") then 
-				local HRP = Agent:FindFirstChild("HumanoidRootPart")
+			if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and not Agent:FindFirstChildWhichIsA("ForceField") then 
+				local HRP = Agent.PrimaryPart or Agent:FindFirstChild("HumanoidRootPart")
 
 				local ZombieType = Agent:GetAttribute("Type")
-				local IgnoreVal = ZombieTypesList[ZombieType]
+				local IgnoreVal = AgentTypeList[ZombieType]
 
 				if HRP and type(IgnoreVal) == "boolean" and not IgnoreVal then 
-					local Distance = (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+					local Distance:number = (not UsePosition)
+                        and (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+                        or (Vector3.new(CharHRP.X, 0, CharHRP.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
 
 					if Distance <= Range then 
 						table.insert(AgentsInRange, Agent)
 					end
 				elseif HRP and type(IgnoreVal) ~= "boolean" then
-					--// this is incase it is a new type, or renamed type.
+					--// incase the agent's type is *new*, or not in the list.
 					table.insert(AgentsInRange, Agent)
 				end
             else
@@ -434,20 +438,22 @@ local function GetAgentsInRange(Range:number):{[number]:any}
 
 	if #BotsFolder:GetChildren() > 0 then 
 		for _, Agent in ipairs(BotsFolder:GetChildren()) do 
-			if typeof(Agent) == "Instance" and Agent.Parent and not Agent:FindFirstChildWhichIsA("ForceField") then 
-				local HRP = Agent:FindFirstChild("HumanoidRootPart")
+			if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and not Agent:FindFirstChildWhichIsA("ForceField") then 
+				local HRP = Agent.PrimaryPart or Agent:FindFirstChild("HumanoidRootPart")
 
 				local BotType = Agent:GetAttribute("Type")
-				local IgnoreVal = ZombieTypesList[BotType]
+				local IgnoreVal = AgentTypeList[BotType]
 
 				if HRP and type(IgnoreVal) == "boolean" and not IgnoreVal then 
-					local Distance = (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+					local Distance = (not UsePosition)
+                        and (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+                        or (Vector3.new(CharHRP.X, 0, CharHRP.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
 
 					if Distance <= Range then 
 						table.insert(AgentsInRange, Agent)
 					end
 				elseif HRP and type(IgnoreVal) ~= "boolean" then 
-					--// this is incase it is a newx type, or renamed type.
+					--// incase the agent's type is *new*, or not in the list.
 					table.insert(AgentsInRange, Agent)
 				end
             else
@@ -836,7 +842,7 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 			if LocalPlayer.Character and LocalPlayer.Character.Parent then
 				local Character = LocalPlayer.Character
 				local HRP = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
-				local AgentsInRange = GetAgentsInRange(ShoveRange)
+				local AgentsInRange = GetAgentsInRange(false, ShoveRange)
 
 				if type(AgentsInRange) ~= "table" then 
                     warn("[FAIL # ShoveBind]: \"AgentsInRange\" is not a table.")
@@ -922,7 +928,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 				local Weapon:Tool, WeaponRemote:RemoteEvent, LimitRange:number = GetMeleeWeapon()
 
 				if Weapon and typeof(Weapon) == "Instance" then 
-                	local AgentsInRange:{[number]:Model} = GetAgentsInRange(LimitRange and (LimitRange * 1.8) or MurderRange)
+                	local AgentsInRange:{[number]:Model} = GetAgentsInRange(false, LimitRange and (LimitRange * 1.8) or MurderRange)
 
                     if type(AgentsInRange) ~= "table" then 
                         warn("[FAIL # MurderBind]: \"AgentsInRange\" is not a table.")
