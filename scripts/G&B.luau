@@ -311,7 +311,7 @@ local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:
                 if LastBeatTick ~= 0 then 
                     _TimeSinceLastBeat = (tick() - LastBeatTick)
                     if Debug then
-                        warn("[DEBUG # Fake Accuracy Beat Thread]: _TimeSinceLastBeat = "..tostring(_TimeSinceLastBeat)..".")
+                        --//warn("[DEBUG # Fake Accuracy Beat Thread]: _TimeSinceLastBeat = "..tostring(_TimeSinceLastBeat)..".")
                     end
                     LastBeatTick = tick()
                 elseif LastBeatTick == 0 then 
