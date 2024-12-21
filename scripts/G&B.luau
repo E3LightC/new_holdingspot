@@ -1,28 +1,28 @@
 --!strict
---//// @_x4yz \\\\--
+--//// Discord: @_x4yz \\\\--
 
---//// stuff. \\\\--
---// if you have an axe, and can shove with it, press Q \\--
---// when killing a group/horde of zombies, pressing Z or X will help with it will help clear them out \\--
---// all hits done with melee will be sent to the server as if you are hitting the head \\--
---// while "RubiksCube" is toggled on, when you have any gun/tool that updates how you're looking, it will jumble your character up, like a rubik's cube! \\--
---// this script also blocks out the "OnAFKSignalReceived" remote and "ForceKill" remote if it is called by a non-exploit script \\--
---// for auto repair to work, you must have a hammer and at least have equipped it once (repair radius seems to be based on HumanoidRootPart or something else so you can technically repair something while the hammer is let us say, 3000 studs away, as long as your character is near the building) \\--
---// check developer console for errors, or any warnings similar to " [FAIL # blahblahblah]: ... " \\--
---// and a few more things \\--
+--//// Features Overview \\\\--
+--// - Press **Q** to shove in an area when using a weapon (if shoving is supported for said weapon). 
+--// - When fighting a group or horde of zombies, use **Z** or **X** to help clear them out.
+--// - All melee hits are registered as headshots increasing your damage output.
+--// - When "RubiksCube" is toggled on, equipping the hammer/claw hammer will scramble your character’s appearance like a Rubik’s Cube.
+--// - Blocks the "OnAFKSignalReceived" and "ForceKill" remotes if they are called/fired by non-exploit scripts.
+--// - Auto-repair requires having a hammer. Repairs work based on your proximity to the building, not the hammer itself (even if the hammer is far away, as long as your character is near the building, repairs will function).
+--// - Check the developer console for errors or warnings (e.g., "[FAIL # example]: ...").
+--// - Additional functionality may also be included.
 
---//// binds \\\\--
---// Q / Shove Bind \\--
---// Z or X / Murder Bind \\--
---// Keypad 1 / Grab Log Bind (only works on Berezina) \\--
---// Keypad 2 to toggle auto repair \\--
---// Keypad 3 to toggle building fetch type \\--
---// Keypad 4 to toggle "RubiksCube" \\--
---// U, F, G, H, J, Y, T to play music with fife or drum. \\--
+--//// Key Bindings \\\\--
+--// **Q**: Shove (Axe only).
+--// **Z** / **X**: Clear zombies (Murder Bind).
+--// **Keypad 1**: Grab Log Bind (only available in Berezina).
+--// **Keypad 2**: Toggle auto-repair.
+--// **Keypad 3**: Toggle building fetch type.
+--// **Keypad 4**: Toggle "RubiksCube."
+--// **U**, **F**, **G**, **H**, **J**, **Y**, **T**: Play music with fife or drum.
 
---[/////////////////////////////]--
---[/////////////////////////////]--
---[/////////////////////////////]--
+--[///////////////////////////////////////////////////////////////////////////////////////////////////]--
+--[///////////////////////////////////////////////////////////////////////////////////////////////////]--
+--[///////////////////////////////////////////////////////////////////////////////////////////////////]--
 
 local OldTick = tick()
 
@@ -56,7 +56,7 @@ local BuildingFetchType = "Closest"
 local HammerWarnDelay = 0.5
 local NewZombieHeadWaitTime = 0.25
 local WaitTimeUntilRepair = 0.125
-local FakeAccuracyBeatWaitTime = 0.15
+local DefaultBeatWaitTime = 0.15
 
 local ShoveRange = 15 --// default range variable used for shoving.
 local MurderRange = 11 --// Used as a backup if can't find weapon range.
@@ -64,8 +64,8 @@ local MurderRange = 11 --// Used as a backup if can't find weapon range.
 local HeadSizeToUse = Vector3.new(6, 9, 4.5)
 local HeadTransparency = 0.6
 
---// true = ignore
---// false = don't ignore
+--// true = Ignore Agent
+--// false = Include Agent
 local AgentTypeList = {
 	["Barrel"] = true;
 	["BigBoy"] = false;
@@ -78,8 +78,8 @@ local AgentTypeList = {
 	["Headless"] = false;
 }
 local AllowedInstruments = {
-    ["Fife"] = true; --// can play music while inside backpack and give buffs
-    ["Drum"] = true; --// only can play while inside character
+    ["Fife"] = true; --// Plays music while in the backpack and still provides/gains buffs.
+    ["Drum"] = true; --// Only plays music while equipped by the character.
 }
 local MusicSelections = {
     ["U"] = "Musketer March";
@@ -92,7 +92,7 @@ local MusicSelections = {
 }
 local PreferredWeapon = "Pike"
 
---// disconnecting and removing stuff if the script already has been executed.
+--// Disconnection/Removing previous script connections if executed more than once.
 if _G["FlameTouchRemover"] ~= nil then 
     _G["FlameTouchRemover"]:Disconnect()
     _G["FlameTouchRemover"] = nil
@@ -156,7 +156,8 @@ if _G["OnCharacterAdded"] then
 end
 --//
 
-task.wait(0.2) --// attempting to let Luau's garbage collector do its things
+task.wait(0.2) --// Allow Luau's garbage collector to cleanup.
+
 _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Head:Instance)
     task.spawn(function()
         if Head and not Head:IsA("Highlight") and Head:IsA("BasePart") and Head.Name == "Head" then 
@@ -238,12 +239,12 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Head:Ins
                     NewHighlight.Adornee = Character
                 end
 
-                for _, ZombPart:any in pairs(Character:GetChildren()) do 
-                    if typeof(ZombPart) == "Instance" and ZombPart:IsA("BasePart") and ZombPart.Name ~= "Head" --[[and ZombPart.Name ~= "HumanoidRootPart"]] then 
-                        --ZombPart.CanQuery = false
-                        ZombPart = nil
-                    end
-                end
+                --//for _, ZombPart:any in pairs(Character:GetChildren()) do 
+                --//    if typeof(ZombPart) == "Instance" and ZombPart:IsA("BasePart") and ZombPart.Name ~= "Head" --[[and ZombPart.Name ~= "HumanoidRootPart"]] then 
+                --//        ZombPart.CanQuery = false
+                --//        ZombPart = nil
+                --//    end
+                --//end
 
                 return
             end
@@ -263,20 +264,45 @@ local LastBeatTick = 0
 local _TimeSinceLastBeat = 0
 
 --[=[
-    Info: This function uses coroutine functions to create a thread that repeatedly updates the accuracy of an instrument
-        using its remote event emulating the actual system in a way.
+    Description:
+    This function initializes a coroutine thread to simulate periodic accuracy updates for an instrument. 
+    It utilizes a provided `RemoteEvent` to send accuracy-related data to the server at specified intervals.
 
-    Parameter count: 1
+    Parameters:
+    - `RemoteEventToUse` (Instance<RemoteEvent>): The RemoteEvent instance to send accuracy-related updates.
+    - `BeatWaitTime` (number?): Optional. The time interval (in seconds) between successive accuracy updates. 
+      If not provided, invalid, or out of the allowed range (0 < `BeatWaitTime` < 10), it defaults to 0.15 seconds.
 
-    Parameter types: Instance(RemoteEvent)
+    Returns:
+    - thread: A coroutine thread that repeatedly dispatches "UpdateAccuracy" events with a fixed accuracy value of 100.
+      If `RemoteEventToUse` is invalid, the function returns an empty coroutine thread.
 
-    returns: thread
+    Behavior:
+    - Validates `RemoteEventToUse` to ensure it is a valid `RemoteEvent`. If not, a warning will be logged and an empty thread is returned.
+    - Verifies `BeatWaitTime`:
+        - If not provided or invalid, defaults to `DefaultBeatWaitTime`.
+        - If the provided value is outside the range (0, 5), it defaults to 0.15 seconds.
+    - The coroutine repeatedly fires "UpdateAccuracy" events to the server at the specified interval (`BeatWaitTime`).
+    - In debug mode, logs the time elapsed between beats (`_TimeSinceLastBeat`) for diagnostic purposes.
+
+    Notes:
+    - Useful for simulating or testing accuracy update behavior for instruments.
+    - The coroutine runs indefinitely until explicitly stopped.
+    - Default behavior ensures safe and reliable operation within a reasonable time interval range.
 ]=]
-local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent)
+local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:number?):(thread)
     if typeof(RemoteEventToUse) == "Instance" or not RemoteEventToUse:IsA("RemoteEvent") then 
-        warn("[FAIL # SetupFakeAccuracyBeat]: \"RemoteEventToUse\" is not an Instance, nor a RemoteEvent")
+        warn("[FAIL # SetupFakeAccuracyBeat]: \"RemoteEventToUse\" is not an Instance, nor a RemoteEvent.")
 
         return coroutine.create(function() end)
+    end
+
+    if type(BeatWaitTime) ~= "number" then
+        BeatWaitTime = DefaultBeatWaitTime
+    elseif type(BeatWaitTime) == "number" then
+        if (BeatWaitTime <= 0) or (BeatWaitTime >= 5) then
+            BeatWaitTime = 0.15
+        end
     end
     
     local NewThread = coroutine.create(function()
@@ -284,7 +310,9 @@ local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent)
             if Debug then
                 if LastBeatTick ~= 0 then 
                     _TimeSinceLastBeat = (tick() - LastBeatTick)
-                    --// warn("[DEBUG # Fake Accuracy Beat Thread]: _TimeSinceLastBeat = "..tostring(_TimeSinceLastBeat)..".")
+                    if Debug then
+                        warn("[DEBUG # Fake Accuracy Beat Thread]: _TimeSinceLastBeat = "..tostring(_TimeSinceLastBeat)..".")
+                    end
                     LastBeatTick = tick()
                 elseif LastBeatTick == 0 then 
                     LastBeatTick = tick()
@@ -292,7 +320,7 @@ local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent)
             end
 
             RemoteEventToUse:FireServer("UpdateAccuracy", 100)
-            task.wait(FakeAccuracyBeatWaitTime)
+            task.wait(BeatWaitTime)
         end
     end)
     coroutine.resume(NewThread)
@@ -301,16 +329,30 @@ local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent)
 end
 
 --[=[
-    Info: This function requires that the local player's character does exist, and not be parented to nothing/nil.
-        This function attempts to find a tool with the same name as whatever the "PreferredWeapon" string variable is equal to.
-        If not found, then it continues to search for any tool that the local player's character contains with a server script named 
-        "MeleeBase" within that said tool, if still not found then, it does the same thing but with the player's backpack.
+    Description:
+    This function searches for a suitable melee weapon for the local player. It prioritizes the player's "PreferredWeapon" 
+    but includes fallback logic to find other tools in the character or backpack. It also identifies and returns any 
+    associated RemoteEvent and configuration attributes.
 
-    Parameter count: 0
+    Parameters:
+    - None
 
-    Parameter types: none
+    Returns:
+    - Tool | nil: The tool instance found, if any.
+    - RemoteEvent | nil: The RemoteEvent associated with the tool, if present.
+    - boolean | nil: The "LimitRange" configuration attribute, if applicable.
 
-    returns: void
+    Behavior:
+    - Validates the local player's character and its parent to ensure the player is active in the game.
+    - Searches the character for a tool matching the `PreferredWeapon`. If found, it returns the tool, its RemoteEvent, 
+      and its "LimitRange" attribute (if configured).
+    - If the `PreferredWeapon` is not found, it searches for tools containing the server script "MeleeBase". If no such tool is found, 
+      it prioritizes tools named "Musket" or "Shovel" as fallback options.
+    - If no tool is found in the character, it searches the player's backpack using the same criteria.
+
+    Notes:
+    - Logs warnings if the character is missing or unparented.
+    - Returns `nil` for all values if no suitable tool is located.
 ]=]
 local function GetMeleeWeapon():(...any)
 	local Character = LocalPlayer.Character
@@ -365,17 +407,41 @@ local function GetMeleeWeapon():(...any)
 end
 
 --[=[
-    Info: This function attempts to find all agents within the "Zombies" and "Bots" folders ignoring any agent that
-        has an attribute named "Type" that is equal to true in the "AgentTypeList" table variable that is within the 
-        range of the "Range" number parameter.
+    Description:
+    This function retrieves agents within the "Zombies" and "Bots" folders that are located within a specified range of 
+    a given position or the player's character. Agents whose "Type" attribute matches an entry in the `AgentTypeList` 
+    table with a truthy value are excluded from the results. The function calculates distances in a 2D plane (ignoring Y-axis differences).
 
-    Parameter count: 1
+    Parameters:
+    - `Position` (Vector3 | boolean): Specifies the center point for the search. If a Vector3 is provided, it is used as the position. 
+      If `false` is passed, the function uses the player's character's position.
+    - `Range` (number): Defines the radius of the search. Negative values are treated as positive. A default of 4 is used 
+      for invalid or zero values.
 
-    Parameter types: number
+    Returns:
+    - `{[number]: any}`: A list of agents (models) within the specified range. Returns an empty table if no valid agents are found.
 
-    returns: table
+    Behavior:
+    - Validates input parameters. If `Range` is invalid or zero, assigns a default value of 4.
+    - If the `Position` parameter is `false`, the function will attempt to use the LocalPlayer's character position. Logs warnings 
+      if the character or its HumanoidRootPart/PrimaryPart is missing.
+    - Iterates through the "Zombies" and "Bots" folders to find agents. Checks if:
+      - The agent is a valid model with a parent.
+      - The agent does not have a `ForceField` instance.
+      - The agent's "Type" attribute is either absent or mapped to a false value in the `AgentTypeList`.
+    - Calculates distances in a 2D plane between the specified position and each agent.
+    - Adds valid agents to the results table. Includes agents with unknown or unlisted "Type" attributes.
+
+    Notes:
+    - Logs warnings for invalid inputs or missing character components.
+    - Excludes agents with "Type" attributes marked as truthy in the `AgentTypeList`.
+    - Ensures robust handling for edge cases such as missing agents or new agent types.
+
+    Use Cases:
+    - This function is ideal for detecting nearby enemies, NPCs, or objects in a game environment based on proximity.
+    - It supports filtering by agent type and handling dynamic game scenarios.
 ]=]
-local function GetAgentsInRange(Position:Vector3|boolean, Range:number):{[number]:any}
+local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[number]:any}
 	local AgentsInRange:{[number]:any} = {}
     
     if type(Range) ~= "number" then 
@@ -390,13 +456,13 @@ local function GetAgentsInRange(Position:Vector3|boolean, Range:number):{[number
 		Range = -Range
 	end
 
-    local UsePosition = typeof(Position) == "Vector3"
+    local UsePosition:boolean = (typeof(Position) == "Vector3")
     local CharHRP:any
     if not UsePosition then
         local Character:Model = LocalPlayer.Character
         if not Character or not Character.Parent then
             warn("[FAIL # GetAgentsInRange]: You do not have a character?")
-            
+
             return AgentsInRange
         end
         
@@ -465,25 +531,57 @@ local function GetAgentsInRange(Position:Vector3|boolean, Range:number):{[number
 	return AgentsInRange
 end
 
---[=[
-    Info: This function takes a table, and a function, and loops through the table executing the function sent with the
-        current table index, and value of the key.
 
-    Example: IterateWithFunction({
-        [1] = "bob",
-        [2] = "Cheese", 
-        ["StringIndex"] = 1
-        }, function(i, v) 
-            print("index: "..tostring(i).."\n value: "..tostring(v))
+--[=[
+    Description:
+    This function iterates over a table, applying a specified function to each key-value pair. It supports both 
+    synchronous and asynchronous execution, determined by the `Instant` parameter. The function ensures proper 
+    validation of inputs and provides warnings for invalid parameters.
+
+    Parameters:
+    - `Table` (table): A table containing key-value pairs to be iterated over.
+    - `Function` (function): A callback function executed for each key-value pair. It receives two arguments: 
+      the key and the value.
+    - `Instant` (boolean?): Optional. If `true` (default) or not provided, the function executes asynchronously 
+      using `task.spawn`. If `false`, the function executes synchronously.
+
+    Returns:
+    - void: This function does not return a value.
+
+    Example Usage:
+    ```lua
+    IterateWithFunction(
+        {
+            [1] = "Bob",
+            [2] = "Cheese",
+            ["StringIndex"] = 1
+        },
+        function(index, value)
+            print("Index: " .. tostring(index) .. " | Value: " .. tostring(value))
         end,
         true
     )
+    ```
+    - Asynchronous execution with `Instant` set to `true` or default.
+    - Synchronous execution with `Instant` explicitly set to `false`.
 
-    Parameter count: 3
+    Behavior:
+    - Validates the `Table` and `Function` parameters:
+        - Logs a warning and terminates if `Table` is not a table or is `nil`.
+        - Logs a warning and terminates if `Function` is not a function or is `nil`.
+    - Determines execution mode based on the `Instant` parameter:
+        - If `Instant` is `true`, this function applies the sent function asynchronously using `task.spawn`.
+        - If `Instant` is `false`, this function applies the function synchronously.
+    - Iterates over all key-value pairs in the table, calling the specified function for each pair.
+    - Provides default asynchronous behavior if `Instant` is not specified.
 
-    Parameter types: table, function, boolean or nil/nothing
+    Notes:
+    - This function is useful for scenarios requiring flexible execution modes (e.g., UI updates vs. heavy computations).
+    - Asynchronous mode can improve performance for computationally intensive or delayed tasks.
 
-    returns: void
+    Use Cases:
+    - Iterating over configuration tables, applying transformations, or triggering specific actions for each entry.
+    - Dynamically handling large datasets in-game systems with minimal blocking of the main thread.
 ]=]
 local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(...) end), Instant:boolean?)
 	if type(Instant) ~= "boolean" then
@@ -529,14 +627,46 @@ local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(
 end
 
 --[=[
-    Info: This function attempts to find the player-made building with the least amount of health in value, by 
-        dividing the max health by the current health returning a value between 1 and 0 which is used to compare all the buildings.
+    Description:
+    This function identifies the building belonging to the local player that has the lowest relative health. It calculates 
+    the ratio of `CurrentHealth` to `MaxHealth` for each building and returns the "BuildingHealth" `NumberValue` instance 
+    corresponding to the building with the lowest ratio. If no buildings are found, it returns `false`.
 
-    Parameter count: 0
+    Parameters:
+    - None
 
-    Parameter types: none
+    Returns:
+    - `Instance<NumberValue>`: The "BuildingHealth" instance with the lowest relative health.
+    - `false`: If no valid buildings are found.
 
-    returns: Instance<NumberValue>
+    Notes:
+    - Health is calculated as `CurrentHealth / MaxHealth`, where `MaxHealth` is an attribute of the "BuildingHealth" instance.
+    - The function logs warnings for missing or invalid data during execution.
+
+    Behavior:
+    - Locates the folder containing the local player's buildings within the `BuildingsFolder`.
+    - Iterates through all descendants of the folder, identifying instances named "BuildingHealth" that are of type `NumberValue`.
+    - Compiles all valid "BuildingHealth" instances into a table.
+    - Sorts the table in ascending order based on the relative health (`CurrentHealth / MaxHealth`) of each building.
+    - Returns the first instance (lowest relative health) from the sorted table.
+    - Logs warnings if:
+        - No buildings are found for the player.
+        - "BuildingHealth" instances are missing or invalid.
+
+    Example Usage:
+    ```lua
+    local WeakestBuilding = GetBuildingWithLeastHealth()
+    if WeakestBuilding then
+        print("The building with the lowest relative health is: ", WeakestBuilding)
+    else
+        print("No valid buildings were found.")
+    end
+    ```
+
+    Use Cases:
+    - Real-time monitoring and repair systems for player-owned buildings.
+    - Identifying weak points in a player's structure during gameplay.
+    - Strategically prioritizing building maintenance or defense based on health status.
 ]=]
 local function GetBuildingWithLeastHealth():any
     local LocalPlayerUserId:number = LocalPlayer.UserId
@@ -544,7 +674,7 @@ local function GetBuildingWithLeastHealth():any
 
     local LocalPlayerBuildings = (BuildingsFolder:FindFirstChild(tostring(LocalPlayerUserId)))::Folder
     if not LocalPlayerBuildings then 
-        return
+        return false
     end
 
 	for _,  v in pairs(LocalPlayerBuildings:GetDescendants()) do
@@ -572,12 +702,47 @@ local function GetBuildingWithLeastHealth():any
 end
 
 --[=[
-    Info: This function attempts to find the closest player-made building.
-    Parameter count: 0
+    Description: 
+    Identifies the closest player-made building to the local player's character by calculating the distance between the character and each building's "Bound" part. Returns the "BuildingHealth" instance of the closest building unless it is already at maximum health. If no valid building is found, or all are at maximum health, returns `false`. Returns `nil` if the local player has no buildings.
 
-    Parameter types: none
+    Parameters: 
+    - None
 
-    returns: Instance<NumberValue>
+    Returns: 
+    - `Instance<NumberValue>`: The "BuildingHealth" instance of the closest building.
+    - `false`: If the closest building is at maximum health or no valid building is found.
+    - `nil`: If the local player has no buildings.
+
+    Notes:
+    - The function checks that the local player's character exists and is properly parented.
+    - Each building is represented by a "Bound" part, a `BasePart` instance within the player's building folder in `BuildingsFolder`.
+    - The closest building is determined using the `DistanceFromCharacter` method, ensuring accurate distance measurements relative to the local player.
+    - The "BuildingHealth" instance is checked against its `MaxHealth` attribute to exclude buildings already at full health.
+
+    Behavior:
+    - Locates the folder containing the local player's buildings in the `BuildingsFolder`.
+    - Iterates through the folder to find all "Bound" parts associated with buildings.
+    - Sorts the buildings by distance from the local player's character.
+    - Retrieves the "BuildingHealth" instance of the closest building and checks its health.
+    - Returns the "BuildingHealth" instance if the building's health is below its maximum value.
+    - Logs warnings if no valid buildings are found or the closest building has invalid data.
+
+    Example Usage:
+    ```lua
+    local ClosestBuilding = GetClosestBuilding()
+    if ClosestBuilding then
+        print("The closest building is: ", ClosestBuilding)
+    elseif ClosestBuilding == false then
+        print("The closest building is already at maximum health or invalid.")
+    else
+        print("No buildings found for the player.")
+    end
+    ```
+
+    Use Cases:
+    - Identifying the nearest building for repair or defense during gameplay.
+    - Monitoring player-owned structures based on proximity for strategic purposes.
+    - Facilitating dynamic interactions with player-made structures in multiplayer games.
 ]=]
 local function GetClosestBuilding():any
     if not LocalPlayer.Character or not LocalPlayer.Character.Parent then
@@ -588,7 +753,7 @@ local function GetClosestBuilding():any
 	local Bounds = {}
 
     local LocalPlayerBuildings = (BuildingsFolder:FindFirstChild(tostring(LocalPlayerUserId)))::Folder
-    if not LocalPlayerBuildings then 
+    if not LocalPlayerBuildings then
         return
     end
 
@@ -612,16 +777,50 @@ local function GetClosestBuilding():any
 
             return ((Bounds[1].Parent)::Part):WaitForChild("BuildingHealth")
         elseif not Bounds[1] then 
-            warn("[FAIL # GetBuildingWithLeastHealth]: Failed to find the closest building.")
+            warn("[FAIL # GetClosestBuilding]: Failed to find the closest building.")
             return false
         end
     else
-        warn("[FAIL # GetBuildingWithLeastHealth]: No buildings found?")
+        warn("[FAIL # GetClosestBuilding]: No buildings found?")
 	end 
 
 	return false
 end
 
+--[=[
+    Description:
+    Counts the total number of valid indices in a given table, including both array-like and dictionary-like indices. 
+    If the input is invalid or `nil`, logs appropriate warnings and returns `0`.
+
+    Parameters:
+    - `Table: {[any]: any}`: The table whose indices are to be counted.
+
+    Returns:
+    - `number`: The total count of valid indices in the table.
+    - `0`: If the input is `nil` or not of type `table`.
+
+    Notes:
+    - Differentiates between valid and invalid inputs, ensuring reliable results.
+    - Treats all table indices (numeric and non-numeric) as valid for counting.
+    - Provides helpful warnings for debugging when the input is `nil` or not a table.
+
+    Example Usage:
+    ```lua
+    local SampleTable = {1, 2, 3, ["Key"] = "Value"}
+    local MaxIndex = GetMaxIndexOfTable(SampleTable)
+    print("Total indices:", MaxIndex)  -- Output: 4
+    ```
+
+    Use Cases:
+    - Counting entries in a table regardless of its structure (sequential or non-sequential).
+    - Debugging scenarios involving `nil` or improperly formatted tables.
+    - Validating and inspecting table content in dynamic Lua scripts.
+
+    Edge Cases:
+    - If the `Table` parameter is `nil`, the function logs a warning and returns `0`.
+    - If the `Table` is not a table, logs a warning and returns `0`.
+    - Empty tables return a count of `0`.
+]=]
 local function GetMaxIndexOfTable(Table:{[any]: any})
     if Table ~= nil then 
 		if type(Table) ~= "table" then 
@@ -649,39 +848,6 @@ local function GetMaxIndexOfTable(Table:{[any]: any})
 
 	return 0
 end
-
-_G["OnCharacterAdded"] = LocalPlayer.CharacterAdded:Connect(function(NewCharacter)
-    if NewCharacter then 
-        local GrabRemote:RemoteEvent
-        local Attempts:number = 0
-        local MaxAttempts:number = 10
-
-        repeat
-            if NewCharacter and NewCharacter:FindFirstChild("GrabRemote") then 
-                GrabRemote = (NewCharacter:FindFirstChild("GrabRemote"))::RemoteEvent
-                break
-            else
-                if not NewCharacter then 
-                    break
-                end
-            end
-            Attempts += 1
-
-            task.wait(0.05)
-        until GrabRemote or Attempts >= MaxAttempts
-
-        task.wait(0.1)
-
-        repeat 
-            task.wait()
-        until #(getconnections(GrabRemote.OnClientEvent)) >= 1
-
---[[    print("[INFO # OnCharacterAdded]: Removing \"OnClientEvent\" connections from the LocalPlayer's \"GrabRemote\".")
-        for _, Connection:Connection in pairs(getconnections(GrabRemote.OnClientEvent)) do 
-            Connection:Disable()
-        end]]
-    end
-end)
 
 _G["BuildingBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
@@ -755,7 +921,7 @@ _G["BuildingFetchTypeBind"] = UserInputService.InputBegan:Connect(function(Key, 
             BuildingFetchType = "Closest"
         end
 
-        print("[INFO # BuildingBind]: \"BuildingFetchType\" is now equal to: "..tostring(BuildingFetchType))
+        print("[INFO # BuildingFetchTypeBind]: \"BuildingFetchType\" is now equal to: "..tostring(BuildingFetchType))
     end
 end)
 
@@ -1074,10 +1240,44 @@ if Debug then
             end
         end
     end)
+
+--[[    _G["OnCharacterAdded"] = LocalPlayer.CharacterAdded:Connect(function(NewCharacter)
+        if NewCharacter then 
+            local GrabRemote:RemoteEvent
+            local Attempts:number = 0
+            local MaxAttempts:number = 10
+
+            repeat
+                if NewCharacter and NewCharacter:FindFirstChild("GrabRemote") then 
+                    GrabRemote = (NewCharacter:FindFirstChild("GrabRemote"))::RemoteEvent
+                    break
+                else
+                    if not NewCharacter then 
+                        break
+                    end
+                end
+                Attempts += 1
+
+                task.wait(0.05)
+            until GrabRemote or Attempts >= MaxAttempts
+
+            task.wait(0.1)
+
+            repeat 
+                task.wait()
+            until #(getconnections(GrabRemote.OnClientEvent)) >= 1
+
+            print("[INFO # OnCharacterAdded]: Removing \"OnClientEvent\" connections from the LocalPlayer's \"GrabRemote\".")
+            for _, Connection:Connection in pairs(getconnections(GrabRemote.OnClientEvent)) do 
+                Connection:Disable()
+            end
+        end
+    end)]]
 end
 
 local OldNameCall = nil
 local OldIndex = nil
+
 if _G["AlreadyActive"] == nil then 
 	_G["AlreadyActive"] = true
 
@@ -1237,9 +1437,9 @@ end
 warn(
     ([[ 
         [DISCORD]: @_x4yz
-        [INFO # END OF SCRIPT]: script successfully executed!
+        [INFO # END OF SCRIPT]: Script successfully executed!
             [INFO # DETAILS]: Took %s seconds to run.
-            [INFO # Music Bind Info]: {%s}
+            [INFO # MUSIC INFO]: {%s}
         
     ]]):format(
         tostring(tick() - OldTick),
