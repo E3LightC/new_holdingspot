@@ -291,7 +291,7 @@ local _TimeSinceLastBeat = 0
     - Default behavior ensures safe and reliable operation within a reasonable time interval range.
 ]=]
 local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:number?):(thread)
-    if typeof(RemoteEventToUse) == "Instance" or not RemoteEventToUse:IsA("RemoteEvent") then 
+    if typeof(RemoteEventToUse) ~= "Instance" or not RemoteEventToUse:IsA("RemoteEvent") then 
         warn("[FAIL # SetupFakeAccuracyBeat]: \"RemoteEventToUse\" is not an Instance, nor a RemoteEvent.")
 
         return coroutine.create(function() end)
