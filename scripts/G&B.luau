@@ -899,7 +899,6 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
         else
             if HammerCanWarn then
                 HammerCanWarn = false
-                print(Backpack, Hammer)
                 warn("[FAIL # BuildingBindFunc]: Failed to find a hammer to use.")
 
                 task.wait(HammerWarnDelay)
