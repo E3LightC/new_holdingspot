@@ -33,8 +33,128 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local UserInputService = game:GetService("UserInputService")
 
+--[=[
+    Description:
+    Waits for a child of a specific class type (`ClassName`) to appear under the given parent (`Parent`) instance. The function continuously checks for the child and optionally accepts a timeout value to limit the wait duration. If no valid child is found, it returns `nil`. Provides detailed logging for invalid input and early termination scenarios.
+
+    Parameters:
+    - `Parent: Instance`: The parent instance under which the child is expected to exist.
+    - `ClassName: string`: The class type of the child instance to wait for.
+    - `TimeOut: number?` (optional): The maximum number of seconds to wait for the child to appear. Defaults to indefinite waiting if not provided.
+
+    Returns:
+    - `Instance | nil`: The first child instance of the specified class type, or `nil` if not found within the timeout period or if inputs are invalid.
+
+    Features:
+    - **Flexible Timeout**: Allows indefinite or constrained waiting based on the provided `TimeOut`.
+    - **Dynamic Validation**:
+      - Ensures that `Parent` is a valid instance and `ClassName` is a string.
+      - Handles cases where the parent instance is destroyed or invalid during the wait.
+    - **Logging and Debugging**:
+      - Logs errors for invalid parameters.
+      - Provides informational messages if the wait is terminated early (e.g., parent instance invalidated or timeout reached).
+
+    Notes:
+    - Uses `FindFirstChildWhichIsA` for efficient child type detection.
+    - Can operate without a timeout for cases requiring indefinite waiting.
+    - Ensures compatibility with dynamically changing instance hierarchies.
+
+    Example Usage:
+    ```lua
+    local Parent = workspace
+    local ClassName = "Model"
+    local TimeOut = 5
+
+    local FoundChild = WaitForChildWhichIsA(Parent, ClassName, TimeOut)
+    if FoundChild then
+        print("Found child of type", ClassName)
+    else
+        print("No child of type", ClassName, "found within the timeout.")
+    end
+    ```
+
+    Edge Cases:
+    - Logs a warning and returns `nil` if `Parent` is not an instance or `ClassName` is not a string.
+    - Terminates early and logs information if the parent is invalidated during the wait.
+    - Honors the timeout if provided, even if the parent instance remains valid.
+
+]=]
+local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:number?):(Instance | nil)
+    if typeof(Parent) == "Instance" and type(ClassName) == "string" then
+        local InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
+        if InstanceToReturn then
+            return InstanceToReturn
+        end
+
+        local UseTimeOut = (type(TimeOut) == "number")
+        local EndedEarly: boolean = false
+        local TimeOutWasReached:boolean = false
+
+        if not UseTimeOut then
+            task.wait()
+
+            repeat
+                if not Parent or not Parent.Parent then
+                    EndedEarly = true
+                    break
+                end
+
+                InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
+            until ((typeof(InstanceToReturn) == "Instance") or EndedEarly or not Parent or not Parent.Parent)
+        else
+            local AbsTimeOut:number = math.abs(TimeOut or 1)
+            local StartTime:number = os.clock()
+
+            repeat
+                task.wait()
+
+                if ((os.clock() - StartTime) >= AbsTimeOut) then
+                    TimeOutWasReached = true
+                    EndedEarly = true
+                    break
+                end
+                if not Parent or not Parent.Parent then
+                    EndedEarly = true
+                    break
+                end
+
+                InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
+            until ((typeof(InstanceToReturn) == "Instance") or EndedEarly or (os.clock() - StartTime) >= AbsTimeOut)
+        end
+
+        if EndedEarly then
+            local StringToOutput:string = ("[INFO # WaitForChildWhichIsA]: Loop was ended early due to %s")
+            
+            if UseTimeOut then
+                if TimeOutWasReached then
+                    StringToOutput = StringToOutput:format("the time out being reached.")
+                elseif not TimeOutWasReached then
+                    StringToOutput = StringToOutput:format("the \".Parent\" value of the \"Parent\" parameter being invalid.")
+                end
+            else
+                StringToOutput = StringToOutput:format("the \".Parent\" value of the \"Parent\" parameter being invalid.")
+            end
+            
+            print(StringToOutput)
+        end
+
+        return InstanceToReturn
+    else
+        if typeof(Parent) ~= "Instance" then
+            warn("[FAIL # WaitForChildWhichIsA]: \"Parent\" is not an Instance.")
+            return nil
+        end
+        if type(ClassName) ~= "string" then
+            warn("[FAIL # WaitForChildWhichIsA]: \"ClassName\" is not a string.")
+            return nil
+        end
+    end
+
+    return nil
+end
+
 local LocalPlayer:Player = Players.LocalPlayer
-local Backpack:Backpack = LocalPlayer.Backpack
+local Backpack:Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
 
 local Remotes = (ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:WaitForChild("Remotes", math.huge))::Folder
 local AFKSignal = (Remotes:FindFirstChild("OnAFKSignalReceived") or Remotes:WaitForChild("OnAFKSignalReceived", math.huge))::RemoteEvent
@@ -408,9 +528,9 @@ end
 
 --[=[
     Description:
-    This function retrieves agents within the "Zombies" and "Bots" folders that are located within a specified range of 
+    This function retrieves agents within the "Zombies" and "Bots" folders located within a specified range of 
     a given position or the player's character. Agents whose "Type" attribute matches an entry in the `AgentTypeList` 
-    table with a truthy value are excluded from the results. The function calculates distances in a 2D plane (ignoring Y-axis differences).
+    table with a truthy value is excluded from the results. The function calculates distances in a 2D plane (ignoring Y-axis differences).
 
     Parameters:
     - `Position` (Vector3 | boolean): Specifies the center point for the search. If a Vector3 is provided, it is used as the position. 
@@ -422,7 +542,7 @@ end
     - `{[number]: any}`: A list of agents (models) within the specified range. Returns an empty table if no valid agents are found.
 
     Behavior:
-    - Validates input parameters. If `Range` is invalid or zero, assigns a default value of 4.
+    - Validates the input parameter 'Range'. If it is invalid or set to zero, the function assigns a default value of 4 to ensure proper functionality.
     - If the `Position` parameter is `false`, the function will attempt to use the LocalPlayer's character position. Logs warnings 
       if the character or its HumanoidRootPart/PrimaryPart is missing.
     - Iterates through the "Zombies" and "Bots" folders to find agents. Checks if:
@@ -435,7 +555,7 @@ end
     Notes:
     - Logs warnings for invalid inputs or missing character components.
     - Excludes agents with "Type" attributes marked as truthy in the `AgentTypeList`.
-    - Ensures robust handling for edge cases such as missing agents or new agent types.
+    - Implements robust handling for edge cases, including scenarios with missing agents or the addition of new agent types.
 
     Use Cases:
     - This function is ideal for detecting nearby enemies, NPCs, or objects in a game environment based on proximity.
@@ -645,7 +765,7 @@ end
 
     Behavior:
     - Locates the folder containing the local player's buildings within the `BuildingsFolder`.
-    - Iterates through all descendants of the folder, identifying instances named "BuildingHealth" that are of type `NumberValue`.
+    - Iterates through all descendants of the folder, identifying instances named "BuildingHealth" that is of type `NumberValue`.
     - Compiles all valid "BuildingHealth" instances into a table.
     - Sorts the table in ascending order based on the relative health (`CurrentHealth / MaxHealth`) of each building.
     - Returns the first instance (lowest relative health) from the sorted table.
