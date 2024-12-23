@@ -1545,10 +1545,10 @@ warn(
     ]]):format(
         tostring(tick() - OldTick),
         (function()
-            local ReturnString = "\n                "
+            local ReturnString:string = "\n                "
 
             local MaxIndexes:number = GetMaxIndexOfTable(MusicSelections)
-            local CurrentIndex = 0
+            local CurrentIndex:number = 0
             for i, v in pairs(MusicSelections) do 
                 CurrentIndex += 1
 
