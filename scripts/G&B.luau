@@ -1218,24 +1218,6 @@ if Debug then
                 if TouchInterest then
                     TouchInterest:Destroy()
                 end
-            elseif NewWorkspaceChild.Name == "Thrown" and NewWorkspaceChild:IsA("Model") then
-                NewWorkspaceChild:WaitForChild("Bound"):WaitForChild("TouchInterest"):Destroy()
-                NewWorkspaceChild:Destroy()
-            elseif NewWorkspaceChild.Name == "FirePartTest" then
-                NewWorkspaceChild:WaitForChild("TouchInterest"):Destroy()
-                print(NewWorkspaceChild:GetFullName())
-            elseif NewWorkspaceChild.Name == "Part" and NewWorkspaceChild:GetAttribute("ArchimedesID") == "260ADDE6-B486-415B-B8E2-84C3963351A5" or NewWorkspaceChild:GetAttribute("ArchimedesID") == "FF1F6119-BA61-488B-98BB-A00D06567A35" then
-                NewWorkspaceChild:WaitForChild("TouchInterest"):Destroy()
-                print(NewWorkspaceChild:GetFullName())
-            elseif NewWorkspaceChild.Name == "Part" and NewWorkspaceChild:FindFirstChild("Sound") and NewWorkspaceChild:FindFirstChild("PathfindingModifier") then
-                NewWorkspaceChild:WaitForChild("TouchInterest"):Destroy()
-                print(NewWorkspaceChild:GetFullName())
-            elseif NewWorkspaceChild.Name == "FireHazard" then
-                NewWorkspaceChild:WaitForChild("TouchInterest"):Destroy()
-                print(NewWorkspaceChild:GetFullName())
-            elseif NewWorkspaceChild.Name == "Fire" and type(NewWorkspaceChild:GetAttribute("DoNot")) == "boolean" then
-                NewWorkspaceChild:WaitForChild("TouchInterest"):Destroy()
-                print(NewWorkspaceChild:GetFullName())
             end
         end
     end)
