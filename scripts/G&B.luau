@@ -1539,7 +1539,7 @@ warn(
     ([[ 
         [DISCORD]: @_x4yz
         [INFO # END OF SCRIPT]: Script successfully executed!
-            [INFO # DETAILS]: Took %s seconds to run.
+            [INFO # DETAILS]: Took %s seconds to fully execute.
             [INFO # MUSIC INFO]: {%s}
         
     ]]):format(
