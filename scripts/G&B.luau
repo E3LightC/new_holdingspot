@@ -1,5 +1,6 @@
 --!strict
 --//// Discord: @_x4yz \\\\--
+--// https://www.roblox.com/games/12334109280/UPDATE-Guts-Blackpowder
 
 --//// Features Overview \\\\--
 --// - Press **Q** to shove in an area when using a weapon (if shoving is supported for said weapon). 
