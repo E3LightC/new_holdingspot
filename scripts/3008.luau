@@ -1,4 +1,5 @@
 --// @_x4yz \\--
+--// uses the rayfield ui library, https://docs.sirius.menu/rayfield
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -8,7 +9,7 @@ local LocalPlayer:Player = Players.LocalPlayer
 local Backpack:Backpack = LocalPlayer.Backpack
 
 local Rayfield = loadstring(
-    tostring(game:HttpGet('https://sirius.menu/rayfield'))
+    game:HttpGet('https://sirius.menu/rayfield')
 )()
 
 local MaxAttemptsToPickup = 5
