@@ -1,5 +1,6 @@
 --// @_x4yz
 --// currently just outputs stuff to developer console (f9, /console)
+--// likely outdated
 
 local Map = workspace:FindFirstChild("Map") or workspace:WaitForChild("Map", math.huge)
 local function GetMapObject(Name:string):Instance?
