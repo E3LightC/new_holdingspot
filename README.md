@@ -1,4 +1,5 @@
 * **discord: @_x4yz**
+* **(these scripts are made for pc only, unless they are a GUI or something simple as the Infinite Yield plugin)**
 
 # *holding spot for scripts i've made, or am working on slowly*
 * [Guts & Blackpowder Script](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/G%26B.luau)
