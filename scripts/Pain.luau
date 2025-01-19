@@ -32,8 +32,13 @@ if _G["PositionSpoofer"] then
     _G["PositionSpoofer"] = nil
 end
 
-local function RandomVector(Range1, Range2, Y1, Y2):Vector3
-    local VectorValue = Vector3.new(math.random(Range1, Range2), math.random(Y1, Y2), math.random(Range1, Range2))
+local function RandomVector(X1:number, X2:number, Y1:number, Y2:number, Z1:number, Z2:number):Vector3
+    local VectorValue = Vector3.new(
+        math.random(X1, X2), 
+        math.random(Y1, Y2), 
+        math.random(Z1, Z2)
+    )
+    
     return VectorValue
 end
 
@@ -150,7 +155,7 @@ _G["MainLoop"] = RunService.Heartbeat:Connect(function()
 end)
 
 local OldTypes:{any} = {}
-_G.PositionSpoofer = RunService.Heartbeat:Connect(function()
+_G["PositionSpoofer"] = RunService.Heartbeat:Connect(function()
     if _G["IsToggled"] and type(_G["TargetSelected"]) == "string" and LocalPlayer.Character then
         local Character = LocalPlayer.Character
         local HRP:BasePart = (Character:WaitForChild("HumanoidRootPart")::BasePart)
@@ -170,7 +175,11 @@ _G.PositionSpoofer = RunService.Heartbeat:Connect(function()
         OldTypes[3] = (TargetCharacter:WaitForChild("HumanoidRootPart")::BasePart).CFrame
 
         HRP.AssemblyLinearVelocity = Vector3.new(999999999999999, 999999999999999, 999999999999999)
-        HRP.CFrame = (OldTypes[3] + RandomVector(-14, 15, -6, 6))::CFrame
+        HRP.CFrame = (OldTypes[3] + RandomVector(
+            -14, 15,
+            -6, 6,
+            5, 6
+        ))::CFrame
 
         RunService.RenderStepped:Wait()
  
