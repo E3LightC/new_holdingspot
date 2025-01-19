@@ -9,26 +9,33 @@ local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
+local CFrameHook
 
 if _G["BoxCreator"] then
     _G["BoxCreator"]:Disconnect()
     _G["BoxCreator"] = nil
 end
-
 if _G["Selector"] then
     _G["Selector"]:Disconnect()
     _G["Selector"] = nil
 end
-
+if _G["MainLoop"] then
+    _G["MainLoop"]:Disconnect()
+    _G["MainLoop"] = nil
+end
 if _G["Toggler"] then
     _G["Toggler"]:Disconnect()
     _G["Toggler"] = nil
 end
 _G["IsToggled"] = false
+if _G["PositionSpoofer"] then
+    _G["PositionSpoofer"]:Disconnect()
+    _G["PositionSpoofer"] = nil
+end
 
-if _G["MainLoop"] then
-    _G["MainLoop"]:Disconnect()
-    _G["MainLoop"] = nil
+local function RandomVector(Range1, Range2, Y1, Y2):Vector3
+    local VectorValue = Vector3.new(math.random(Range1, Range2), math.random(Y1, Y2), math.random(Range1, Range2))
+    return VectorValue
 end
 
 local function GetPositionFromPart(Part:BasePart, ApplyPrediction:boolean?):(Vector3)
@@ -71,9 +78,9 @@ local function AttemptToFire(Remote:RemoteFunction, Position:Vector3, PrimaryPar
 end
 
 _G["BoxCreator"] = RunService.RenderStepped:Connect(function()
-    for _, Player in pairs(Players:GetPlayers()) do 
-        if Player and Player.Character and not Player.Character:FindFirstChild("__BoxTarget") then
-            local Character:Model = Player.Character
+    for _, PlayerValue in pairs(Players:GetPlayers()) do 
+        if PlayerValue and (PlayerValue ~= LocalPlayer) and PlayerValue.Character and not PlayerValue.Character:FindFirstChild("__BoxTarget") then
+            local Character:Model = PlayerValue.Character
             local BoxPart:Part = Instance.new("Part")
             BoxPart.Name = "__BoxTarget"
             BoxPart.CanCollide = false
@@ -88,6 +95,8 @@ _G["BoxCreator"] = RunService.RenderStepped:Connect(function()
             Weld.Part1 = (Character.PrimaryPart or Character:WaitForChild("HumanoidRootPart")::BasePart)
             Weld.C0 = CFrame.new(0, 1.5, 0)
             Weld.Parent = BoxPart
+        else
+            continue
         end
     end
 end)
@@ -140,3 +149,53 @@ _G["MainLoop"] = RunService.Heartbeat:Connect(function()
         end
     end
 end)
+
+local OldTypes:{any} = {}
+_G.PositionSpoofer = RunService.Heartbeat:Connect(function()
+    if _G["IsToggled"] and type(_G["TargetSelected"]) == "string" and LocalPlayer.Character then
+        local Character = LocalPlayer.Character
+        local HRP:BasePart = (Character:WaitForChild("HumanoidRootPart")::BasePart)
+
+        local TargetSelected:Player = (Players:FindFirstChild(tostring(_G["TargetSelected"]))::Player) 
+        if not TargetSelected or not TargetSelected.Character then
+            return
+        end
+        local TargetCharacter:Model = TargetSelected.Character
+
+        if (TargetCharacter:WaitForChild("HumanoidRootPart")::BasePart).Position.Y <= -100 then
+            return
+        end
+        
+        OldTypes[1] = HRP.CFrame
+        OldTypes[2] = HRP.AssemblyLinearVelocity
+        OldTypes[3] = (TargetCharacter:WaitForChild("HumanoidRootPart")::BasePart).CFrame
+
+        HRP.AssemblyLinearVelocity = Vector3.new(999999999999999, 999999999999999, 999999999999999)
+        HRP.CFrame = (OldTypes[3] + RandomVector(-14, 15, -6, 6))::CFrame
+
+        RunService.RenderStepped:Wait()
+ 
+        HRP.CFrame = OldTypes[1]
+        HRP.AssemblyLinearVelocity = OldTypes[2]
+    end
+end)
+
+
+if not _G["CFrameHookActive"] then
+    _G["CFrameHookActive"] = true
+    CFrameHook = hookmetamethod(game, "__index", newcclosure(function(Self, Key)
+        if _G["IsToggled"] then
+            if not checkcaller() then
+                if Key == "CFrame" and _G["IsToggled"] and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character:FindFirstChild("Humanoid") and (LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")::Humanoid).Health > 0 then
+                    if Self == LocalPlayer.Character.HumanoidRootPart then
+                        return OldTypes[1] or CFrame.new()
+                    elseif Self == LocalPlayer.Character.Head then
+                        return OldTypes[1] and OldTypes[1] + Vector3.new(0, LocalPlayer.Character.HumanoidRootPart.Size / 2 + 0.5, 0) or CFrame.new()
+                    end
+                end
+            end
+        end
+
+        return CFrameHook(Self, Key)
+    end))
+end
