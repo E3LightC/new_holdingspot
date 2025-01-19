@@ -9,7 +9,6 @@ local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
-local CFrameHook
 
 if _G["BoxCreator"] then
     _G["BoxCreator"]:Disconnect()
@@ -179,23 +178,3 @@ _G.PositionSpoofer = RunService.Heartbeat:Connect(function()
         HRP.AssemblyLinearVelocity = OldTypes[2]
     end
 end)
-
-
-if not _G["CFrameHookActive"] then
-    _G["CFrameHookActive"] = true
-    CFrameHook = hookmetamethod(game, "__index", newcclosure(function(Self, Key)
-        if _G["IsToggled"] then
-            if not checkcaller() then
-                if Key == "CFrame" and _G["IsToggled"] and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character:FindFirstChild("Humanoid") and (LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")::Humanoid).Health > 0 then
-                    if Self == LocalPlayer.Character.HumanoidRootPart then
-                        return OldTypes[1] or CFrame.new()
-                    elseif Self == LocalPlayer.Character.Head then
-                        return OldTypes[1] and OldTypes[1] + Vector3.new(0, LocalPlayer.Character.HumanoidRootPart.Size / 2 + 0.5, 0) or CFrame.new()
-                    end
-                end
-            end
-        end
-
-        return CFrameHook(Self, Key)
-    end))
-end
