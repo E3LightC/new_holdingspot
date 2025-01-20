@@ -1312,6 +1312,7 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                                         
                                         local LogTool = (Character:FindFirstChild("Log") or WaitForChildWhichIsA(Character, "Tool", 1))
                                         if LogTool and typeof(LogTool) == "Instance" then
+                                            task.wait()
                                             LogTool.Parent = Backpack
                                         else
                                             continue
@@ -1330,8 +1331,9 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                                 if Log and Log:IsA("Model") and Log.Name == "Log" and Log:FindFirstChild("Log") and (Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact") then 
                                     ((Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact")::RemoteEvent):FireServer()
                                     
-                                    local LogTool = (Character:FindFirstChild("Log") or WaitForChildWhichIsA(Character, "Tool", 1))
+                                    local LogTool = (Character:FindFirstChild("Log") or WaitForChildWhichIsA(Character, "Tool"))
                                     if LogTool and typeof(LogTool) == "Instance" then
+                                        task.wait()
                                         LogTool.Parent = Backpack
                                     end
 
