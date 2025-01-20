@@ -80,7 +80,7 @@ local UserInputService = game:GetService("UserInputService")
     - Honors the timeout if provided, even if the parent instance remains valid.
 
 ]=]
-local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:number?):(Instance | nil)
+local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:number?):(Instance | nil | any)
     if typeof(Parent) == "Instance" and type(ClassName) == "string" then
         local InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
         if InstanceToReturn then
@@ -92,9 +92,9 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
         local TimeOutWasReached:boolean = false
 
         if not UseTimeOut then
-            task.wait()
-
             repeat
+                task.wait()
+
                 if not Parent or not Parent.Parent then
                     EndedEarly = true
                     break
@@ -1290,6 +1290,7 @@ end)
 _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
     if not Process then 
         if Key.KeyCode == Enum.KeyCode.KeypadOne and LocalPlayer.Character then
+            local Character:Model = LocalPlayer.Character
             local Berezina = Workspace:FindFirstChild("Berezina")
 
             if Berezina then 
@@ -1299,11 +1300,41 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                     local Holdout = Modes:FindFirstChild("Holdout") or Modes:WaitForChild("Holdout", 1)
 
                     if Holdout then 
+                        local EscapeRoute = Holdout:FindFirstChild("EscapeRoute") or Holdout:WaitForChild("EscapeRoute")
+
+                        if EscapeRoute then
+                            local Logs = (EscapeRoute:FindFirstChild("SupplyWagon") and (EscapeRoute:FindFirstChild("SupplyWagon")::Instance):FindFirstChild("Logs") or false)
+
+                            if type(Logs) ~= "boolean" and typeof(Logs) == "Instance" and (#Logs:GetChildren() > 0) then
+                                for _, Log in pairs(Logs:GetChildren()) do 
+                                    if Log and Log:IsA("Model") and Log.Name == "Model" and Log:FindFirstChild("Handle") and (Log:FindFirstChild("Handle")::MeshPart):FindFirstChild("Interact") then 
+                                        ((Log:FindFirstChild("Handle")::MeshPart):FindFirstChild("Interact")::RemoteEvent):FireServer()
+                                        
+                                        local LogTool = (Character:FindFirstChild("Log") or WaitForChildWhichIsA(Character, "Tool", 1))
+                                        if LogTool and typeof(LogTool) == "Instance" then
+                                            LogTool.Parent = Backpack
+                                        end
+
+                                        task.wait()
+                                        --return
+                                    else
+                                        continue
+                                    end
+                                end
+                            end
+                        end
                         if Holdout:FindFirstChild("Log") then
                             for _, Log in pairs(Holdout:GetChildren()) do 
                                 if Log and Log:IsA("Model") and Log.Name == "Log" and Log:FindFirstChild("Log") and (Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact") then 
                                     ((Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact")::RemoteEvent):FireServer()
-                                    return
+                                    
+                                    local LogTool = (Character:FindFirstChild("Log") or WaitForChildWhichIsA(Character, "Tool", 1))
+                                    if LogTool and typeof(LogTool) == "Instance" then
+                                        LogTool.Parent = Backpack
+                                    end
+
+                                    task.wait()
+                                    --return
                                 else
                                     continue
                                 end
@@ -1313,6 +1344,8 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                             
                             return
                         end
+
+                        return
                     end
                 end
 
