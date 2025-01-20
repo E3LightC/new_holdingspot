@@ -1313,9 +1313,11 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                                         local LogTool = (Character:FindFirstChild("Log") or WaitForChildWhichIsA(Character, "Tool", 1))
                                         if LogTool and typeof(LogTool) == "Instance" then
                                             LogTool.Parent = Backpack
+                                        else
+                                            continue
                                         end
 
-                                        task.wait()
+                                        --task.wait()
                                         --return
                                     else
                                         continue
@@ -1333,7 +1335,7 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                                         LogTool.Parent = Backpack
                                     end
 
-                                    task.wait()
+                                    --task.wait()
                                     --return
                                 else
                                     continue
