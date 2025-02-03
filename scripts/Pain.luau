@@ -3,6 +3,9 @@
 --// https://www.roblox.com/games/6230718877/Pain
 --// not done
 
+_G["TargetSelected"] = "creeiity"
+_G["IsToggled"] = true
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -26,7 +29,6 @@ if _G["Toggler"] then
     _G["Toggler"]:Disconnect()
     _G["Toggler"] = nil
 end
-_G["IsToggled"] = false
 if _G["PositionSpoofer"] then
     _G["PositionSpoofer"]:Disconnect()
     _G["PositionSpoofer"] = nil
