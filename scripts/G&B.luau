@@ -245,6 +245,10 @@ if _G["ShoveBind"] ~= nil then
 	_G["ShoveBind"]:Disconnect()
 	_G["ShoveBind"] = nil
 end
+if _G["ShoveEquipper"] ~= nil then
+    _G["ShoveEquipper"]:Disconnect()
+    _G["ShoveEquipper"] = nil
+end
 
 if _G["MurderBind"] ~= nil then 
 	_G["MurderBind"]:Disconnect()
