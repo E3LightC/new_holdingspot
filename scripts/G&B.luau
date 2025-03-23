@@ -14,8 +14,9 @@
 
 --//// Key Bindings \\\\--
 --// **Q**: Shove (Axe only).
---// **Z** / **X**: Clear zombies (Murder Bind).
---// **Keypad 1**: Grab Log Bind (only available in Berezina).
+--// **Z** / **X**: Kill zombie within aura.
+--// **G**: Equips tool in your backpack that you can shove with.
+--// **Keypad 1**: Grab Log Bind (only available on Berezina).
 --// **Keypad 2**: Toggle auto-repair.
 --// **Keypad 3**: Toggle building fetch type.
 --// **Keypad 4**: Toggle "RubiksCube."
@@ -1261,7 +1262,7 @@ end)
 
 _G["ShoveEquipper"] = UserInputService.InputBegan:Connect(function(Key, Process)
     if not Process then
-        if Key.KeyCode == Enum.KeyCode.KeypadFive and LocalPlayer.Character then
+        if Key.KeyCode == Enum.KeyCode.G and LocalPlayer.Character then
             local Character:Model = LocalPlayer.Character
             Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
 
