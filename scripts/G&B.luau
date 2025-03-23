@@ -1733,9 +1733,9 @@ warn(
 
         [INFO]: Script successfully executed!
             [INFO # DETAILS]: Took %s seconds to execute fully.
-            [INFO # DETAILS]: Usage of the global "vector" library is %s.
-            [INFO # DETAILS]: "Debug" variable is %s.
-            [INFO # DETAILS]: "DebugPrints" variable is %s.
+               [INFO # DETAILS]: Usage of the global "vector" library is %s.
+               [INFO # DETAILS]: "Debug" variable is %s.
+               [INFO # DETAILS]: "DebugPrints" variable is %s.
 
             [INFO # MUSIC INFO]: {%s}
         
