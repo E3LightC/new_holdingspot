@@ -34,6 +34,25 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local UserInputService = game:GetService("UserInputService")
 
+type vector = { 
+    create: (x:number, y:number, z:number) -> Vector3;
+    magnitude: (vec:Vector3) -> number;
+    normalize: (vec:Vector3) -> Vector3;
+    cross: (vec1:Vector3, vec2:Vector3) -> Vector3;
+    dot: (vec1:Vector3, vec2:Vector3) -> number;
+    angle: (vec1:Vector3, vec2:Vector3, axis:Vector3) -> number;
+    floor: (vec:Vector3) -> Vector3;
+    ceil: (vec:Vector3) -> Vector3;
+    abs: (vec:Vector3) -> Vector3;
+    sign: (vec:Vector3) -> Vector3;
+    clamp: (vec:Vector3, min:Vector3, max:Vector3) -> Vector3;
+    max: (any:Vector3) -> Vector3;
+    min: (any:Vector3) -> Vector3;
+
+    zero: (Vector3);
+    one: (Vector3);
+}
+
 --[=[
     Description:
     Waits for a child of a specific class type (`ClassName`) to appear under the given parent (`Parent`) instance. The function continuously checks for the child and optionally accepts a timeout value to limit the wait duration. If no valid child is found, it returns `nil`. Provides detailed logging for invalid input and early termination scenarios.
@@ -166,6 +185,9 @@ local BuildingsFolder = (Workspace:FindFirstChild("Buildings") or Workspace:Wait
 local Camera = (Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera"))::Camera
 
 local Debug = true
+local DebugPrints = false
+local UseVectorLibrary = true
+local vector:vector = (getfenv().vector)
 
 local RubiksCube = false
 
@@ -174,15 +196,15 @@ local BuildingBindEnabled = false
 local HammerCanWarn = true
 local BuildingFetchType = "Closest"
 
-local HammerWarnDelay = 0.5
-local NewZombieHeadWaitTime = 0.25
+local HammerWarnDelay = 1
+local ZombieESPWait = 0.25
 local WaitTimeUntilRepair = 0.125
 local DefaultBeatWaitTime = 0.15
 
 local ShoveRange = 15 --// default range variable used for shoving.
 local MurderRange = 11 --// Used as a backup if can't find weapon range.
 
-local HeadSizeToUse = Vector3.new(6, 9, 4.5)
+local HeadSizeToUse:Vector3 = (UseVectorLibrary and vector.create(6, 9, 4.5)) or Vector3.new(6, 9, 4.5)
 local HeadTransparency = 0.6
 
 --// true = Ignore Agent
@@ -279,100 +301,8 @@ end
 
 task.wait(0.2) --// Allow Luau's garbage collector to cleanup.
 
-_G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Head:Instance)
-    task.spawn(function()
-        if Head and not Head:IsA("Highlight") and Head:IsA("BasePart") and Head.Name == "Head" then 
-            task.wait(NewZombieHeadWaitTime)
-
-            local Character = Head and Head.Parent or nil
-            if Character then 
-                local IsIgniter = false
-                local IsRunner = false
-                local IsSapper = false
-                local IsBomber = false
-
-                if Head:FindFirstChild("Eat") then 
-                    IsRunner = true
-                end
-                if Character:FindFirstChild("Axe") then 
-                    IsSapper = true
-                end
-                if Character:FindFirstChild("Barrel") then 
-                    IsBomber = true
-                end
-
-                for i, v in pairs(Character:GetChildren()) do 
-                    if typeof(v) == "Instance" and v:IsA("Model") and v.Name == "Head" then 
-                        IsIgniter = true
-                        break
-                    end
-
-                    task.wait()
-                end
-
-                Head.Massless = true
-                Head.Size = HeadSizeToUse or Vector3.new(3, 3, 3)
-                Head.Transparency = HeadTransparency or 0.6
-                Head.CastShadow = false
-                if IsIgniter then
-                    --// Igniter
-                    local NewHighlight = Instance.new("Highlight")
-                    Character:AddTag("Highlighted")
-                    NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                    NewHighlight.OutlineColor = Color3.fromRGB(255, 255, 0)
-                    NewHighlight.FillColor = Color3.fromRGB(255, 255, 0)
-                    NewHighlight.Parent = Character
-                    NewHighlight.FillTransparency = 0.5
-                    NewHighlight.Enabled = true
-                    NewHighlight.Adornee = Character
-                elseif IsRunner then
-                    --// Runner
-                    local NewHighlight = Instance.new("Highlight")
-                    Character:AddTag("Highlighted")
-                    NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                    NewHighlight.OutlineColor = Color3.fromRGB(0, 255, 255)
-                    NewHighlight.FillColor = Color3.fromRGB(0, 255, 255)
-                    NewHighlight.Parent = Character
-                    NewHighlight.FillTransparency = 0.5
-                    NewHighlight.Enabled = true
-                    NewHighlight.Adornee = Character
-                elseif IsSapper then 
-                    --// Sapper
-                    local NewHighlight = Instance.new("Highlight")
-                    Character:AddTag("Highlighted")
-                    NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                    NewHighlight.OutlineColor = Color3.fromRGB(255, 0, 255)
-                    NewHighlight.FillColor = Color3.fromRGB(255, 0, 255)
-                    NewHighlight.Parent = Character
-                    NewHighlight.FillTransparency = 0.5
-                    NewHighlight.Enabled = true
-                    NewHighlight.Adornee = Character
-                elseif IsBomber then 
-                    --// Bomber
-                    local NewHighlight = Instance.new("Highlight")
-                    Character:AddTag("Highlighted")
-                    NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                    NewHighlight.OutlineColor = Color3.fromRGB(255, 123, 0)
-                    NewHighlight.FillColor = Color3.fromRGB(255, 123, 0)
-                    NewHighlight.Parent = Character
-                    NewHighlight.FillTransparency = 0.5
-                    NewHighlight.Enabled = true
-                    NewHighlight.Adornee = Character
-                end
-
-                --//for _, ZombPart:any in pairs(Character:GetChildren()) do 
-                --//    if typeof(ZombPart) == "Instance" and ZombPart:IsA("BasePart") and ZombPart.Name ~= "Head" --[[and ZombPart.Name ~= "HumanoidRootPart"]] then 
-                --//        ZombPart.CanQuery = false
-                --//        ZombPart = nil
-                --//    end
-                --//end
-
-                return
-            end
-        end
-    end)
-end)
-
+local LastBeatTick = 0
+local _TimeSinceLastBeat = 0
 _G["BuildHighlight"] = Instance.new("Highlight")
 _G["BuildHighlight"].DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 _G["BuildHighlight"].OutlineColor = Color3.fromRGB(255, 204, 0)
@@ -381,35 +311,167 @@ _G["BuildHighlight"].Parent = ReplicatedFirst
 _G["BuildHighlight"].FillTransparency = 0.5
 _G["BuildHighlight"].Enabled = true
 
-local LastBeatTick = 0
-local _TimeSinceLastBeat = 0
+--[=[
+    Description:
+    Applies an ESP (Extra Sensory Perception) highlight effect to a given character model based on its classification.
+    The highlight color varies depending on the type of character, allowing for easy visual identification.
+
+    Parameters:
+    - `Character: Model`: The character model to which the ESP effect will be applied.
+    - `IsIgniter: boolean`: If true, applies a yellow highlight.
+    - `IsRunner: boolean`: If true, applies a cyan highlight.
+    - `IsSapper: boolean`: If true, applies a magenta highlight.
+    - `IsBomber: boolean`: If true, applies an orange highlight.
+    - `IsHeadless: boolean`: If true, applies a purple highlight.
+
+    Returns:
+    - `nil`: The function does not return any values but modifies the character model directly.
+
+    Features:
+    - Ensures `Character` is a valid `Model` before applying effects.
+    - Validates all boolean parameters to prevent unexpected behavior.
+    - Assigns a unique highlight color for each character classification.
+    - Uses `Highlight` instances with `AlwaysOnTop` mode for visibility.
+    - Adds a "Highlighted_" tag to prevent duplicate highlights on the same character.
+
+    Notes:
+    - The function prevents multiple highlight applications by checking for an existing `"Highlighted_"` tag.
+    - If multiple classifications are `true`, only the first one in the order of evaluation is applied.
+    - The highlight effect is temporary and may need to be reapplied if removed.
+
+    Example Usage:
+    ```lua
+    local characterModel = workspace:FindFirstChild("Enemy")
+    if characterModel then
+        AddEsp(characterModel, true, false, false, false, false) -- Applies Igniter (yellow) highlight
+    end
+    ```
+
+    Edge Cases:
+    - If `Character` is not a `Model`, the function exits without applying any effects.
+    - If all boolean flags are `false`, no highlight is added.
+    - If the character already has the `"Highlighted_"` tag, no additional highlights are applied.
+]=]
+local function AddEsp(Character:Model, IsIgniter:boolean, IsRunner:boolean, IsSapper:boolean, IsBomber:boolean, IsHeadless:boolean)
+    if (typeof(Character) ~= "Instance") or not Character:IsA("Model") then
+        return
+    end
+    if (type(IsIgniter) ~= "boolean") then
+        return
+    end
+    if (type(IsRunner) ~= "boolean") then
+        return
+    end
+    if (type(IsSapper) ~= "boolean") then
+        return
+    end
+    if (type(IsBomber) ~= "boolean") then
+        return
+    end
+    if (type(IsHeadless) ~= "boolean") then
+        return
+    end
+    if Character:HasTag("Highlighted_") then
+        return
+    end
+    
+    local NewHighlight:any = nil
+    if IsIgniter then
+        --// Igniter
+        NewHighlight = Instance.new("Highlight")
+        Character:AddTag("Highlighted_")
+        NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        NewHighlight.OutlineColor = Color3.fromRGB(255, 255, 0)
+        NewHighlight.FillColor = Color3.fromRGB(255, 255, 0)
+        NewHighlight.Parent = Character
+        NewHighlight.FillTransparency = 0.5
+        NewHighlight.Enabled = true
+        NewHighlight.Adornee = Character
+    elseif IsRunner then
+        --// Runner
+        NewHighlight = Instance.new("Highlight")
+        Character:AddTag("Highlighted_")
+        NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        NewHighlight.OutlineColor = Color3.fromRGB(0, 255, 255)
+        NewHighlight.FillColor = Color3.fromRGB(0, 255, 255)
+        NewHighlight.Parent = Character
+        NewHighlight.FillTransparency = 0.5
+        NewHighlight.Enabled = true
+        NewHighlight.Adornee = Character
+    elseif IsSapper then 
+        --// Sapper
+        NewHighlight = Instance.new("Highlight")
+        Character:AddTag("Highlighted_")
+        NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        NewHighlight.OutlineColor = Color3.fromRGB(255, 0, 255)
+        NewHighlight.FillColor = Color3.fromRGB(255, 0, 255)
+        NewHighlight.Parent = Character
+        NewHighlight.FillTransparency = 0.5
+        NewHighlight.Enabled = true
+        NewHighlight.Adornee = Character
+    elseif IsBomber then 
+        --// Bomber
+        NewHighlight = Instance.new("Highlight")
+        Character:AddTag("Highlighted_")
+        NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        NewHighlight.OutlineColor = Color3.fromRGB(255, 123, 0)
+        NewHighlight.FillColor = Color3.fromRGB(255, 123, 0)
+        NewHighlight.Parent = Character
+        NewHighlight.FillTransparency = 0.5
+        NewHighlight.Enabled = true
+        NewHighlight.Adornee = Character
+    elseif IsHeadless then 
+        --// Bomber
+        NewHighlight = Instance.new("Highlight")
+        Character:AddTag("Highlighted_")
+        NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        NewHighlight.OutlineColor = Color3.fromRGB(100, 0, 167)
+        NewHighlight.FillColor = Color3.fromRGB(100, 0, 167)
+        NewHighlight.Parent = Character
+        NewHighlight.FillTransparency = 0.5
+        NewHighlight.Enabled = true
+        NewHighlight.Adornee = Character
+    end
+
+    NewHighlight = nil
+end
 
 --[=[
     Description:
-    This function initializes a coroutine thread to simulate periodic accuracy updates for an instrument. 
-    It utilizes a provided `RemoteEvent` to send accuracy-related data to the server at specified intervals.
+    Creates and starts a coroutine that continuously fires a specified `RemoteEvent` to simulate an "accuracy beat."
+    This function is typically used to send periodic accuracy updates to the server.
 
     Parameters:
-    - `RemoteEventToUse` (Instance<RemoteEvent>): The RemoteEvent instance to send accuracy-related updates.
-    - `BeatWaitTime` (number?): Optional. The time interval (in seconds) between successive accuracy updates. 
-      If not provided, invalid, or out of the allowed range (0 < `BeatWaitTime` < 10), it defaults to 0.15 seconds.
+    - `RemoteEventToUse: RemoteEvent`: The remote event instance that will be fired.
+    - `BeatWaitTime: number?` (optional): The delay (in seconds) between each accuracy update. 
+      - If `BeatWaitTime` is invalid, the function assigns a default value.
+      - If `BeatWaitTime` is not provided, it falls back to `DefaultBeatWaitTime`.
+      - If `BeatWaitTime` is less than or equal to `0` or greater than `5`, it defaults to `0.15` seconds.
 
     Returns:
-    - thread: A coroutine thread that repeatedly dispatches "UpdateAccuracy" events with a fixed accuracy value of 100.
-      If `RemoteEventToUse` is invalid, the function returns an empty coroutine thread.
+    - `thread`: The coroutine responsible for continuously firing the remote event.
 
-    Behavior:
-    - Validates `RemoteEventToUse` to ensure it is a valid `RemoteEvent`. If not, a warning will be logged and an empty thread is returned.
-    - Verifies `BeatWaitTime`:
-        - If not provided or invalid, defaults to `DefaultBeatWaitTime`.
-        - If the provided value is outside the range (0, 5), it defaults to 0.15 seconds.
-    - The coroutine repeatedly fires "UpdateAccuracy" events to the server at the specified interval (`BeatWaitTime`).
-    - In debug mode, logs the time elapsed between beats (`_TimeSinceLastBeat`) for diagnostic purposes.
+    Features:
+    - Validates that `RemoteEventToUse` is a proper `RemoteEvent` instance before proceeding.
+    - Ensures `BeatWaitTime` is within an acceptable range to prevent unreasonable wait times.
+    - Uses coroutines to maintain efficiency and avoid blocking the main thread.
+    - Implements debug logging to track time since the last beat when debugging is enabled.
+    - Fires the remote event with `"UpdateAccuracy"` and a fixed value of `100` at each interval.
 
     Notes:
-    - Useful for simulating or testing accuracy update behavior for instruments.
-    - The coroutine runs indefinitely until explicitly stopped.
-    - Default behavior ensures safe and reliable operation within a reasonable time interval range.
+    - If `RemoteEventToUse` is invalid, the function returns an empty coroutine.
+    - The coroutine runs indefinitely unless manually stopped.
+    - Debug mode tracks the time since the last accuracy update and logs it if `DebugPrints` is enabled.
+
+    Example Usage:
+    ```lua
+    local fakeAccuracyThread = SetupFakeAccuracyBeat(game.ReplicatedStorage.AccuracyEvent, 0.2)
+    ```
+
+    Edge Cases:
+    - If `RemoteEventToUse` is not a valid `RemoteEvent`, the function warns and returns an empty coroutine.
+    - If `BeatWaitTime` is out of range, it defaults to `0.15` to ensure smooth operation.
+    - Ensures that if `LastBeatTick` is `0`, it initializes before calculating the time since the last beat.
 ]=]
 local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:number?):(thread)
     if typeof(RemoteEventToUse) ~= "Instance" or not RemoteEventToUse:IsA("RemoteEvent") then 
@@ -431,8 +493,8 @@ local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:
             if Debug then
                 if LastBeatTick ~= 0 then 
                     _TimeSinceLastBeat = (tick() - LastBeatTick)
-                    if Debug then
-                        --//warn("[DEBUG # Fake Accuracy Beat Thread]: _TimeSinceLastBeat = "..tostring(_TimeSinceLastBeat)..".")
+                    if DebugPrints then
+                        print(`[DEBUG # Fake Accuracy Beat Thread]: _TimeSinceLastBeat = {tostring(_TimeSinceLastBeat)}.`)
                     end
                     LastBeatTick = tick()
                 elseif LastBeatTick == 0 then 
@@ -606,9 +668,17 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
 				local IgnoreVal = AgentTypeList[ZombieType]
 
 				if HRP and type(IgnoreVal) == "boolean" and not IgnoreVal then 
-					local Distance:number = (not UsePosition)
-                        and (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-                        or (Vector3.new(CharHRP.X, 0, CharHRP.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+					local Distance:number = 0
+                    if UseVectorLibrary then
+                        Distance = (not UsePosition)
+                            and (vector.create(CharHRP.Position.X, 0, CharHRP.Position.Z) - vector.create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+                            or (vector.create(CharHRP.X, 0, CharHRP.Z) - vector.create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+                    else
+                        Distance = (not UsePosition)
+                            and (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+                            or (Vector3.new(CharHRP.X, 0, CharHRP.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+                    end
+
 
 					if Distance <= Range then 
 						table.insert(AgentsInRange, Agent)
@@ -632,9 +702,17 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
 				local IgnoreVal = AgentTypeList[BotType]
 
 				if HRP and type(IgnoreVal) == "boolean" and not IgnoreVal then 
-					local Distance = (not UsePosition)
-                        and (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-                        or (Vector3.new(CharHRP.X, 0, CharHRP.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+					local Distance:number = 0
+
+                    if UseVectorLibrary then
+                        Distance = (not UsePosition)
+                            and (vector.create(CharHRP.Position.X, 0, CharHRP.Position.Z) - vector.create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+                            or (vector.create(CharHRP.X, 0, CharHRP.Z) - vector.create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+                    else
+                        Distance = (not UsePosition)
+                            and (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+                            or (Vector3.new(CharHRP.X, 0, CharHRP.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+                    end
 
 					if Distance <= Range then 
 						table.insert(AgentsInRange, Agent)
@@ -886,6 +964,10 @@ local function GetClosestBuilding():any
 
 	if #Bounds > 0 then 
 		table.sort(Bounds, function(Arg1, Arg2)
+            if UseVectorLibrary then
+                return (Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or vector.create(0, 0, 0)) < (Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or vector.create(0, 0, 0))
+            end
+
             return (Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or Vector3.new()) < (Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or Vector3.new())
 		end)
 
@@ -970,6 +1052,55 @@ local function GetMaxIndexOfTable(Table:{[any]: any})
 	return 0
 end
 
+_G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Instance)
+    if Orig and not Orig:IsA("Highlight") and Orig:IsA("ObjectValue") and Orig.Name == "Orig" then 
+        repeat
+            task.wait()
+        until Orig.Value and Orig.Parent
+        task.wait(ZombieESPWait)
+
+        local Character:Model = (Orig.Parent::Model)
+        local Agent:Model = (Orig.Value::Model)
+        local Type:string = (Agent and tostring(Agent:GetAttribute("Type"))) or ""
+
+        local IsIgniter:boolean = (Type == "Igniter")
+        local IsRunner:boolean = (Type == "Fast")
+        local IsSapper:boolean = (Type == "Sapper")
+        local IsBomber:boolean = (Type == "Barrel")
+        local IsHeadless:boolean = (Type == "Headless")
+
+        task.spawn(pcall, AddEsp,
+            Character,
+            IsIgniter,
+            IsRunner,
+            IsSapper,
+            IsBomber,
+            IsHeadless
+        )
+
+        local Head:Instance?
+
+        if not IsIgniter then
+            Head = (Character:FindFirstChild("Head") or Character:WaitForChild("Head", 3))
+        else
+            for _, Part:any in pairs(Character:GetChildren()) do 
+                if Part and Part:IsA("Part") and (Part.Name == "Head") then
+                    Head = Part
+                    Part = nil
+                    break
+                end
+            end
+        end
+
+        if Head then
+            Head.Massless = true
+            Head.Size = HeadSizeToUse or (UseVectorLibrary and vector.create(3, 3, 3)) or Vector3.new(3, 3, 3)
+            Head.Transparency = HeadTransparency
+            Head = nil
+        end
+    end
+end)
+
 _G["BuildingBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if Key.KeyCode == Enum.KeyCode.KeypadTwo then 
@@ -986,6 +1117,8 @@ end)
 _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 	if BuildingBindEnabled and LocalPlayer.Character then 
 		local Character = LocalPlayer.Character
+        Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
+
 		local Hammer = Backpack:FindFirstChild("Hammer") 
 			or Character:FindFirstChildWhichIsA("Tool")
 			or Character:FindFirstChildWhichIsA("HopperBin")
@@ -1122,6 +1255,24 @@ _G["RubiksCubeBind"] = UserInputService.InputBegan:Connect(function(Key, Process
     end
 end)
 
+_G["ShoveEquipper"] = UserInputService.InputBegan:Connect(function(Key, Process)
+    if not Process then
+        if Key.KeyCode == Enum.KeyCode.KeypadFive and LocalPlayer.Character then
+            local Character:Model = LocalPlayer.Character
+            Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
+
+			local Weapon:Tool = (Backpack:FindFirstChild("Axe") 
+                or Backpack:FindFirstChild("Carbine")
+                or Backpack:FindFirstChild("Navy Pistol")
+                or Backpack:FindFirstChild("Pickaxe"))::Tool
+
+            if Weapon then
+                Weapon.Parent = Character
+            end
+        end
+    end
+end)
+
 _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if Key.KeyCode == Enum.KeyCode.Q then 
@@ -1149,14 +1300,15 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 					return
 				end
 
-				local Weapon = Character:FindFirstChild("Axe") 
+                Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
+				local Weapon:Tool = (Character:FindFirstChild("Axe") 
                     or Character:FindFirstChild("Carbine") 
                     or Character:FindFirstChild("Navy Pistol")
                     or Character:FindFirstChild("Pickaxe")
                     or Backpack:FindFirstChild("Axe") 
                     or Backpack:FindFirstChild("Carbine")
                     or Backpack:FindFirstChild("Navy Pistol")
-                    or Backpack:FindFirstChild("Pickaxe")
+                    or Backpack:FindFirstChild("Pickaxe"))::Tool
 
 				if Weapon and typeof(Weapon) == "Instance" and Weapon.Parent then
 					local Remote = Weapon:FindFirstChildWhichIsA("RemoteEvent")
@@ -1243,7 +1395,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 										[2] = Agent;
 										[3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
 										[4] = true;
-                                        [5] = Vector3.new(0, 4096, 0);
+                                        [5] = (UseVectorLibrary and vector.create(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096))) or Vector3.new(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096));
                                         [6] = "HumanoidRootPart";
                                         [7] = (Agent.PrimaryPart and Agent.PrimaryPart.CFrame.LookVector * 5) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).CFrame.LookVector * 5;
 									}
@@ -1365,7 +1517,9 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 end)
 
 if Debug then
-    print("[INFO # DEBUG]: The \"Debug\" variable is active.")
+    if DebugPrints then
+        print(`[DEBUG # INFO]: Connecting workspace.DescendantAdded script signal for global "FlameTouchRemover".`)
+    end
     _G["FlameTouchRemover"] = Workspace.DescendantAdded:Connect(function(NewWorkspaceChild)
         if NewWorkspaceChild then
             if NewWorkspaceChild.Name == "IgniterFire" and NewWorkspaceChild:IsA("BasePart") then
@@ -1576,12 +1730,20 @@ end
 warn(
     ([[ 
         [DISCORD]: @_x4yz
-        [INFO # END OF SCRIPT]: Script successfully executed!
-            [INFO # DETAILS]: Took %s seconds to fully execute.
+
+        [INFO]: Script successfully executed!
+            [INFO # DETAILS]: Took %s seconds to execute fully.
+            [INFO # DETAILS]: Usage of the global "vector" library is %s.
+            [INFO # DETAILS]: "Debug" variable is %s.
+            [INFO # DETAILS]: "DebugPrints" variable is %s.
+
             [INFO # MUSIC INFO]: {%s}
         
     ]]):format(
         tostring(tick() - OldTick),
+        ((tostring(UseVectorLibrary) == "true") and "enabled" or "disabled"),
+        ((tostring(Debug) == "true") and "enabled" or "disabled"),
+        ((tostring(DebugPrints) == "true") and "enabled" or "disabled"),
         (function()
             local ReturnString:string = "\n                "
 
