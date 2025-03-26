@@ -326,44 +326,47 @@ _G["BuildHighlight"].Enabled = true
 
 --[=[
     Description:
-    Applies an ESP (Extra Sensory Perception) highlight effect to a given character model based on its classification.
-    The highlight color varies depending on the type of character, allowing for easy visual identification.
+    Adds an ESP (Extra Sensory Perception) highlight effect to a given character model, visually marking them based on their type.
+    The function assigns distinct colors for different character roles and optionally changes the color of the head part.
 
     Parameters:
-    - `Character: Model`: The character model to which the ESP effect will be applied.
-    - `IsIgniter: boolean`: If true, applies a yellow highlight.
-    - `IsRunner: boolean`: If true, applies a cyan highlight.
-    - `IsSapper: boolean`: If true, applies a magenta highlight.
-    - `IsBomber: boolean`: If true, applies an orange highlight.
-    - `IsHeadless: boolean`: If true, applies a purple highlight.
+    - `Character: Model`: The character model to be highlighted.
+    - `Head: BasePart?` (optional): The head part of the character, which may be recolored based on the assigned type.
+    - `IsIgniter: boolean`: Whether the character is classified as an "Igniter."
+    - `IsRunner: boolean`: Whether the character is classified as a "Runner."
+    - `IsSapper: boolean`: Whether the character is classified as a "Sapper."
+    - `IsBomber: boolean`: Whether the character is classified as a "Bomber."
+    - `IsHeadless: boolean`: Whether the character is classified as "Headless."
 
     Returns:
-    - `nil`: The function does not return any values but modifies the character model directly.
+    - None (modifies the `Character` model in-place).
 
     Features:
-    - Ensures `Character` is a valid `Model` before applying effects.
-    - Validates all boolean parameters to prevent unexpected behavior.
-    - Assigns a unique highlight color for each character classification.
-    - Uses `Highlight` instances with `AlwaysOnTop` mode for visibility.
-    - Adds a "Highlighted_" tag to prevent duplicate highlights on the same character.
+    - Ensures `Character` is a valid `Model` before proceeding.
+    - Prevents duplicate highlights by checking if the character is already tagged as `"Highlighted_"`.
+    - Uses a predefined `ESPColors` table to assign colors based on the character type.
+    - Dynamically selects the appropriate type from the provided boolean flags.
+    - Assigns a `Highlight` instance to the character model for visual identification.
+    - Optionally updates the color of the `Head` part if provided and valid.
 
     Notes:
-    - The function prevents multiple highlight applications by checking for an existing `"Highlighted_"` tag.
-    - If multiple classifications are `true`, only the first one in the order of evaluation is applied.
-    - The highlight effect is temporary and may need to be reapplied if removed.
+    - If the character is already highlighted, the function exits early.
+    - If multiple boolean flags are `true`, the function prioritizes them in the order: `Igniter > Runner > Sapper > Bomber > Headless`.
+    - The highlight effect is always set to `AlwaysOnTop` to ensure visibility.
+    - `FillTransparency` is set to `0.5` to provide a semi-transparent highlight.
 
     Example Usage:
     ```lua
-    local characterModel = workspace:FindFirstChild("Enemy")
-    if characterModel then
-        AddEsp(characterModel, true, false, false, false, false) -- Applies Igniter (yellow) highlight
-    end
+    local characterModel = game.Workspace.NPC
+    local headPart = characterModel:FindFirstChild("Head")
+
+    AddEsp(characterModel, headPart, false, true, false, false, false) -- Highlights as a Runner
     ```
 
     Edge Cases:
-    - If `Character` is not a `Model`, the function exits without applying any effects.
-    - If all boolean flags are `false`, no highlight is added.
-    - If the character already has the `"Highlighted_"` tag, no additional highlights are applied.
+    - If `Character` is not a valid `Model`, the function exits without modifications.
+    - If `Head` is not a valid `BasePart`, its color remains unchanged.
+    - If none of the boolean parameters are `true`, the function does nothing.
 ]=]
 local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean, IsRunner:boolean, IsSapper:boolean, IsBomber:boolean, IsHeadless:boolean)
     if (typeof(Character) ~= "Instance") or not Character:IsA("Model") then
@@ -393,85 +396,24 @@ local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean, IsRunn
         or (IsRunner and "Runner") 
         or (IsSapper and "Sapper") 
         or (IsBomber and "Bomber")
-        or (IsHeadless or "Headless")
-        
-    warn(Type)
-    local NewHighlight:any = Instance.new("Highlight")
-    Character:AddTag("Highlighted_")
-    NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    NewHighlight.OutlineColor = ESPColors[Type]
-    NewHighlight.FillColor = ESPColors[Type]
-    NewHighlight.Parent = Character
-    NewHighlight.FillTransparency = 0.5
-    NewHighlight.Enabled = true
-    NewHighlight.Adornee = Character
+        or (IsHeadless and "Headless")
+    local NewHighlight:any
 
-    if HeadParameterExist and Head then
-        Head.Color = ESPColors[Type]
-    end
-    --[=[
-    if IsIgniter then
-        --// Igniter
+    if (type(Type) == "string") then
         NewHighlight = Instance.new("Highlight")
         Character:AddTag("Highlighted_")
         NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        NewHighlight.OutlineColor = ESPColors["Igniter"]
-        NewHighlight.FillColor = ESPColors["Igniter"]
+        NewHighlight.OutlineColor = ESPColors[Type]
+        NewHighlight.FillColor = ESPColors[Type]
         NewHighlight.Parent = Character
         NewHighlight.FillTransparency = 0.5
         NewHighlight.Enabled = true
         NewHighlight.Adornee = Character
 
-        if HeadParameterExist then
-            Head.Color = ESPColors["Igniter"]
+        if HeadParameterExist and Head then
+            Head.Color = ESPColors[Type]
         end
-    elseif IsRunner then
-        --// Runner
-        NewHighlight = Instance.new("Highlight")
-        Character:AddTag("Highlighted_")
-        NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        NewHighlight.OutlineColor = Color3.fromRGB(0, 255, 255)
-        NewHighlight.FillColor = Color3.fromRGB(0, 255, 255)
-        NewHighlight.Parent = Character
-        NewHighlight.FillTransparency = 0.5
-        NewHighlight.Enabled = true
-        NewHighlight.Adornee = Character
-    elseif IsSapper then 
-        --// Sapper
-        NewHighlight = Instance.new("Highlight")
-        Character:AddTag("Highlighted_")
-        NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        NewHighlight.OutlineColor = Color3.fromRGB(255, 0, 255)
-        NewHighlight.FillColor = Color3.fromRGB(255, 0, 255)
-        NewHighlight.Parent = Character
-        NewHighlight.FillTransparency = 0.5
-        NewHighlight.Enabled = true
-        NewHighlight.Adornee = Character
-    elseif IsBomber then 
-        --// Bomber
-        NewHighlight = Instance.new("Highlight")
-        Character:AddTag("Highlighted_")
-        NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        NewHighlight.OutlineColor = Color3.fromRGB(255, 123, 0)
-        NewHighlight.FillColor = Color3.fromRGB(255, 123, 0)
-        NewHighlight.Parent = Character
-        NewHighlight.FillTransparency = 0.5
-        NewHighlight.Enabled = true
-        NewHighlight.Adornee = Character
-    elseif IsHeadless then 
-        --// Bomber
-        NewHighlight = Instance.new("Highlight")
-        Character:AddTag("Highlighted_")
-        NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        NewHighlight.OutlineColor = Color3.fromRGB(100, 0, 167)
-        NewHighlight.FillColor = Color3.fromRGB(100, 0, 167)
-        NewHighlight.Parent = Character
-        NewHighlight.FillTransparency = 0.5
-        NewHighlight.Enabled = true
-        NewHighlight.Adornee = Character
     end
-    ]=]
-
     NewHighlight = nil
 end
 
