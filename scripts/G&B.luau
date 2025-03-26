@@ -1049,10 +1049,14 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Ins
         local IsSapper:boolean = (Type == "Sapper")
         local IsBomber:boolean = (Type == "Barrel")
         local IsHeadless:boolean = (Type == "Headless")
+        
+        if not Character then
+            return
+        end
 
         local Head:BasePart?
         if not IsIgniter then
-            Head = (Character:FindFirstChild("Head") or Character:WaitForChild("Head", 3))::BasePart
+            Head = (Character:FindFirstChild("Head") or Character:WaitForChild("Head", 3))::BasePart or (nil)
         else
             for _, Part:any in pairs(Character:GetChildren()) do 
                 if Part and Part:IsA("Part") and (Part.Name == "Head") then
