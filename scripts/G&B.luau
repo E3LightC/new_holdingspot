@@ -202,6 +202,9 @@ local WaitTimeUntilRepair = 0.125
 local DefaultBeatWaitTime = 0.15
 local ZombieESPWait = 0.25
 
+local LastBeatTick = 0
+local _TimeSinceLastBeat = 0
+
 local ShoveRange = 15 --// default range variable used for shoving.
 local MurderRange = 11 --// Used as a backup if can't find weapon range.
 
@@ -314,8 +317,6 @@ end
 
 task.wait(0.2) --// Allow Luau's garbage collector to cleanup.
 
-local LastBeatTick = 0
-local _TimeSinceLastBeat = 0
 _G["BuildHighlight"] = Instance.new("Highlight")
 _G["BuildHighlight"].DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 _G["BuildHighlight"].OutlineColor = Color3.fromRGB(255, 204, 0)
@@ -494,31 +495,52 @@ end
 
 --[=[
     Description:
-    This function searches for a suitable melee weapon for the local player. It prioritizes the player's "PreferredWeapon" 
-    but includes fallback logic to find other tools in the character or backpack. It also identifies and returns any 
-    associated RemoteEvent and configuration attributes.
+    Retrieves a melee weapon from the player's character or backpack, returning the weapon tool and its associated RemoteEvent and limit range configuration attribute.
+    Supports an optional mode to list all available melee weapons instead of returning only the first found.
 
     Parameters:
-    - None
+    - `ListTools: boolean?` (optional): If `true`, returns a list of all melee weapons found instead of a single tool. Defaults to `false`.
 
     Returns:
-    - Tool | nil: The tool instance found, if any.
-    - RemoteEvent | nil: The RemoteEvent associated with the tool, if present.
-    - boolean | nil: The "LimitRange" configuration attribute, if applicable.
+    - If `ListTools` is `false` or `nil`:
+        - `Tool: Tool?` - The first melee weapon found.
+        - `RemoteEvent: RemoteEvent?` - The weapon's RemoteEvent (if available).
+        - `LimitRange: any?` - The weapon's limit range attribute (if available).
+    - If `ListTools` is `true`:
+        - `List: table` - A list of melee weapons, each containing `{Tool, RemoteEvent, LimitRange}`.
 
-    Behavior:
-    - Validates the local player's character and its parent to ensure the player is active in the game.
-    - Searches the character for a tool matching the `PreferredWeapon`. If found, it returns the tool, its RemoteEvent, 
-      and its "LimitRange" attribute (if configured).
-    - If the `PreferredWeapon` is not found, it searches for tools containing the server script "MeleeBase". If no such tool is found, 
-      it prioritizes tools named "Musket" or "Shovel" as fallback options.
-    - If no tool is found in the character, it searches the player's backpack using the same criteria.
+    Features:
+    - Searches for the `PreferredWeapon` in the player's character first.
+    - Looks for melee weapons by checking for the `"MeleeBase"` child.
+    - Also considers `"Musket"` and `"Shovel"` as valid melee weapons.
+    - Prioritizes equipped tools (in the character) before searching in the backpack.
+    - Ensures that the player's character exists before attempting to retrieve a weapon.
+    - Prevents errors by verifying that tools have valid parents before accessing their attributes.
 
     Notes:
-    - Logs warnings if the character is missing or unparented.
-    - Returns `nil` for all values if no suitable tool is located.
+    - If no melee weapon is found, returns `nil` (or an empty list if `ListTools` is `true`).
+    - If multiple melee weapons exist and `ListTools` is `false`, the function returns only the first match.
+    - If the function fails to find the player's character, a warning is logged, and execution stops.
+
+    Example Usage:
+    ```lua
+    local weapon, remote, limitRange = GetMeleeWeapon()
+    if weapon then
+        print("Equipped Melee Weapon:", weapon.Name)
+    end
+
+    local availableWeapons = GetMeleeWeapon(true)
+    for _, data in pairs(availableWeapons) do
+        print("Available Melee Weapon:", data[1].Name)
+    end
+    ```
+
+    Edge Cases:
+    - If `Character` is `nil`, the function logs a warning and exits early.
+    - If `Character.Parent` is `nil`, a warning is logged, and execution stops.
+    - If `ListTools` is `true`, but no melee weapons are found, an empty table is returned instead of `nil`.
 ]=]
-local function GetMeleeWeapon():(...any)
+local function GetMeleeWeapon(ListTools:boolean?):(...any)
 	local Character = LocalPlayer.Character
 
 	if not Character then 
@@ -533,41 +555,63 @@ local function GetMeleeWeapon():(...any)
 		return
 	end
 
-    if Character:FindFirstChild(PreferredWeapon) then 
-        local Tool = (Character:FindFirstChild(PreferredWeapon))::Tool
-        
-        return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
+    if not ListTools then
+        if Character:FindFirstChild(PreferredWeapon) then 
+            local Tool = (Character:FindFirstChild(PreferredWeapon))::Tool
+            
+            return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
+        end
     end
 
+    local List:any = {}
     if Character:FindFirstChildWhichIsA("Tool") then
         for _, Tool in ipairs(Character:GetChildren()) do 
             if typeof(Tool) == "Instance" and Tool:IsA("Tool") and Tool.Parent then 
                 if Tool:FindFirstChild("MeleeBase") then 
+                    if ListTools then
+                        table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
+                        continue
+                    end
+
                     return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
 				else
 					if Tool.Name == "Musket" or Tool.Name == "Shovel" then 
-						return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
+                        if ListTools then
+                            table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
+                            continue
+                        end
+
+                        return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
 					end
                 end
             end
         end
     end
-
     if Backpack:FindFirstChildWhichIsA("Tool") then
         for _, Tool in ipairs(Backpack:GetChildren()) do 
             if typeof(Tool) == "Instance" and Tool:IsA("Tool") and Tool.Parent then 
-                if Tool:FindFirstChild("MeleeBase") then 
-                    return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent")
+                if Tool:FindFirstChild("MeleeBase") then
+                    if ListTools then
+                        table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
+                        continue
+                    end
+
+                    return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
 				else
 					if Tool.Name == "Musket" or Tool.Name == "Shovel" then 
-						return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent")
+                        if ListTools then
+                            table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
+                            continue
+                        end
+
+                        return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
 					end
                 end
             end
         end
     end
     
-	return
+	return (ListTools and List) or nil
 end
 
 --[=[
@@ -1348,77 +1392,85 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if Key.KeyCode == Enum.KeyCode.Z or Key.KeyCode == Enum.KeyCode.X then 
 			if LocalPlayer.Character and LocalPlayer.Character.Parent then
-				local Weapon:Tool, WeaponRemote:RemoteEvent, LimitRange:number = GetMeleeWeapon()
+				local List:{{}} = GetMeleeWeapon(true)
 
-				if Weapon and typeof(Weapon) == "Instance" then 
-                	local AgentsInRange:{[number]:Model} = GetAgentsInRange(false, LimitRange and (LimitRange * 1.8) or MurderRange)
+                for _, Table in pairs(List) do 
+                    local Weapon = Table[1]
+                    local WeaponRemote = Table[2]
+                    local LimitRange = Table[3]
 
-                    if type(AgentsInRange) ~= "table" then 
-                        warn("[FAIL # MurderBind]: \"AgentsInRange\" is not a table.")
+                    if Weapon and typeof(Weapon) == "Instance" then 
+                        local AgentsInRange:{[number]:Model} = GetAgentsInRange(false, LimitRange and (LimitRange * 1.8) or MurderRange)
 
-                        return
-                    end
+                        if type(AgentsInRange) ~= "table" then 
+                            warn("[FAIL # MurderBind]: \"AgentsInRange\" is not a table.")
 
-                    if #AgentsInRange <= 0 then
-                        warn("[FAIL # MurderBind]: No agents found within a range of "..tostring(LimitRange and (LimitRange * 1.8) or MurderRange).." studs.")
+                            continue
+                        end
 
-                        return
-                    end
+                        if #AgentsInRange <= 0 then
+                            warn("[FAIL # MurderBind]: No agents found within a range of "..tostring(LimitRange and (LimitRange * 1.8) or MurderRange).." studs.")
 
-					if WeaponRemote and WeaponRemote:IsA("RemoteEvent") then 						
-						if Weapon.Name ~= "Musket" then
-							if Weapon.Name == "Spade" then 
-                                WeaponRemote:FireServer("Swing", "Over")
-                            else
-                                WeaponRemote:FireServer("Swing", "Side")
-                            end
+                            continue
+                        end
 
-							IterateWithFunction(AgentsInRange, function(Key:any, Agent:Model) 
-								if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
-									local HitArgs:{[number]:any} = {
-										[1] = "HitZombie";
-										[2] = Agent;
-										[3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
-										[4] = true;
-                                        [5] = (UseVectorLibrary and vector.create(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096))) or Vector3.new(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096));
-                                        [6] = "HumanoidRootPart";
-                                        [7] = (Agent.PrimaryPart and Agent.PrimaryPart.CFrame.LookVector * 5) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).CFrame.LookVector * 5;
-									}
-	
-									WeaponRemote:FireServer(unpack(HitArgs))
-								end
-							end)
-						elseif Weapon.Name == "Musket" then
-							WeaponRemote:FireServer("ThrustBayonet")
+                        if WeaponRemote and WeaponRemote:IsA("RemoteEvent") then 						
+                            if Weapon.Name ~= "Musket" then
+                                if Weapon.Name == "Spade" then 
+                                    WeaponRemote:FireServer("Swing", "Over")
+                                else
+                                    WeaponRemote:FireServer("Swing", "Side")
+                                end
 
-                            for _, Agent in pairs(AgentsInRange) do 
-                                if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
-                                    local HitArgs:{[number]:any} = {
-                                        [1] = "Bayonet_HitZombie";
-                                        [2] = Agent;
-                                        [3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
-                                        [4] = true;
-                                    }
-                                    
-                                    WeaponRemote:FireServer(unpack(HitArgs))
+                                IterateWithFunction(AgentsInRange, function(Key:any, Agent:Model) 
+                                    if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
+                                        local HitArgs:{[number]:any} = {
+                                            [1] = "HitZombie";
+                                            [2] = Agent;
+                                            [3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
+                                            [4] = true;
+                                            [5] = (UseVectorLibrary and vector.create(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096))) or Vector3.new(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096));
+                                            [6] = "HumanoidRootPart";
+                                            [7] = (Agent.PrimaryPart and Agent.PrimaryPart.CFrame.LookVector * 5) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).CFrame.LookVector * 5;
+                                        }
+        
+                                        WeaponRemote:FireServer(unpack(HitArgs))
+                                    end
+                                end)
+                            elseif Weapon.Name == "Musket" then
+                                WeaponRemote:FireServer("ThrustBayonet")
 
-                                    break
+                                for _, Agent in pairs(AgentsInRange) do 
+                                    if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
+                                        local HitArgs:{[number]:any} = {
+                                            [1] = "Bayonet_HitZombie";
+                                            [2] = Agent;
+                                            [3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
+                                            [4] = true;
+                                        }
+                                        
+                                        WeaponRemote:FireServer(unpack(HitArgs))
+
+                                        break
+                                    end
                                 end
                             end
-						end
 
-                        table.clear(AgentsInRange)
+                            table.clear(AgentsInRange)
+                        else
+                            warn("[FAIL # MurderBind]: \"WeaponRemote\" if statement failed.")
+
+                            table.clear(AgentsInRange)
+                            continue
+                        end
                     else
-                        warn("[FAIL # MurderBind]: \"WeaponRemote\" if statement failed.")
+                        warn("[FAIL # MurderBind]: \"Weapon\" if statement failed.")
 
-                        table.clear(AgentsInRange)
-                        return
-					end
-                else
-                    warn("[FAIL # MurderBind]: \"Weapon\" if statement failed.")
+                        continue
+                    end
 
-                    return
-				end
+                    task.wait(0.5)
+                end
 			end
 		end
 	end
