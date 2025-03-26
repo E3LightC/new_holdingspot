@@ -35,7 +35,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local UserInputService = game:GetService("UserInputService")
 
-type vector = { 
+type VectorLibrary = { 
     create: (x:number, y:number, z:number) -> Vector3;
     magnitude: (vec:Vector3) -> number;
     normalize: (vec:Vector3) -> Vector3;
@@ -188,7 +188,7 @@ local Camera = (Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Cam
 local Debug = true
 local DebugPrints = false
 local UseVectorLibrary = true
-local vector:vector = (getfenv().vector)
+local vector:VectorLibrary = (getfenv().vector)
 
 local RubiksCube = false
 
