@@ -394,7 +394,7 @@ local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean, IsRunn
         or (IsSapper and "Sapper") 
         or (IsBomber and "Bomber")
         or (IsHeadless or "Headless")
-        or "Backup"
+        
     warn(Type)
     local NewHighlight:any = Instance.new("Highlight")
     Character:AddTag("Highlighted_")
