@@ -198,9 +198,9 @@ local HammerCanWarn = true
 local BuildingFetchType = "Closest"
 
 local HammerWarnDelay = 1
-local ZombieESPWait = 0.25
 local WaitTimeUntilRepair = 0.125
 local DefaultBeatWaitTime = 0.15
+local ZombieESPWait = 0.25
 
 local ShoveRange = 15 --// default range variable used for shoving.
 local MurderRange = 11 --// Used as a backup if can't find weapon range.
@@ -233,6 +233,14 @@ local MusicSelections = {
     ["J"] = "Kalina Malina";
     ["Y"] = "Kolonni Idushej Ataku";
     ["T"] = "Marsh Preobrazhenskogo polka";
+}
+local ESPColors = {
+    ["Igniter"] = Color3.fromRGB(255, 255, 0);
+    ["Runner"] = Color3.fromRGB(0, 255, 255);
+    ["Sapper"] = Color3.fromRGB(255, 0, 255);
+    ["Bomber"] = Color3.fromRGB(255, 123, 0);
+    ["Headless"] = Color3.fromRGB(100, 0, 167);
+    ["Backup"] = Color3.fromRGB(14, 16, 168)
 }
 local PreferredWeapon = "Pike"
 
@@ -357,7 +365,7 @@ _G["BuildHighlight"].Enabled = true
     - If all boolean flags are `false`, no highlight is added.
     - If the character already has the `"Highlighted_"` tag, no additional highlights are applied.
 ]=]
-local function AddEsp(Character:Model, IsIgniter:boolean, IsRunner:boolean, IsSapper:boolean, IsBomber:boolean, IsHeadless:boolean)
+local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean, IsRunner:boolean, IsSapper:boolean, IsBomber:boolean, IsHeadless:boolean)
     if (typeof(Character) ~= "Instance") or not Character:IsA("Model") then
         return
     end
@@ -380,18 +388,43 @@ local function AddEsp(Character:Model, IsIgniter:boolean, IsRunner:boolean, IsSa
         return
     end
     
-    local NewHighlight:any = nil
+    local HeadParameterExist = (typeof(Head) == "Instance" and Head:IsA("BasePart"))
+    local Type = (IsIgniter and "Igniter") 
+        or (IsRunner and "Runner") 
+        or (IsSapper and "Sapper") 
+        or (IsBomber and "Bomber")
+        or (IsHeadless or "Headless")
+        or "Backup"
+    warn(Type)
+    local NewHighlight:any = Instance.new("Highlight")
+    Character:AddTag("Highlighted_")
+    NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    NewHighlight.OutlineColor = ESPColors[Type]
+    NewHighlight.FillColor = ESPColors[Type]
+    NewHighlight.Parent = Character
+    NewHighlight.FillTransparency = 0.5
+    NewHighlight.Enabled = true
+    NewHighlight.Adornee = Character
+
+    if HeadParameterExist and Head then
+        Head.Color = ESPColors[Type]
+    end
+    --[=[
     if IsIgniter then
         --// Igniter
         NewHighlight = Instance.new("Highlight")
         Character:AddTag("Highlighted_")
         NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        NewHighlight.OutlineColor = Color3.fromRGB(255, 255, 0)
-        NewHighlight.FillColor = Color3.fromRGB(255, 255, 0)
+        NewHighlight.OutlineColor = ESPColors["Igniter"]
+        NewHighlight.FillColor = ESPColors["Igniter"]
         NewHighlight.Parent = Character
         NewHighlight.FillTransparency = 0.5
         NewHighlight.Enabled = true
         NewHighlight.Adornee = Character
+
+        if HeadParameterExist then
+            Head.Color = ESPColors["Igniter"]
+        end
     elseif IsRunner then
         --// Runner
         NewHighlight = Instance.new("Highlight")
@@ -437,6 +470,7 @@ local function AddEsp(Character:Model, IsIgniter:boolean, IsRunner:boolean, IsSa
         NewHighlight.Enabled = true
         NewHighlight.Adornee = Character
     end
+    ]=]
 
     NewHighlight = nil
 end
@@ -1074,19 +1108,9 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Ins
         local IsBomber:boolean = (Type == "Barrel")
         local IsHeadless:boolean = (Type == "Headless")
 
-        task.spawn(pcall, AddEsp,
-            Character,
-            IsIgniter,
-            IsRunner,
-            IsSapper,
-            IsBomber,
-            IsHeadless
-        )
-
-        local Head:Instance?
-
+        local Head:BasePart?
         if not IsIgniter then
-            Head = (Character:FindFirstChild("Head") or Character:WaitForChild("Head", 3))
+            Head = (Character:FindFirstChild("Head") or Character:WaitForChild("Head", 3))::BasePart
         else
             for _, Part:any in pairs(Character:GetChildren()) do 
                 if Part and Part:IsA("Part") and (Part.Name == "Head") then
@@ -1103,6 +1127,16 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Ins
             Head.Transparency = HeadTransparency
             Head = nil
         end
+
+        task.spawn(pcall, AddEsp,
+            Character,
+            Head,
+            IsIgniter,
+            IsRunner,
+            IsSapper,
+            IsBomber,
+            IsHeadless
+        )
     end
 end)
 
