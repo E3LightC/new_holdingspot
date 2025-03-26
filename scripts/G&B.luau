@@ -555,15 +555,22 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 		return
 	end
 
+    local List:any = {}
+
     if not ListTools then
         if Character:FindFirstChild(PreferredWeapon) then 
             local Tool = (Character:FindFirstChild(PreferredWeapon))::Tool
             
             return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
         end
+    elseif ListTools then
+        if Character:FindFirstChild(PreferredWeapon) then 
+            local Tool = (Character:FindFirstChild(PreferredWeapon))::Tool
+            
+            table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
+        end
     end
 
-    local List:any = {}
     if Character:FindFirstChildWhichIsA("Tool") then
         for _, Tool in ipairs(Character:GetChildren()) do 
             if typeof(Tool) == "Instance" and Tool:IsA("Tool") and Tool.Parent then 
