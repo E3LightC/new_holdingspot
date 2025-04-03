@@ -1,10 +1,21 @@
 * **discord: @_x4yz**
-* **(these scripts are made for pc only, unless they are a GUI or something simple as the Infinite Yield plugin)**
+# *holding spot for scripts i've made*
 
-# *holding spot for scripts i've made, or am working on slowly*
-* [Guts & Blackpowder Script](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/G%26B.luau)
-* [3008 Script](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/3008.luau)
-* [Naval Warfare Script](https://github.com/E3LightC/new_holdingspot/blob/main/scripts/Naval_Warfare.luau)
+# *functioning scripts*
+ * [Guts & Blackpowder Script (PC only)](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/G%26B.luau)
+ * [3008 Script (PC and Mobile)](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/3008.luau)
 
 # *other stuff*
-* [Infinite Yield FOV Plugin](https://github.com/E3LightC/new_holdingspot/blob/main/scripts/FOV_Commands.iy)
+ * [Infinite Yield FOV Plugin](https://github.com/E3LightC/new_holdingspot/blob/main/scripts/FOV_Commands.iy)
+
+ 
+# *loadstrings*
+  ```lua
+  --// Guts & Blackpowder Script
+  loadstring(game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/G%26B.luau", true))()
+  ```
+  * Guts & Blackpowder Script
+  ```lua
+  --// 3008 Script
+  loadstring(game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/3008.luau", true))()
+  ```
