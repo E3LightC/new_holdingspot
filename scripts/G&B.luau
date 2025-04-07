@@ -5,16 +5,16 @@
 --//// Features Overview \\\\--
 --// - Press **Q** to shove in an area when using a weapon (if shoving is supported for said weapon). 
 --// - When fighting a group or horde of zombies, use **Z** or **X** to help clear them out.
---// - All melee hits are registered as headshots increasing your damage output.
+--// - All melee hits are registered as headshots, increasing your damage output.
 --// - When "RubiksCube" is toggled on, equipping the hammer/claw hammer will scramble your character’s appearance like a Rubik’s Cube.
 --// - Blocks the "OnAFKSignalReceived" and "ForceKill" remotes if they are called/fired by non-exploit scripts.
---// - Auto-repair requires having a hammer. Repairs work based on your proximity to the building, not the hammer itself (even if the hammer is far away, as long as your character is near the building, repairs will function).
+--// - Auto-repair requires having a hammer. Repairs work based on your proximity to the building, not the hammer itself (even if the hammer is far away, as long as your character is near the building, repairs will work).
 --// - Check the developer console for errors or warnings (e.g., "[FAIL # example]: ...").
 --// - Additional functionality may also be included.
 
 --//// Key Bindings \\\\--
---// **Q**: Shove (Axe only).
---// **Z** / **X**: Kill zombie within aura.
+--// **Q**: Shove bind.
+--// **Z** / **X**: Kill aura bind.
 --// **G**: Equips tool in your backpack that you can shove with.
 --// **Keypad 1**: Grab Log Bind (only available on Berezina).
 --// **Keypad 2**: Toggle auto-repair.
