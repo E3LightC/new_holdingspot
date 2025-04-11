@@ -119,7 +119,7 @@ OldNameCall = hookmetamethod(game, "__namecall", function(Remote, ...)
                                 GameEvent[NamecallMethod](Remote, 
                                     "aim",
                                     {
-                                        [1] = (Closest.Position + (Closest.AssemblyLinearVelocity * ((LocalPlayer:GetNetworkPing() / 100) * 23.2)))
+                                        [1] = ((Closest.Position + Vector3.new(0, 2, 0)) + (Closest.AssemblyLinearVelocity * ((LocalPlayer:GetNetworkPing() / 100) * 23.2)))
                                     }
                                 )
                             elseif (_G.ShootAtType == "Players") then 
