@@ -100,7 +100,7 @@ OldNameCall = hookmetamethod(game, "__namecall", function(Remote, ...)
 
 	if not checkcaller() then
         if NamecallMethod == "FireServer" then
-            if (Arguments[1] == "shoot") and (type(Arguments[2][1]) == "boolean") and Arguments[2][1] then
+            if (Arguments[1] == "shoot") or (Arguments[1] == "bomb") and (type(Arguments[2][1]) == "boolean") and Arguments[2][1] then
                 _G.IsShooting = true
                 print("[INFO]: Shooting.")
 
@@ -135,7 +135,7 @@ OldNameCall = hookmetamethod(game, "__namecall", function(Remote, ...)
                         end
                     end
                 end))
-            elseif (Arguments[1] == "shoot") and (type(Arguments[2][1]) == "boolean") and not Arguments[2][1] then
+            elseif (Arguments[1] == "shoot") or (Arguments[1] == "bomb") and (type(Arguments[2][1]) == "boolean") and not Arguments[2][1] then
                 _G.IsShooting = false		
                 print("[INFO]: Stopped shooting.")
 
