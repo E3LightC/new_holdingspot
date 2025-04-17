@@ -43,7 +43,7 @@
 --//        [Keypad 4]: Toggles **RubiksCube** mode, which scrambles the character model using `UpdateLook` on hammer tools.
 --// [Music Controls]
 --//        [U], [F], [G], [H], [J], [Y], [T]: Plays predefined musical tracks using either a fife or a drum, depending on the equipped instrument. 
---//					Song mappings can be customized through the `MusicSelections` table.
+--//				Song mappings can be customized through the `MusicSelections` table.
 
 --[///////////////////////////////////////////////////////////////////////////////////////////////////]--
 --[///////////////////////////////////////////////////////////////////////////////////////////////////]--
