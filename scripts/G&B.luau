@@ -179,7 +179,7 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
                 StringToOutput = StringToOutput:format(`the ".Parent" value of the "Parent" parameter being invalid.`)
             end
             
-            print(StringToOutput)
+            print(StringToOutput..`  ||| Current script line: {debug.info(1, "l")}`)
         end
 
         return InstanceToReturn
@@ -482,7 +482,7 @@ end
 ]=]
 local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:number?):(thread)
     if (typeof(RemoteEventToUse) ~= "Instance") or not RemoteEventToUse:IsA("RemoteEvent") then 
-        warn(`[FAIL # SetupFakeAccuracyBeat]: "RemoteEventToUse" is not an Instance, nor a RemoteEvent.`)
+        warn(`[FAIL # SetupFakeAccuracyBeat]: "RemoteEventToUse" is not an Instance, nor a RemoteEvent.  ||| Current script line: {debug.info(1, "l")}`)
 
         return coroutine.create(function() end)
     end
@@ -569,13 +569,13 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 	local Character = LocalPlayer.Character
 
 	if not Character then 
-		warn("[FAIL # GetMeleeWeapon]: Your character doesn't exist?")
+		warn(`[FAIL # GetMeleeWeapon]: Your character doesn't exist?  ||| Current script line: {debug.info(1, "l")}`)
 
 		return
 	end
 
 	if (Character.Parent == nil) then 
-		warn("[FAIL # GetMeleeWeapon]: Your character's parent is equal to nil.")
+		warn(`[FAIL # GetMeleeWeapon]: Your character's parent is equal to nil.  ||| Current script line: {debug.info(1, "l")}`)
 
 		return
 	end
@@ -685,7 +685,7 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
 	local AgentsInRange:{[number]:any} = {}
     
     if (type(Range) ~= "number") then 
-		warn(`[FAIL # GetAgentsInRange]: "Range" is not a number.`)
+		warn(`[FAIL # GetAgentsInRange]: "Range" is not a number.  ||| Current script line: {debug.info(1, "l")}`)
 		return AgentsInRange
 	end
 
@@ -700,14 +700,14 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
     if not UsePosition then
         local Character:Model = LocalPlayer.Character
         if not Character or not Character.Parent then
-            warn("[FAIL # GetAgentsInRange]: You do not have a character?")
+            warn(`[FAIL # GetAgentsInRange]: You do not have a character?  ||| Current script line: {debug.info(1, "l")}`)
 
             return AgentsInRange
         end
         
         CharHRP = (Character:FindFirstChild("HumanoidRootPart") or Character.PrimaryPart)::BasePart
         if not CharHRP or CharHRP:IsA("Model") then 
-            warn("[FAIL # GetAgentsInRange]: No HumanoidRootPart/PrimaryPart found inside in the player's character.")
+            warn(`[FAIL # GetAgentsInRange]: No HumanoidRootPart/PrimaryPart found inside in the player's character.  ||| Current script line: {debug.info(1, "l")}`)
 
             return AgentsInRange
         end
@@ -844,13 +844,13 @@ local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(
 
     if (Table ~= nil) and (Function ~= nil) then 
 		if (type(Table) ~= "table") then 
-			warn(`[FAIL # IterateWithFunction]: "Table" is not a table.`)
+			warn(`[FAIL # IterateWithFunction]: "Table" is not a table.  ||| Current script line: {debug.info(1, "l")}`)
 
 			return
 		end
 
 		if (type(Function) ~= "function") then 
-			warn(`[FAIL # IterateWithFunction]: "Function" is not a function.`)
+			warn(`[FAIL # IterateWithFunction]: "Function" is not a function.  ||| Current script line: {debug.info(1, "l")}`)
 
 			return
 		end
@@ -866,12 +866,12 @@ local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(
         end
     else
         if (Table == nil) then 
-            warn(`[FAIL # IterateWithFunction]: Table is equal to nil.`)
+            warn(`[FAIL # IterateWithFunction]: "Table" is equal to nil.  ||| Current script line: {debug.info(1, "l")}`)
 
             return
         end
         if (Function == nil) then 
-            warn(`[FAIL # IterateWithFunction]: Function is equal to nil.`)
+            warn(`[FAIL # IterateWithFunction]: "Function" is equal to nil.  ||| Current script line: {debug.info(1, "l")}`)
 
             return
         end
@@ -951,11 +951,11 @@ local function GetBuildingWithLeastHealth():any
 		if (typeof(Healths[1]) == "Instance") then 
             return Healths[1]
         elseif not Healths[1] then 
-            warn(`[FAIL # GetBuildingWithLeastHealth]: Failed to get a "BuildingHealth" NumberValue.`)
+            warn(`[FAIL # GetBuildingWithLeastHealth]: Failed to get a "BuildingHealth" NumberValue.  ||| Current script line: {debug.info(1, "l")}`)
             return false
         end
     else
-        warn("[FAIL # GetBuildingWithLeastHealth]: No buildings found?")
+        warn(`[FAIL # GetBuildingWithLeastHealth]: No buildings found?  ||| Current script line: {debug.info(1, "l")}`)
 	end 
 
 	return false
@@ -1051,11 +1051,11 @@ local function GetClosestBuilding():any
 
             return ((Bounds[1].Parent)::Part):WaitForChild("BuildingHealth")
         elseif not Bounds[1] then 
-            warn("[FAIL # GetClosestBuilding]: Failed to find the closest building.")
+            warn(`[FAIL # GetClosestBuilding]: Failed to find the closest building.  ||| Current script line: {debug.info(1, "l")}`)
             return false
         end
     else
-        warn("[FAIL # GetClosestBuilding]: No buildings found?")
+        warn(`[FAIL # GetClosestBuilding]: No buildings found?  ||| Current script line: {debug.info(1, "l")}`)
 	end 
 
 	return false
@@ -1098,7 +1098,7 @@ end
 local function GetMaxIndexOfTable(Table:{[any]: any})
     if (Table ~= nil) then 
 		if (type(Table) ~= "table") then 
-			warn(`[FAIL # GetMaxIndexOfTable]: "Table" is not a table. Returning 0`)
+			warn(`[FAIL # GetMaxIndexOfTable]: "Table" is not a table. Returning 0.  ||| Current script line: {debug.info(1, "l")}`)
 			return 0
 		end
 
@@ -1114,7 +1114,7 @@ local function GetMaxIndexOfTable(Table:{[any]: any})
         return CountToReturn
     else
         if (Table == nil) then 
-            warn(`[FAIL # GetMaxIndexOfTable]: "Table" is equal to nil. Returning 0`)
+            warn(`[FAIL # GetMaxIndexOfTable]: "Table" is equal to nil. Returning 0.  ||| Current script line: {debug.info(1, "l")}`)
 
             return 0
         end
@@ -1222,7 +1222,7 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 					CanRepair = true
 				end)
             elseif not Remote then 
-                warn("[FAIL # BuildingBindFunc]: Failed to find the hammer's remote event.")
+                warn(`[FAIL # BuildingBindFunc]: Failed to find the hammer's remote event.  ||| Current script line: {debug.info(1, "l")}`)
                 return
 			end
         else
@@ -1307,7 +1307,7 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                         end
                     end)
                 elseif not Remote then 
-                    warn(`[FAIL # MusicBind]: Failed to find instrument remote event for the "{FoundInstrument.Name}".`)
+                    warn(`[FAIL # MusicBind]: Failed to find instrument remote event for the "{FoundInstrument.Name}".  ||| Current script line: {debug.info(1, "l")}`)
                     return
                 end
             else
@@ -1353,19 +1353,19 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 				local AgentsInRange = GetAgentsInRange(false, ShoveRange)
 
 				if (type(AgentsInRange) ~= "table") then 
-                    warn(`[FAIL # ShoveBind]: AgentsInRange is not a table.`)
+                    warn(`[FAIL # ShoveBind]: AgentsInRange is not a table.  ||| Current script line: {debug.info(1, "l")}  ||| Current script line: {debug.info(1, "l")}`)
 
 					return
 				end
 
 				if (#AgentsInRange <= 0) then
-					warn("[FAIL # ShoveBind]: No agents found within a range of {ShoveRange} studs.")
+					warn(`[FAIL # ShoveBind]: No agents found within a range of {ShoveRange} studs.  ||| Current script line: {debug.info(1, "l")}`)
                     
 					return
 				end
 
 				if not HRP then 
-					warn("[FAIL # ShoveBind]: Character has no HumanoidRootPart/Torso?")
+					warn(`[FAIL # ShoveBind]: Character has no HumanoidRootPart/Torso?  ||| Current script line: {debug.info(1, "l")}`)
                     
                     table.clear(AgentsInRange)
 					return
@@ -1414,13 +1414,13 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
                         table.clear(AgentsInRange)
                     elseif not Remote then 
-                        warn(`[FAIL # ShoveBind]: "Remote" if statement failed.`)
+                        warn(`[FAIL # ShoveBind]: "Remote" if statement failed.  ||| Current script line: {debug.info(1, "l")}`)
 
                         table.clear(AgentsInRange)
                         return
 					end
                 else
-                    warn(`[FAIL # ShoveBind]: "Weapon" if statement failed.`)
+                    warn(`[FAIL # ShoveBind]: "Weapon" if statement failed.  ||| Current script line: {debug.info(1, "l")}`)
 
                     table.clear(AgentsInRange)
                     return
@@ -1445,13 +1445,13 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                         local AgentsInRange:{[number]:Model} = GetAgentsInRange(false, (LimitRange and (LimitRange * 1.8)) or MurderRange)
 
                         if (type(AgentsInRange) ~= "table") then 
-                            warn(`[FAIL # MurderBind]: AgentsInRange is not a table.`)
+                            warn(`[FAIL # MurderBind]: AgentsInRange is not a table.  ||| Current script line: {debug.info(1, "l")}`)
 
                             continue
                         end
 
                         if (#AgentsInRange <= 0) then
-                            warn(`[FAIL # MurderBind]: No agents found within a range of {LimitRange and (LimitRange * 1.8) or MurderRange} studs.`)
+                            warn(`[FAIL # MurderBind]: No agents found within a range of {LimitRange and (LimitRange * 1.8) or MurderRange} studs.  ||| Current script line: {debug.info(1, "l")}`)
 
                             continue
                         end
@@ -1499,13 +1499,13 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
                             table.clear(AgentsInRange)
                         else
-                            warn(`[FAIL # MurderBind]: "WeaponRemote" if statement failed.`)
+                            warn(`[FAIL # MurderBind]: "WeaponRemote" if statement failed.  ||| Current script line: {debug.info(1, "l")}`)
 
                             table.clear(AgentsInRange)
                             continue
                         end
                     else
-                        warn(`[FAIL # MurderBind]: "Weapon" if statement failed.`)
+                        warn(`[FAIL # MurderBind]: "Weapon" if statement failed.  ||| Current script line: {debug.info(1, "l")}`)
 
                         continue
                     end
@@ -1583,10 +1583,10 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                     end
                 end
 
-                warn(`[FAIL # GrabLogBind]: "Modes" or "Holdout" if statements failed?`)
+                warn(`[FAIL # GrabLogBind]: "Modes" or "Holdout" if statements failed?  ||| Current script line: {debug.info(1, "l")}`)
                 return
             elseif not Berezina then 
-                warn("[FAIL # GrabLogBind]: The current map is not Berezina?")
+                warn(`[FAIL # GrabLogBind]: The current map is not Berezina?  ||| Current script line: {debug.info(1, "l")}`)
 
                 return
             end
