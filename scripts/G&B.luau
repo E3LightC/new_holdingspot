@@ -707,7 +707,7 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
         
         CharHRP = (Character:FindFirstChild("HumanoidRootPart") or Character.PrimaryPart)::BasePart
         if not CharHRP or CharHRP:IsA("Model") then 
-            warn(`[FAIL # GetAgentsInRange]: No HumanoidRootPart/PrimaryPart found inside in the player's character.  ||| Current script line: {debug.info(1, "l")}`)
+            warn(`[FAIL # GetAgentsInRange]: No HumanoidRootPart/PrimaryPart found inside the player's character.  ||| Current script line: {debug.info(1, "l")}`)
 
             return AgentsInRange
         end
@@ -890,7 +890,7 @@ end
     - None
 
     Returns:
-    - `Instance<NumberValue>`: The "BuildingHealth" instance with the lowest relative health.
+    - `Instance: NumberValue`: The "BuildingHealth" instance with the lowest relative health.
     - `false`: If no valid buildings are found.
 
     Notes:
@@ -969,7 +969,7 @@ end
     - None
 
     Returns: 
-    - `Instance<NumberValue>`: The "BuildingHealth" instance of the closest building.
+    - `Instance: NumberValue`: The "BuildingHealth" instance of the closest building.
     - `false`: If the closest building is at maximum health or no valid building is found.
     - `nil`: If the local player has no buildings.
 
