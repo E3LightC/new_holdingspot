@@ -1,26 +1,49 @@
 --!strict
 --//// Discord: @_x4yz \\\\--
---// https://www.roblox.com/games/12334109280/UPDATE-Guts-Blackpowder
+--// https://www.roblox.com/games/12334109280/Guts-Blackpowder
+--//    Made with Wave. https://getwave.gg
 
---//// Features Overview \\\\--
---// - Press **Q** to shove in an area when using a weapon (if shoving is supported for said weapon). 
---// - When fighting a group or horde of zombies, use **Z** or **X** to help clear them out.
---// - All melee hits are registered as headshots, increasing your damage output.
---// - When "RubiksCube" is toggled on, equipping the hammer/claw hammer will scramble your character’s appearance like a Rubik’s Cube.
---// - Blocks the "OnAFKSignalReceived" and "ForceKill" remotes if they are called/fired by non-exploit scripts.
---// - Auto-repair requires having a hammer. Repairs work based on your proximity to the building, not the hammer itself (even if the hammer is far away, as long as your character is near the building, repairs will work).
---// - Check the developer console for errors or warnings (e.g., "[FAIL # example]: ...").
---// - Additional functionality may also be included.
+--//// Feature Overview \\\\--
+--// [System Logging]
+--//        All failures, errors, warnings, and other information are output to the Roblox Developer Console with standardized tags 
+--//   (e.g., "[FAIL # EXAMPLE_CONTEXT]: ...", "[INFO # EXAMPLE_CONTEXT]: ...", "[DEBUG # EXAMPLE_CONTEXT]: ...").
+--// [Input Bindings]
+--//        [Q]: Triggers a shove action against nearby zombie entities within `ShoveRange`, if the equipped tool supports shoving.
+--//        [Z] / [X]: Activates an AoE melee attack, targeting all valid zombie entities within range based on the equipped weapon's parameters.
+--//        [G]: Automatically equips a shove-capable tool from the Backpack, if one is available.
+--//        [Keypad 1]: Executes a log retrieval action. (Limited to the "Berezina" map.)
+--//        [Keypad 2]: Toggles the auto-repair system on or off.
+--//        [Keypad 3]: Switches the internal lookup method to identify nearby repairable structures.
+--//        [Keypad 4]: Enables or disables "RubiksCube" mode (details below).
+--//        [U], [F], [G], [H], [J], [Y], [T]: Triggers playback of a predefined fife or drum song. Song mappings are configurable via the `MusicSelections` table.
+--// [Combat Behavior]
+--//        All melee attacks are forcibly registered as headshots, applying either the weapon’s specific headshot multiplier 
+--//   or a default multiplier of 1.5x for increased damage output.
+--// [Visuals / ESP System]
+--//        Zombie entities are dynamically highlighted with Roblox's `Highlight` instance based on their classification. 
+--//   Colors are pulled from the `ESPColors` table, allowing for consistent team or role-based visual cues. 
+--//   Highlighting is gated by tag-checking to prevent redundant application.
+--// [Tool Manipulation / Exploit Behavior]
+--//        While "RubiksCube" mode is enabled, equipping a hammer or claw hammer forcibly distorts the character’s model 
+--//   by repeatedly triggering the `UpdateLook` remote. (Note: this effect is processed server-side.)
+--//        Client-fired RemoteEvent calls to `OnAFKSignalReceived` and `ForceKill` are blocked and will not propagate.
+--//   (Note: This does not block RemoteEvent calls triggered externally via exploit tools or injection methods.)
+--//        Auto-repair requires a hammer-type tool to be equipped. The player’s character position determines the structure's proximity
+--//   rather than the tool itself, due to design limitations in tool implementation.
 
---//// Key Bindings \\\\--
---// **Q**: Shove bind.
---// **Z** / **X**: Kill aura bind.
---// **G**: Equips tool in your backpack that you can shove with.
---// **Keypad 1**: Grab Log Bind (only available on Berezina).
---// **Keypad 2**: Toggle auto-repair.
---// **Keypad 3**: Toggle building fetch type.
---// **Keypad 4**: Toggle "RubiksCube."
---// **U**, **F**, **G**, **H**, **J**, **Y**, **T**: Play music with fife or drum.
+--//// Key Bindings Overview \\\\--
+--// [Combat Actions]
+--//        [Q]: Executes a shove against nearby zombie entities within `ShoveRange`, if supported by the current tool.
+--//        [Z] / [X]: Triggers a kill aura, dealing AoE melee damage to all valid zombies within range based on the equipped weapon.
+--//        [G]: Searches the Backpack for a compatible shove-capable tool and equips it automatically.
+--// [Utility Actions]
+--//        [Keypad 1]: Initiates a log retrieval action. Only available on the **Berezina** map.
+--//        [Keypad 2]: Toggles the auto-repair system to automate building repairs.
+--//        [Keypad 3]: Switches the targeting method used by auto-repair to locate valid structures.
+--//        [Keypad 4]: Toggles **RubiksCube** mode, which scrambles the character model using `UpdateLook` on hammer tools.
+--// [Music Controls]
+--//        [U], [F], [G], [H], [J], [Y], [T]: Plays predefined musical tracks using either a fife or a drum, depending on the equipped instrument. 
+--//					Song mappings can be customized through the `MusicSelections` table.
 
 --[///////////////////////////////////////////////////////////////////////////////////////////////////]--
 --[///////////////////////////////////////////////////////////////////////////////////////////////////]--
@@ -101,7 +124,7 @@ type VectorLibrary = {
 
 ]=]
 local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:number?):(Instance | nil | any)
-    if typeof(Parent) == "Instance" and type(ClassName) == "string" then
+    if (typeof(Parent) == "Instance") and (type(ClassName) == "string") then
         local InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
         if InstanceToReturn then
             return InstanceToReturn
@@ -150,10 +173,10 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
                 if TimeOutWasReached then
                     StringToOutput = StringToOutput:format("the time out being reached.")
                 elseif not TimeOutWasReached then
-                    StringToOutput = StringToOutput:format("the \".Parent\" value of the \"Parent\" parameter being invalid.")
+                    StringToOutput = StringToOutput:format(`the ".Parent" value of the "Parent" parameter being invalid.`)
                 end
             else
-                StringToOutput = StringToOutput:format("the \".Parent\" value of the \"Parent\" parameter being invalid.")
+                StringToOutput = StringToOutput:format(`the ".Parent" value of the "Parent" parameter being invalid.`)
             end
             
             print(StringToOutput)
@@ -161,12 +184,12 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
 
         return InstanceToReturn
     else
-        if typeof(Parent) ~= "Instance" then
-            warn("[FAIL # WaitForChildWhichIsA]: \"Parent\" is not an Instance.")
+        if (typeof(Parent) ~= "Instance") then
+            warn(`[FAIL # WaitForChildWhichIsA]: "Parent" is not an Instance.`)
             return nil
         end
-        if type(ClassName) ~= "string" then
-            warn("[FAIL # WaitForChildWhichIsA]: \"ClassName\" is not a string.")
+        if (type(ClassName) ~= "string") then
+            warn(`[FAIL # WaitForChildWhichIsA]: "ClassName" is not a string.`)
             return nil
         end
     end
@@ -174,16 +197,18 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
     return nil
 end
 
-local LocalPlayer:Player = Players.LocalPlayer
+local OldNameCall = nil
+local OldIndex = nil
+
 local Backpack:Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
 
-local Remotes = (ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:WaitForChild("Remotes", math.huge))::Folder
-local AFKSignal = (Remotes:FindFirstChild("OnAFKSignalReceived") or Remotes:WaitForChild("OnAFKSignalReceived", math.huge))::RemoteEvent
+local Remotes:Folder = (ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:WaitForChild("Remotes", math.huge))::Folder
+local AFKSignal:RemoteEvent = (Remotes:FindFirstChild("OnAFKSignalReceived") or Remotes:WaitForChild("OnAFKSignalReceived", math.huge))::RemoteEvent
 
-local ZombiesFolder = (Workspace:FindFirstChild("Zombies") or Workspace:WaitForChild("Zombies", math.huge))::Folder
-local BotsFolder = (Workspace:FindFirstChild("Bots") or Workspace:WaitForChild("Bots", math.huge))::Folder
-local BuildingsFolder = (Workspace:FindFirstChild("Buildings") or Workspace:WaitForChild("Buildings", math.huge))::Folder
-local Camera = (Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera"))::Camera
+local ZombiesFolder:Folder = (Workspace:FindFirstChild("Zombies") or Workspace:WaitForChild("Zombies", math.huge))::Folder
+local BotsFolder:Folder = (Workspace:FindFirstChild("Bots") or Workspace:WaitForChild("Bots", math.huge))::Folder
+local BuildingsFolder:Folder = (Workspace:FindFirstChild("Buildings") or Workspace:WaitForChild("Buildings", math.huge))::Folder
+local Camera:Camera = (Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera"))::Camera
 
 local Debug = true
 local DebugPrints = false
@@ -456,15 +481,15 @@ end
     - Ensures that if `LastBeatTick` is `0`, it initializes before calculating the time since the last beat.
 ]=]
 local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:number?):(thread)
-    if typeof(RemoteEventToUse) ~= "Instance" or not RemoteEventToUse:IsA("RemoteEvent") then 
-        warn("[FAIL # SetupFakeAccuracyBeat]: \"RemoteEventToUse\" is not an Instance, nor a RemoteEvent.")
+    if (typeof(RemoteEventToUse) ~= "Instance") or not RemoteEventToUse:IsA("RemoteEvent") then 
+        warn(`[FAIL # SetupFakeAccuracyBeat]: "RemoteEventToUse" is not an Instance, nor a RemoteEvent.`)
 
         return coroutine.create(function() end)
     end
 
-    if type(BeatWaitTime) ~= "number" then
+    if (type(BeatWaitTime) ~= "number") then
         BeatWaitTime = DefaultBeatWaitTime
-    elseif type(BeatWaitTime) == "number" then
+    elseif (type(BeatWaitTime) == "number") then
         if (BeatWaitTime <= 0) or (BeatWaitTime >= 5) then
             BeatWaitTime = 0.15
         end
@@ -473,13 +498,13 @@ local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:
     local NewThread = coroutine.create(function()
         while true do
             if Debug then
-                if LastBeatTick ~= 0 then 
+                if (LastBeatTick ~= 0) then 
                     _TimeSinceLastBeat = (tick() - LastBeatTick)
                     if DebugPrints then
-                        print(`[DEBUG # Fake Accuracy Beat Thread]: _TimeSinceLastBeat = {tostring(_TimeSinceLastBeat)}.`)
+                        print(`[DEBUG # Fake Accuracy Beat Thread]: _TimeSinceLastBeat = {_TimeSinceLastBeat}.`)
                     end
                     LastBeatTick = tick()
-                elseif LastBeatTick == 0 then 
+                elseif (LastBeatTick == 0) then 
                     LastBeatTick = tick()
                 end
             end
@@ -549,7 +574,7 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 		return
 	end
 
-	if Character.Parent == nil then 
+	if (Character.Parent == nil) then 
 		warn("[FAIL # GetMeleeWeapon]: Your character's parent is equal to nil.")
 
 		return
@@ -573,7 +598,7 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 
     if Character:FindFirstChildWhichIsA("Tool") then
         for _, Tool in ipairs(Character:GetChildren()) do 
-            if typeof(Tool) == "Instance" and Tool:IsA("Tool") and Tool.Parent then 
+            if (typeof(Tool) == "Instance") and Tool:IsA("Tool") and Tool.Parent then 
                 if Tool:FindFirstChild("MeleeBase") then 
                     if ListTools then
                         table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
@@ -582,7 +607,7 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 
                     return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
 				else
-					if Tool.Name == "Musket" or Tool.Name == "Shovel" then 
+					if (Tool.Name == "Musket") or (Tool.Name == "Shovel") then 
                         if ListTools then
                             table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
                             continue
@@ -596,7 +621,7 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
     end
     if Backpack:FindFirstChildWhichIsA("Tool") then
         for _, Tool in ipairs(Backpack:GetChildren()) do 
-            if typeof(Tool) == "Instance" and Tool:IsA("Tool") and Tool.Parent then 
+            if (typeof(Tool) == "Instance") and Tool:IsA("Tool") and Tool.Parent then 
                 if Tool:FindFirstChild("MeleeBase") then
                     if ListTools then
                         table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
@@ -605,7 +630,7 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 
                     return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
 				else
-					if Tool.Name == "Musket" or Tool.Name == "Shovel" then 
+					if (Tool.Name == "Musket") or (Tool.Name == "Shovel") then 
                         if ListTools then
                             table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
                             continue
@@ -659,16 +684,15 @@ end
 local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[number]:any}
 	local AgentsInRange:{[number]:any} = {}
     
-    if type(Range) ~= "number" then 
-		warn("[FAIL # GetAgentsInRange]: \"Range\" is not a number.")
-
+    if (type(Range) ~= "number") then 
+		warn(`[FAIL # GetAgentsInRange]: "Range" is not a number.`)
 		return AgentsInRange
 	end
 
-	if Range == 0 or Range == (0/0) or Range == (-(0/0)) then 
+	if (Range == 0) or (Range ~= Range) then 
 		Range = 4
-	elseif Range < 0 then 
-		Range = -Range
+	elseif (Range < 0) then 
+		Range = math.abs(Range)
 	end
 
     local UsePosition:boolean = (typeof(Position) == "Vector3")
@@ -691,15 +715,15 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
         CharHRP = Position
     end
 
-	if #ZombiesFolder:GetChildren() > 0 then 
+	if (#ZombiesFolder:GetChildren() > 0) then 
 		for _, Agent in ipairs(ZombiesFolder:GetChildren()) do 
-			if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and not Agent:FindFirstChildWhichIsA("ForceField") then 
+			if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and not Agent:FindFirstChildWhichIsA("ForceField") then 
 				local HRP = Agent.PrimaryPart or Agent:FindFirstChild("HumanoidRootPart")
 
 				local ZombieType = Agent:GetAttribute("Type")
 				local IgnoreVal = AgentTypeList[ZombieType]
 
-				if HRP and type(IgnoreVal) == "boolean" and not IgnoreVal then 
+				if HRP and (type(IgnoreVal) == "boolean") and not IgnoreVal then 
 					local Distance:number = 0
                     if UseVectorLibrary then
                         Distance = (not UsePosition)
@@ -712,10 +736,10 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
                     end
 
 
-					if Distance <= Range then 
+					if (Distance <= Range) then 
 						table.insert(AgentsInRange, Agent)
 					end
-				elseif HRP and type(IgnoreVal) ~= "boolean" then
+				elseif HRP and (type(IgnoreVal) ~= "boolean") then
 					--// incase the agent's type is *new*, or not in the list.
 					table.insert(AgentsInRange, Agent)
 				end
@@ -725,15 +749,15 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
 		end
 	end
 
-	if #BotsFolder:GetChildren() > 0 then 
+	if (#BotsFolder:GetChildren() > 0) then 
 		for _, Agent in ipairs(BotsFolder:GetChildren()) do 
-			if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and not Agent:FindFirstChildWhichIsA("ForceField") then 
+			if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and not Agent:FindFirstChildWhichIsA("ForceField") then 
 				local HRP = Agent.PrimaryPart or Agent:FindFirstChild("HumanoidRootPart")
 
 				local BotType = Agent:GetAttribute("Type")
 				local IgnoreVal = AgentTypeList[BotType]
 
-				if HRP and type(IgnoreVal) == "boolean" and not IgnoreVal then 
+				if HRP and (type(IgnoreVal) == "boolean") and not IgnoreVal then 
 					local Distance:number = 0
 
                     if UseVectorLibrary then
@@ -746,10 +770,10 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
                             or (Vector3.new(CharHRP.X, 0, CharHRP.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
                     end
 
-					if Distance <= Range then 
+					if (Distance <= Range) then 
 						table.insert(AgentsInRange, Agent)
 					end
-				elseif HRP and type(IgnoreVal) ~= "boolean" then 
+				elseif HRP and (type(IgnoreVal) ~= "boolean") then 
 					--// incase the agent's type is *new*, or not in the list.
 					table.insert(AgentsInRange, Agent)
 				end
@@ -761,7 +785,6 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
 
 	return AgentsInRange
 end
-
 
 --[=[
     Description:
@@ -815,19 +838,19 @@ end
     - Dynamically handling large datasets in-game systems with minimal blocking of the main thread.
 ]=]
 local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(...) end), Instant:boolean?)
-	if type(Instant) ~= "boolean" then
+	if (type(Instant) ~= "boolean") then
         Instant = true
     end
 
-    if Table ~= nil and Function ~= nil then 
-		if type(Table) ~= "table" then 
-			warn("[FAIL # IterateWithFunction]: \"Table\" is not a table.")
+    if (Table ~= nil) and (Function ~= nil) then 
+		if (type(Table) ~= "table") then 
+			warn(`[FAIL # IterateWithFunction]: "Table" is not a table.`)
 
 			return
 		end
 
-		if type(Function) ~= "function" then 
-			warn("[FAIL # IterateWithFunction]: \"Function\" is not a function.")
+		if (type(Function) ~= "function") then 
+			warn(`[FAIL # IterateWithFunction]: "Function" is not a function.`)
 
 			return
 		end
@@ -842,13 +865,13 @@ local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(
             end
         end
     else
-        if Table == nil then 
-            warn("[FAIL # IterateWithFunction]: \"Table\" is equal to nil.")
+        if (Table == nil) then 
+            warn(`[FAIL # IterateWithFunction]: Table is equal to nil.`)
 
             return
         end
-        if Function == nil then 
-            warn("[FAIL # IterateWithFunction]: \"Function\" is equal to nil.")
+        if (Function == nil) then 
+            warn(`[FAIL # IterateWithFunction]: Function is equal to nil.`)
 
             return
         end
@@ -909,20 +932,26 @@ local function GetBuildingWithLeastHealth():any
     end
 
 	for _,  v in pairs(LocalPlayerBuildings:GetDescendants()) do
-		if typeof(v) == "Instance" and v.Name == "BuildingHealth" and v:IsA("NumberValue") then 
+		if (typeof(v) == "Instance") and (v.Name == "BuildingHealth") and v:IsA("NumberValue") then 
 			table.insert(Healths, v)
+        else
+            continue
 		end
 	end
 
-	if #Healths > 0 then 
+	if (#Healths > 0) then 
 		table.sort(Healths, function(Arg1, Arg2)
-			return (Arg1.Value / (Arg1:GetAttribute("MaxHealth") or Arg1.Value) ) < (Arg2.Value / (Arg2:GetAttribute("MaxHealth") or Arg2.Value))
+			return (
+                (Arg1.Value / (Arg1:GetAttribute("MaxHealth") or Arg1.Value))
+                    < 
+                (Arg2.Value / (Arg2:GetAttribute("MaxHealth") or Arg2.Value))
+            )
 		end)
 
-		if typeof(Healths[1]) == "Instance" then 
+		if (typeof(Healths[1]) == "Instance") then 
             return Healths[1]
         elseif not Healths[1] then 
-            warn("[FAIL # GetBuildingWithLeastHealth]: Failed to get a \"BuildingHealth\" NumberValue.")
+            warn(`[FAIL # GetBuildingWithLeastHealth]: Failed to get a "BuildingHealth" NumberValue.`)
             return false
         end
     else
@@ -963,7 +992,7 @@ end
     local ClosestBuilding = GetClosestBuilding()
     if ClosestBuilding then
         print("The closest building is: ", ClosestBuilding)
-    elseif ClosestBuilding == false then
+    elseif not ClosestBuilding then
         print("The closest building is already at maximum health or invalid.")
     else
         print("No buildings found for the player.")
@@ -989,24 +1018,34 @@ local function GetClosestBuilding():any
     end
 
 	for _,  v in pairs(LocalPlayerBuildings:GetDescendants()) do
-		if typeof(v) == "Instance" and v.Name == "Bound" and v:IsA("BasePart") then 
+		if (typeof(v) == "Instance") and (v.Name == "Bound") and v:IsA("BasePart") then 
 			table.insert(Bounds, v)
+        else
+            continue
 		end
 	end
 
-	if #Bounds > 0 then 
+	if (#Bounds > 0) then 
 		table.sort(Bounds, function(Arg1, Arg2)
             if UseVectorLibrary then
-                return (Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or vector.create(0, 0, 0)) < (Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or vector.create(0, 0, 0))
+                return (
+                    (Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or vector.create(0, 0, 0)) 
+                        < 
+                    (Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or vector.create(0, 0, 0))
+                )
             end
 
-            return (Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or Vector3.new()) < (Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or Vector3.new())
+            return (
+                (Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or Vector3.new()) 
+                    < 
+                (Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or Vector3.new())
+            )
 		end)
 
-		if typeof(Bounds[1]) == "Instance" and typeof(Bounds[1].Parent) == "Instance" then 
+		if (typeof(Bounds[1]) == "Instance") and (typeof(Bounds[1].Parent) == "Instance") then 
             local BuildingHealth:NumberValue = (((Bounds[1].Parent)::Part):WaitForChild("BuildingHealth")::NumberValue)
 
-            if ( BuildingHealth.Value >= (BuildingHealth:GetAttribute("MaxHealth") or BuildingHealth.Value) )  then 
+            if (BuildingHealth.Value >= (BuildingHealth:GetAttribute("MaxHealth") or BuildingHealth.Value))  then 
                 return false
             end
 
@@ -1057,25 +1096,25 @@ end
     - Empty tables return a count of `0`.
 ]=]
 local function GetMaxIndexOfTable(Table:{[any]: any})
-    if Table ~= nil then 
-		if type(Table) ~= "table" then 
-			warn("[FAIL # GetMaxIndexOfTable]: \"Table\" is not a table. Returning 0")
-
+    if (Table ~= nil) then 
+		if (type(Table) ~= "table") then 
+			warn(`[FAIL # GetMaxIndexOfTable]: "Table" is not a table. Returning 0`)
 			return 0
 		end
 
 		local CountToReturn = 0
-
         for i, v in pairs(Table) do 
             if i then
                 CountToReturn += 1
+            else
+                continue
             end
         end
 
         return CountToReturn
     else
-        if Table == nil then 
-            warn("[FAIL # GetMaxIndexOfTable]: \"Table\" is equal to nil. Returning 0")
+        if (Table == nil) then 
+            warn(`[FAIL # GetMaxIndexOfTable]: "Table" is equal to nil. Returning 0`)
 
             return 0
         end
@@ -1085,7 +1124,7 @@ local function GetMaxIndexOfTable(Table:{[any]: any})
 end
 
 _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Instance)
-    if Orig and not Orig:IsA("Highlight") and Orig:IsA("ObjectValue") and Orig.Name == "Orig" then 
+    if Orig and not Orig:IsA("Highlight") and Orig:IsA("ObjectValue") and (Orig.Name == "Orig") then 
         repeat
             task.wait()
         until Orig.Value and Orig.Parent
@@ -1139,9 +1178,9 @@ end)
 
 _G["BuildingBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
-		if Key.KeyCode == Enum.KeyCode.KeypadTwo then 
+		if (Key.KeyCode == Enum.KeyCode.KeypadTwo) then 
             BuildingBindEnabled	= not BuildingBindEnabled
-            print("[INFO # BuildingBind]: \"BuildingBindEnabled\" is now equal to: "..tostring(BuildingBindEnabled))
+            print(`[INFO # BuildingBind]: "BuildingBindEnabled" is now equal to: {BuildingBindEnabled}`)
 
 			if not BuildingBindEnabled then 
 				_G["BuildHighlight"].Adornee = nil
@@ -1159,13 +1198,13 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 			or Character:FindFirstChildWhichIsA("Tool")
 			or Character:FindFirstChildWhichIsA("HopperBin")
 
-		if Hammer and Hammer.Name == "Hammer" then
+		if Hammer and (Hammer.Name == "Hammer") then
 			local Remote = Hammer:FindFirstChild("RemoteEvent")
 
 			if Remote then 
-				local BuildingFound:NumberValue = (BuildingFetchType == "LeastHealth" and GetBuildingWithLeastHealth() or GetClosestBuilding())
+				local BuildingFound:NumberValue = (BuildingFetchType == "LeastHealth" and GetBuildingWithLeastHealth()) or GetClosestBuilding()
 
-				if type(BuildingFound) == "boolean" or not CanRepair or ( BuildingFound.Value >= (BuildingFound:GetAttribute("MaxHealth") or BuildingFound.Value) ) then 
+				if (type(BuildingFound) == "boolean") or not CanRepair or (BuildingFound.Value >= (BuildingFound:GetAttribute("MaxHealth") or BuildingFound.Value)) then 
 					if not CanRepair then 
 						return
 					end
@@ -1204,47 +1243,46 @@ end)
 
 _G["BuildingFetchTypeBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
     if not Process and Key.KeyCode == Enum.KeyCode.KeypadThree then 
-        if BuildingFetchType == "Closest" then 
+        if (BuildingFetchType == "Closest") then 
             BuildingFetchType = "LeastHealth"
         else
             BuildingFetchType = "Closest"
         end
 
-        print("[INFO # BuildingFetchTypeBind]: \"BuildingFetchType\" is now equal to: "..tostring(BuildingFetchType))
+        print(`[INFO # BuildingFetchTypeBind]: "BuildingFetchType" is now equal to: {BuildingFetchType}`)
     end
 end)
 
--- u f g h j k l
 _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process and LocalPlayer.Character then 
         local Character = LocalPlayer.Character
 		local KeyCodeName = tostring(Key.KeyCode.Name)
         local SongName = MusicSelections[KeyCodeName]
 
-        if type(SongName) == "string" then 
+        if (type(SongName) == "string") then 
             local FoundInstrument:Tool
 
             for i:string, v:boolean in pairs(AllowedInstruments) do 
-                if type(i) == "string" and v then 
+                if (type(i) == "string") and v then 
                     FoundInstrument = (Character:FindFirstChild(tostring(i)) or Backpack:FindFirstChild(tostring(i)))::Tool
 
                     if FoundInstrument then 
-                        print("[INFO # MusicBind]: Found instrument \""..tostring(FoundInstrument.Name).."\".")
+                        print(`[INFO # MusicBind]: Found instrument "{FoundInstrument.Name}".`)
                         break
                     end
                 end
             end
 
-            if typeof(FoundInstrument) == "Instance" and FoundInstrument:IsA("Tool") then                 
+            if( typeof(FoundInstrument) == "Instance") and FoundInstrument:IsA("Tool") then                 
                 local Remote = (FoundInstrument:FindFirstChild("RemoteEvent"))::RemoteEvent
                 
                 if Remote then 
-                    if _G["FakeAccuracyBeat"] ~= nil then 
+                    if (_G["FakeAccuracyBeat"] ~= nil) then 
                         coroutine.close(_G["FakeAccuracyBeat"])
                         _G["FakeAccuracyBeat"] = nil
                     end
 
-                    print("[INFO # MusicBind]: Attempted to play \""..tostring(SongName).."\" with "..tostring(FoundInstrument.Name)..".")
+                    print(`[INFO # MusicBind]: Attempted to play "{SongName}" with {FoundInstrument.Name}.`)
                     
                     Remote:FireServer("Stop")
                     Remote:FireServer("Play", SongName)
@@ -1252,15 +1290,15 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
                     local Connection
                     Connection = FoundInstrument:GetPropertyChangedSignal("Parent"):Connect(function()
-                        if FoundInstrument.Parent and FoundInstrument.Parent.Name == "Backpack" then 
-                            if _G["FakeAccuracyBeat"] ~= nil then 
+                        if FoundInstrument.Parent and ((FoundInstrument.Parent).Name == "Backpack") then 
+                            if (_G["FakeAccuracyBeat"] ~= nil) then 
                                 coroutine.close(_G["FakeAccuracyBeat"])
                                 _G["FakeAccuracyBeat"] = nil
                             end
                             
                             Connection:Disconnect()
                         elseif not FoundInstrument.Parent then 
-                            if _G["FakeAccuracyBeat"] ~= nil then 
+                            if (_G["FakeAccuracyBeat"] ~= nil) then 
                                 coroutine.close(_G["FakeAccuracyBeat"])
                                 _G["FakeAccuracyBeat"] = nil
                             end
@@ -1269,13 +1307,10 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                         end
                     end)
                 elseif not Remote then 
-                    warn("[FAIL # MusicBind]: Failed to find instrument remote event for the "..tostring(FoundInstrument.Name)..".")
-                    
+                    warn(`[FAIL # MusicBind]: Failed to find instrument remote event for the "{FoundInstrument.Name}".`)
                     return
                 end
             else
-                --warn("[FAIL # MusicBind]: Failed to find an instrument to use.")
-
                 return
             end
         end
@@ -1284,16 +1319,16 @@ end)
 
 _G["RubiksCubeBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
-		if Key.KeyCode == Enum.KeyCode.KeypadFour then 
+		if (Key.KeyCode == Enum.KeyCode.KeypadFour) then 
             RubiksCube = not RubiksCube
-            print("[INFO # RubiksCubeBind]: \"RubiksCube\" is now equal to: "..tostring(RubiksCube))
+            print(`[INFO # RubiksCubeBind]: "RubiksCube" is now equal to: {RubiksCube}`)
         end
     end
 end)
 
 _G["ShoveEquipper"] = UserInputService.InputBegan:Connect(function(Key, Process)
     if not Process then
-        if Key.KeyCode == Enum.KeyCode.G and LocalPlayer.Character then
+        if (Key.KeyCode == Enum.KeyCode.G) and LocalPlayer.Character then
             local Character:Model = LocalPlayer.Character
             Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
 
@@ -1311,20 +1346,20 @@ end)
 
 _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
-		if Key.KeyCode == Enum.KeyCode.Q then 
+		if (Key.KeyCode == Enum.KeyCode.Q) then 
 			if LocalPlayer.Character and LocalPlayer.Character.Parent then
 				local Character = LocalPlayer.Character
 				local HRP = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
 				local AgentsInRange = GetAgentsInRange(false, ShoveRange)
 
-				if type(AgentsInRange) ~= "table" then 
-                    warn("[FAIL # ShoveBind]: \"AgentsInRange\" is not a table.")
+				if (type(AgentsInRange) ~= "table") then 
+                    warn(`[FAIL # ShoveBind]: AgentsInRange is not a table.`)
 
 					return
 				end
 
 				if (#AgentsInRange <= 0) then
-					warn("[FAIL # ShoveBind]: No agents found within a range of "..tostring(ShoveRange).." studs.")
+					warn("[FAIL # ShoveBind]: No agents found within a range of {ShoveRange} studs.")
                     
 					return
 				end
@@ -1346,11 +1381,11 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                     or Backpack:FindFirstChild("Navy Pistol")
                     or Backpack:FindFirstChild("Pickaxe"))::Tool
 
-				if Weapon and typeof(Weapon) == "Instance" and Weapon.Parent then
+				if Weapon and (typeof(Weapon) == "Instance") and Weapon.Parent then
 					local Remote = Weapon:FindFirstChildWhichIsA("RemoteEvent")
 
 					if Remote then
-						if Weapon.Name == "Axe" or Weapon.Name == "Pickaxe" then
+						if (Weapon.Name == "Axe") or (Weapon.Name == "Pickaxe") then
 							Remote:FireServer("BraceBlock")
 
 							task.spawn(function()
@@ -1359,12 +1394,12 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 									Remote:FireServer("StopBraceBlock")
 								end
 							end)
-						elseif Weapon.Name == "Carbine" or Weapon.Name == "Navy Pistol" then
+						elseif (Weapon.Name == "Carbine") or (Weapon.Name == "Navy Pistol" )then
 							Remote:FireServer("Shove")
 						end
 
 						IterateWithFunction(AgentsInRange, function(Key, Agent)
-							if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
+							if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
 								local StunArgs:{[number]:any} = {
 									[1] = "FeedbackStun";
 									[2] = Agent;
@@ -1379,13 +1414,13 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
                         table.clear(AgentsInRange)
                     elseif not Remote then 
-                        warn("[FAIL # ShoveBind]: \"Remote\" if statement failed.")
+                        warn(`[FAIL # ShoveBind]: "Remote" if statement failed.`)
 
                         table.clear(AgentsInRange)
                         return
 					end
                 else
-                    warn("[FAIL # ShoveBind]: \"Weapon\" if statement failed.")
+                    warn(`[FAIL # ShoveBind]: "Weapon" if statement failed.`)
 
                     table.clear(AgentsInRange)
                     return
@@ -1397,7 +1432,7 @@ end)
 
 _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
-		if Key.KeyCode == Enum.KeyCode.Z or Key.KeyCode == Enum.KeyCode.X then 
+		if (Key.KeyCode == Enum.KeyCode.Z) or (Key.KeyCode == Enum.KeyCode.X) then 
 			if LocalPlayer.Character and LocalPlayer.Character.Parent then
 				local List:{{}} = GetMeleeWeapon(true)
 
@@ -1406,31 +1441,31 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                     local WeaponRemote = Table[2]
                     local LimitRange = Table[3]
 
-                    if Weapon and typeof(Weapon) == "Instance" then 
-                        local AgentsInRange:{[number]:Model} = GetAgentsInRange(false, LimitRange and (LimitRange * 1.8) or MurderRange)
+                    if Weapon and (typeof(Weapon) == "Instance") then 
+                        local AgentsInRange:{[number]:Model} = GetAgentsInRange(false, (LimitRange and (LimitRange * 1.8)) or MurderRange)
 
-                        if type(AgentsInRange) ~= "table" then 
-                            warn("[FAIL # MurderBind]: \"AgentsInRange\" is not a table.")
+                        if (type(AgentsInRange) ~= "table") then 
+                            warn(`[FAIL # MurderBind]: AgentsInRange is not a table.`)
 
                             continue
                         end
 
-                        if #AgentsInRange <= 0 then
-                            warn("[FAIL # MurderBind]: No agents found within a range of "..tostring(LimitRange and (LimitRange * 1.8) or MurderRange).." studs.")
+                        if (#AgentsInRange <= 0) then
+                            warn(`[FAIL # MurderBind]: No agents found within a range of {LimitRange and (LimitRange * 1.8) or MurderRange} studs.`)
 
                             continue
                         end
 
                         if WeaponRemote and WeaponRemote:IsA("RemoteEvent") then 						
-                            if Weapon.Name ~= "Musket" then
-                                if Weapon.Name == "Spade" then 
+                            if (Weapon.Name ~= "Musket") then
+                                if (Weapon.Name == "Spade") then 
                                     WeaponRemote:FireServer("Swing", "Over")
                                 else
                                     WeaponRemote:FireServer("Swing", "Side")
                                 end
 
                                 IterateWithFunction(AgentsInRange, function(Key:any, Agent:Model) 
-                                    if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
+                                    if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
                                         local HitArgs:{[number]:any} = {
                                             [1] = "HitZombie";
                                             [2] = Agent;
@@ -1444,11 +1479,11 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                                         WeaponRemote:FireServer(unpack(HitArgs))
                                     end
                                 end)
-                            elseif Weapon.Name == "Musket" then
+                            elseif (Weapon.Name == "Musket") then
                                 WeaponRemote:FireServer("ThrustBayonet")
 
                                 for _, Agent in pairs(AgentsInRange) do 
-                                    if typeof(Agent) == "Instance" and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
+                                    if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
                                         local HitArgs:{[number]:any} = {
                                             [1] = "Bayonet_HitZombie";
                                             [2] = Agent;
@@ -1457,7 +1492,6 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                                         }
                                         
                                         WeaponRemote:FireServer(unpack(HitArgs))
-
                                         break
                                     end
                                 end
@@ -1465,13 +1499,13 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
                             table.clear(AgentsInRange)
                         else
-                            warn("[FAIL # MurderBind]: \"WeaponRemote\" if statement failed.")
+                            warn(`[FAIL # MurderBind]: "WeaponRemote" if statement failed.`)
 
                             table.clear(AgentsInRange)
                             continue
                         end
                     else
-                        warn("[FAIL # MurderBind]: \"Weapon\" if statement failed.")
+                        warn(`[FAIL # MurderBind]: "Weapon" if statement failed.`)
 
                         continue
                     end
@@ -1485,7 +1519,7 @@ end)
 
 _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
     if not Process then 
-        if Key.KeyCode == Enum.KeyCode.KeypadOne and LocalPlayer.Character then
+        if (Key.KeyCode == Enum.KeyCode.KeypadOne) and LocalPlayer.Character then
             local Character:Model = LocalPlayer.Character
             local Berezina = Workspace:FindFirstChild("Berezina")
 
@@ -1501,21 +1535,21 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                         if EscapeRoute then
                             local Logs = (EscapeRoute:FindFirstChild("SupplyWagon") and (EscapeRoute:FindFirstChild("SupplyWagon")::Instance):FindFirstChild("Logs") or false)
 
-                            if type(Logs) ~= "boolean" and typeof(Logs) == "Instance" and (#Logs:GetChildren() > 0) then
+                            if (type(Logs) ~= "boolean") and (typeof(Logs) == "Instance") and (#Logs:GetChildren() > 0) then
                                 for _, Log in pairs(Logs:GetChildren()) do 
-                                    if Log and Log:IsA("Model") and Log.Name == "Model" and Log:FindFirstChild("Handle") and (Log:FindFirstChild("Handle")::MeshPart):FindFirstChild("Interact") then 
+                                    if Log and Log:IsA("Model") and (Log.Name == "Model") and Log:FindFirstChild("Handle") and (Log:FindFirstChild("Handle")::MeshPart):FindFirstChild("Interact") then 
                                         ((Log:FindFirstChild("Handle")::MeshPart):FindFirstChild("Interact")::RemoteEvent):FireServer()
                                         
                                         local LogTool = (Character:FindFirstChild("Log") or WaitForChildWhichIsA(Character, "Tool", 1))
-                                        if LogTool and typeof(LogTool) == "Instance" then
+                                        if LogTool and (typeof(LogTool) == "Instance") then
                                             task.wait()
-                                            LogTool.Parent = Backpack
+                                            --LogTool.Parent = Backpack
                                         else
                                             continue
                                         end
 
                                         --task.wait()
-                                        --return
+                                        return
                                     else
                                         continue
                                     end
@@ -1524,17 +1558,17 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                         end
                         if Holdout:FindFirstChild("Log") then
                             for _, Log in pairs(Holdout:GetChildren()) do 
-                                if Log and Log:IsA("Model") and Log.Name == "Log" and Log:FindFirstChild("Log") and (Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact") then 
+                                if Log and Log:IsA("Model") and (Log.Name == "Log") and Log:FindFirstChild("Log") and (Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact") then 
                                     ((Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact")::RemoteEvent):FireServer()
                                     
                                     local LogTool = (Character:FindFirstChild("Log") or WaitForChildWhichIsA(Character, "Tool"))
-                                    if LogTool and typeof(LogTool) == "Instance" then
+                                    if LogTool and (typeof(LogTool) == "Instance") then
                                         task.wait()
-                                        LogTool.Parent = Backpack
+                                        --LogTool.Parent = Backpack
                                     end
 
                                     --task.wait()
-                                    --return
+                                    return
                                 else
                                     continue
                                 end
@@ -1549,7 +1583,7 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                     end
                 end
 
-                warn("[FAIL # GrabLogBind]: \"Modes\" or \"Holdout\" if statements failed?")
+                warn(`[FAIL # GrabLogBind]: "Modes" or "Holdout" if statements failed?`)
                 return
             elseif not Berezina then 
                 warn("[FAIL # GrabLogBind]: The current map is not Berezina?")
@@ -1566,9 +1600,8 @@ if Debug then
     end
     _G["FlameTouchRemover"] = Workspace.DescendantAdded:Connect(function(NewWorkspaceChild)
         if NewWorkspaceChild then
-            if NewWorkspaceChild.Name == "IgniterFire" and NewWorkspaceChild:IsA("BasePart") then
+            if (NewWorkspaceChild.Name == "IgniterFire") and NewWorkspaceChild:IsA("BasePart") then
                 NewWorkspaceChild.CanTouch = false
-
                 local TouchInterest = NewWorkspaceChild:WaitForChild("TouchInterest", 3)
 
                 if TouchInterest then
@@ -1596,15 +1629,15 @@ if Debug then
                 Attempts += 1
 
                 task.wait(0.05)
-            until GrabRemote or Attempts >= MaxAttempts
+            until GrabRemote or (Attempts >= MaxAttempts)
 
             task.wait(0.1)
 
             repeat 
                 task.wait()
-            until #(getconnections(GrabRemote.OnClientEvent)) >= 1
+            until (#(getconnections(GrabRemote.OnClientEvent)) >= 1)
 
-            print("[INFO # OnCharacterAdded]: Removing \"OnClientEvent\" connections from the LocalPlayer's \"GrabRemote\".")
+            print(`[INFO # OnCharacterAdded]: Removing "OnClientEvent" connections from the LocalPlayer's "GrabRemote".`)
             for _, Connection:Connection in pairs(getconnections(GrabRemote.OnClientEvent)) do 
                 Connection:Disable()
             end
@@ -1612,52 +1645,49 @@ if Debug then
     end)]]
 end
 
-local OldNameCall = nil
-local OldIndex = nil
-
-if _G["AlreadyActive"] == nil then 
+if (_G["AlreadyActive"] == nil) then 
 	_G["AlreadyActive"] = true
 
 	OldNameCall = hookmetamethod(game, "__namecall", function(Remote, ...)
 		local Args = {...}
 		local NamecallMethod = getnamecallmethod()
 
-		if Remote == LocalPlayer and (NamecallMethod:lower() == "kick") then
+		if (Remote == LocalPlayer) and (NamecallMethod:lower() == "kick") then
             print("[INFO # AntiKick]: An attempt to kick the LocalPlayer was just prevented.")
 			return
 	    end
 
 		if not checkcaller() then
-            if NamecallMethod == "FireServer" then
-                --// always returns nil technically
+            if (NamecallMethod == "FireServer") then
+                --// always returns "nil" technically
                 --// (OldNameCall(Remote, unpack(Args)) == nil) = true / (Remote:FireServer(unpack(Args)) == nil) = true
-                if Remote == AFKSignal or Remote.Name == "OnAFKSignalReceived" then
-                    print("[INFO # Namecall Hook]: \"OnAFKSignalReceived\" attempted to fire.")
+                if (Remote == AFKSignal) or (Remote.Name == "OnAFKSignalReceived") then
+                    print(`[INFO # Namecall Hook]: "OnAFKSignalReceived" attempted to fire.`)
                     return nil
-                elseif Remote.Name == "ForceKill" then 
-                    print("[INFO # Namecall Hook]: \"ForceKill\" remote attempted to fire.")
+                elseif (Remote.Name == "ForceKill") then 
+                    print(`[INFO # Namecall Hook]: "ForceKill" remote attempted to fire.`)
                     return nil
                 else
-                    if Args[1] ~= nil then 
-                        if Args[1] == "UpdateAccuracy" then 
+                    if (Args[1] ~= nil) then 
+                        if (Args[1] == "UpdateAccuracy") then 
                             Args[2] = 100
                             Remote["FireServer"](Remote, unpack(Args))
                             
                             return nil
-                        elseif Args[1] == "HitZombie" or Args[1] == "Bayonet_HitZombie" or Args[1] == "ThrustCharge" then 
-                            if Args[2] ~= nil and Args[2].Parent and (Args[2]:GetAttribute("Type") == "Barrel") then
+                        elseif (Args[1] == "HitZombie") or (Args[1] == "Bayonet_HitZombie") or (Args[1] == "ThrustCharge") then 
+                            if (Args[2] ~= nil) and Args[2].Parent and (Args[2]:GetAttribute("Type") == "Barrel") then
                                 print("[INFO # Namecall Hook]: Player just attempted to hit a barrel zombie, blocking request and replacing with request with nil.")
                                 return nil
                             end
 
-                            if type(Args[4]) == "boolean" then 
+                            if (type(Args[4]) == "boolean") then 
                                 if Args[4] then
                                     return Remote["FireServer"](Remote, unpack(Args))
                                 elseif not Args[4] then
                                     Args[4] = true
                                     Args[6] = "Head"
-                                    Args[5] = (Args[5] * 50)
-                                    Args[7] = (Args[7] * 50)
+                                    Args[5] = (Args[5] * 50) --// Knockback parameter.
+                                    Args[7] = (Args[7] * 50) --// Knockback parameter.
                                     Remote["FireServer"](Remote, unpack(Args))
                                     
                                     return nil
@@ -1667,10 +1697,10 @@ if _G["AlreadyActive"] == nil then
                             end
                             
                             return Remote["FireServer"](Remote, unpack(Args))
-                        elseif Args[1] == "CancelReload" then 
+                        elseif (Args[1] == "CancelReload") then 
                             print("[INFO # Namecall Hook]: CancelReload argument blocked.")
                             return nil
-                        elseif Args[1] == "Swing" then 
+                        elseif (Args[1] == "Swing") then 
                             local Character = LocalPlayer.Character
 
                             if Character then 
@@ -1691,7 +1721,7 @@ if _G["AlreadyActive"] == nil then
                             end
 
                             return Remote["FireServer"](Remote, ...)
-                        elseif Args[1] == "UpdateLook" and RubiksCube then
+                        elseif (Args[1] == "UpdateLook") and RubiksCube then
                         	--// probably a much better way to do this but
                             --// i got lazy!
                             --// only works with the hammer/claw hammer now
@@ -1713,7 +1743,7 @@ if _G["AlreadyActive"] == nil then
                             elseif RandomNum1 == 5 then
                                 Args[3] = LocalPlayer.Character.Torso["Left Hip"] or Args[3]
                             elseif RandomNum1 == 6 then
-                                Args[3] = --[[Player.Character.Torso["Left Shoulder"] or Args[3] ]] LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[3]
+                                Args[3] = LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[3]
                             else
                                 Args[3] = LocalPlayer.Character.Torso["Neck"] or Args[3]
                             end
@@ -1729,7 +1759,7 @@ if _G["AlreadyActive"] == nil then
                             elseif RandomNum2 == 5 then
                                 Args[4] = LocalPlayer.Character.Torso["Left Hip"] or Args[4]
                             elseif RandomNum2 == 6 then
-                                Args[4] = --[[Player.Character.Torso["Left Shoulder"] or Args[4] ]] LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[4]
+                                Args[4] = LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[4]
                             else
                                 Args[4] = LocalPlayer.Character.Torso["Neck"] or Args[4]
                             end
@@ -1745,7 +1775,7 @@ if _G["AlreadyActive"] == nil then
                             elseif RandomNum3 == 5 then
                                 Args[5] = LocalPlayer.Character.Torso["Left Hip"] or Args[5]
                             elseif RandomNum3 == 6 then
-                                Args[5] = --[[Player.Character.Torso["Left Shoulder"] or Args[5] ]] LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[5]
+                                Args[5] = LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[5]
                             else
                                 Args[5] = LocalPlayer.Character.Torso["Neck"] or Args[5]
                             end
@@ -1761,10 +1791,14 @@ if _G["AlreadyActive"] == nil then
 	end)
 
     OldIndex = hookmetamethod(game, "__index", function(Self, Method)
-        if Self == LocalPlayer and (Method:lower() == "kick") then
-            return (function()
-                print("[INFO # AntiKick]: An attempt to kick the LocalPlayer was just prevented.")
-            end)
+        if (Self == LocalPlayer) and (Method:lower() == "kick") then
+            if not _G["__PlaceholderFunction"] than
+                _G["__PlaceholderFunction"] = function()
+                    print("[INFO # AntiKick]: An attempt to kick the LocalPlayer was just prevented.")
+                end
+            end
+
+            return _G["__PlaceholderFunction"]
         end
 
         return OldIndex(Self, Method)
@@ -1785,9 +1819,9 @@ warn(
         
     ]]):format(
         tostring(tick() - OldTick),
-        ((tostring(UseVectorLibrary) == "true") and "enabled" or "disabled"),
-        ((tostring(Debug) == "true") and "enabled" or "disabled"),
-        ((tostring(DebugPrints) == "true") and "enabled" or "disabled"),
+        (UseVectorLibrary and "enabled" or "disabled"),
+        (Debug and "enabled" or "disabled"),
+        (DebugPrints and "enabled" or "disabled"),
         (function()
             local ReturnString:string = "\n                "
 
@@ -1796,14 +1830,14 @@ warn(
             for i, v in pairs(MusicSelections) do 
                 CurrentIndex += 1
 
-                if CurrentIndex < MaxIndexes then   
-                    ReturnString = ReturnString..([[Key:  %s   /   Song:  %s            ]].."\n                "):format(
+                if (CurrentIndex < MaxIndexes) then   
+                    ReturnString = (ReturnString..([[Key:  %s   /   Song:  %s            ]].."\n                "):format(
                         tostring(i), tostring(v)
-                    )
-                elseif CurrentIndex >= MaxIndexes then
-                    ReturnString = ReturnString..([[Key:  %s   /   Song:  %s            ]].."\n             "):format(
+                    ))
+                elseif (CurrentIndex >= MaxIndexes) then
+                    ReturnString = (ReturnString..([[Key:  %s   /   Song:  %s            ]].."\n             "):format(
                         tostring(i), tostring(v)
-                    )
+                    ))
                 end
             end
 
