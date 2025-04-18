@@ -261,7 +261,6 @@ local PreferredWeapon = "Pike"
 --// false = Include Agent
 local AgentTypeList = {
 	["Barrel"] = true;
-    ["Cuirassier"] = false;
 	["BigBoy"] = false;
 	["Crawler"] = false;
 	["Fast"] = false;
@@ -270,6 +269,7 @@ local AgentTypeList = {
 	["Sapper"] = false;
 	["Bot"] = false;
 	["Headless"] = false;
+    ["Cuirassier"] = false;
 }
 local AllowedInstruments = {
     ["Fife"] = true; --// Plays music while in the backpack and still provides/gains buffs.
