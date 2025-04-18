@@ -2,6 +2,7 @@
 --// https://www.roblox.com/games/12334109280/Guts-Blackpowder
 --//    Made with Wave. https://getwave.gg
 --//    Each function has a description if whoever is reading this is curious about what they do.
+--//    * This script is entirely made from boredom and my passion for exploiting/pen-testing. *
 
 --//// Recent Changes \\\\--
 --//        Updated ESP System to also add highlights to the new "Cuirassier" zombie type, which was recently seen in action in G&B's new playtest, 
