@@ -256,10 +256,12 @@ local MurderRange = 11 --// Used as a backup if can't find weapon range.
 local HeadSizeToUse:Vector3 = (UseVectorLibrary and vector.create(6, 9, 4.5)) or Vector3.new(6, 9, 4.5)
 local HeadTransparency = 0.6
 
+local PreferredWeapon = "Pike"
 --// true = Ignore Agent
 --// false = Include Agent
 local AgentTypeList = {
 	["Barrel"] = true;
+    ["Cuirassier"] = false;
 	["BigBoy"] = false;
 	["Crawler"] = false;
 	["Fast"] = false;
@@ -289,9 +291,14 @@ local ESPColors = {
     ["Bomber"] = Color3.fromRGB(255, 123, 0);
     ["Headless"] = Color3.fromRGB(100, 0, 167);
     ["Cuirassier"] = Color3.fromRGB(35, 77, 255);
-    ["Backup"] = Color3.fromRGB(14, 16, 168)
+
+    ["Backup"] = Color3.fromRGB(14, 16, 168);
 }
-local PreferredWeapon = "Pike"
+setmetatable(ESPColors, {
+    __index = function()
+        return ESPColors["Backup"]
+    end
+})
 
 --// Disconnection/Removing previous script connections if executed more than once.
 if _G["FlameTouchRemover"] ~= nil then 
@@ -442,14 +449,14 @@ local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean, IsRunn
         return
     end
     
-    local HeadParameterExist = (typeof(Head) == "Instance" and Head:IsA("BasePart"))
-    local Type = (IsIgniter and "Igniter") 
-        or (IsRunner and "Runner") 
-        or (IsSapper and "Sapper") 
+    local HeadParameterExist:boolean = (typeof(Head) == "Instance" and Head:IsA("BasePart"))
+    local Type:string = (IsIgniter and "Igniter") 
+        or (IsRunner and "Runner")
+        or (IsSapper and "Sapper")
         or (IsBomber and "Bomber")
         or (IsHeadless and "Headless")
 		or (IsCuirassier and "Cuirassier")
-		or "Backup"
+		or "Backup";
     local NewHighlight:any
 
     if (type(Type) == "string") then
@@ -522,7 +529,7 @@ local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:
         end
     end
     
-    local NewThread = coroutine.create(function()
+    local NewThread:thread = coroutine.create(function()
         while true do
             if Debug then
                 if (LastBeatTick ~= 0) then 
@@ -949,7 +956,7 @@ end
     - Identifying weak points in a player's structure during gameplay.
     - Strategically prioritizing building maintenance or defense based on health status.
 ]=]
-local function GetBuildingWithLeastHealth():any
+local function GetBuildingWithLeastHealth():(any)
     local LocalPlayerUserId:number = LocalPlayer.UserId
 	local Healths = {}
 
