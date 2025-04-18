@@ -5,7 +5,7 @@
 
 --//// Recent Changes \\\\--
 --//        Updated ESP System to also add highlights to the new "Cuirassier" zombie type, which was recently seen in action in G&B's new playtest, 
---//   and has multiple variants sitting inside the G&B Dev Zone
+--//   and has multiple variants sitting inside the G&B Dev Zone.
 --//        Changed "Feature Overview" and "Key Bindings Overview" to be more technical.
 --||||||||||||||||||||||||--
 
