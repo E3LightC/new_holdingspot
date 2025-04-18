@@ -1,7 +1,13 @@
---!strict
 --//// Discord: @_x4yz \\\\--
 --// https://www.roblox.com/games/12334109280/Guts-Blackpowder
 --//    Made with Wave. https://getwave.gg
+--//    Each function has a description if whoever is reading this is curious about what they do.
+
+--//// Recent Changes \\\\--
+--//        Updated ESP System to also add highlights to the new "Cuirassier" zombie type, which was recently seen in action in G&B's new playtest, 
+--//   and has multiple variants sitting inside the G&B Dev Zone
+--//        Changed "Feature Overview" and "Key Bindings Overview" to be more technical.
+--||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
 --// [System Logging]
@@ -58,6 +64,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local UserInputService = game:GetService("UserInputService")
 
+--// Types for silencing warnings.
 type VectorLibrary = { 
     create: (x:number, y:number, z:number) -> Vector3;
     magnitude: (vec:Vector3) -> number;
@@ -76,6 +83,13 @@ type VectorLibrary = {
     zero: (Vector3);
     one: (Vector3);
 }
+type DebugLibrary = {
+    info: (level:number, options:string) -> any
+}
+--//
+
+local vector:VectorLibrary = (getfenv().vector) --// Since Wave doesn't have Lua's global "vector" class?
+local debug:DebugLibrary = (getfenv().debug) --// Since debug.info isn't registered for some reason?
 
 --[=[
     Description:
@@ -173,12 +187,12 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
                 if TimeOutWasReached then
                     StringToOutput = StringToOutput:format("the time out being reached.")
                 elseif not TimeOutWasReached then
-                    StringToOutput = StringToOutput:format(`the ".Parent" value of the "Parent" parameter being invalid.`)
+                    StringToOutput = StringToOutput:format(`the ".Parent" property of the "Parent" parameter being invalid.`)
                 end
             else
-                StringToOutput = StringToOutput:format(`the ".Parent" value of the "Parent" parameter being invalid.`)
+                StringToOutput = StringToOutput:format(`the ".Parent" property of the "Parent" parameter being invalid.`)
             end
-            
+
             print(StringToOutput..`  ||| Current script line: {debug.info(1, "l")}`)
         end
 
@@ -200,6 +214,12 @@ end
 local OldNameCall = nil
 local OldIndex = nil
 
+if not Players.LocalPlayer then
+    repeat
+        task.wait()
+    until Players.LocalPlayer
+end
+local LocalPlayer:Player = Players.LocalPlayer
 local Backpack:Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
 
 local Remotes:Folder = (ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:WaitForChild("Remotes", math.huge))::Folder
@@ -213,7 +233,6 @@ local Camera:Camera = (Workspace.CurrentCamera or Workspace:FindFirstChildWhichI
 local Debug = true
 local DebugPrints = false
 local UseVectorLibrary = true
-local vector:VectorLibrary = (getfenv().vector)
 
 local RubiksCube = false
 
@@ -268,7 +287,7 @@ local ESPColors = {
     ["Sapper"] = Color3.fromRGB(255, 0, 255);
     ["Bomber"] = Color3.fromRGB(255, 123, 0);
     ["Headless"] = Color3.fromRGB(100, 0, 167);
-	["Cuirassier"] = Color3.fromRGB(35, 77, 255);
+    ["Cuirassier"] = Color3.fromRGB(35, 77, 255);
     ["Backup"] = Color3.fromRGB(14, 16, 168)
 }
 local PreferredWeapon = "Pike"
@@ -394,7 +413,7 @@ _G["BuildHighlight"].Enabled = true
     Edge Cases:
     - If `Character` is not a valid `Model`, the function exits without modifications.
     - If `Head` is not a valid `BasePart`, its color remains unchanged.
-    - If none of the boolean parameters are `true`, the function does nothing.
+    - The function does nothing if none of the boolean parameters are `true`.
 ]=]
 local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean, IsRunner:boolean, IsSapper:boolean, IsBomber:boolean, IsHeadless:boolean, IsCuirassier:boolean)
     if (typeof(Character) ~= "Instance") or not Character:IsA("Model") then
@@ -415,9 +434,9 @@ local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean, IsRunn
     if (type(IsHeadless) ~= "boolean") then
         return
     end
-	if (type(IsCuirassier) ~= "boolean") then
-		return
-	end
+    if (type(IsCuirassier) ~= "boolean") then
+        return
+    end
     if Character:HasTag("Highlighted_") then
         return
     end
@@ -1178,7 +1197,7 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Ins
             IsSapper,
             IsBomber,
             IsHeadless,
-			IsCuirassier
+            IsCuirassier
         )
     end
 end)
@@ -1799,7 +1818,7 @@ if (_G["AlreadyActive"] == nil) then
 
     OldIndex = hookmetamethod(game, "__index", function(Self, Method)
         if (Self == LocalPlayer) and (Method:lower() == "kick") then
-            if not _G["__PlaceholderFunction"] than
+            if not _G["__PlaceholderFunction"] then
                 _G["__PlaceholderFunction"] = function()
                     print("[INFO # AntiKick]: An attempt to kick the LocalPlayer was just prevented.")
                 end
