@@ -268,6 +268,7 @@ local ESPColors = {
     ["Sapper"] = Color3.fromRGB(255, 0, 255);
     ["Bomber"] = Color3.fromRGB(255, 123, 0);
     ["Headless"] = Color3.fromRGB(100, 0, 167);
+	["Cuirassier"] = Color3.fromRGB(35, 77, 255);
     ["Backup"] = Color3.fromRGB(14, 16, 168)
 }
 local PreferredWeapon = "Pike"
@@ -363,6 +364,7 @@ _G["BuildHighlight"].Enabled = true
     - `IsSapper: boolean`: Whether the character is classified as a "Sapper."
     - `IsBomber: boolean`: Whether the character is classified as a "Bomber."
     - `IsHeadless: boolean`: Whether the character is classified as "Headless."
+	- `IsCuirassier: boolean`: Whether the character is classified as "Cuirassier."
 
     Returns:
     - None (modifies the `Character` model in-place).
@@ -377,7 +379,7 @@ _G["BuildHighlight"].Enabled = true
 
     Notes:
     - If the character is already highlighted, the function exits early.
-    - If multiple boolean flags are `true`, the function prioritizes them in the order: `Igniter > Runner > Sapper > Bomber > Headless`.
+    - If multiple boolean flags are `true`, the function prioritizes them in the order: `Igniter > Runner > Sapper > Bomber > Headless > Cuirassier`.
     - The highlight effect is always set to `AlwaysOnTop` to ensure visibility.
     - `FillTransparency` is set to `0.5` to provide a semi-transparent highlight.
 
@@ -386,7 +388,7 @@ _G["BuildHighlight"].Enabled = true
     local characterModel = game.Workspace.NPC
     local headPart = characterModel:FindFirstChild("Head")
 
-    AddEsp(characterModel, headPart, false, true, false, false, false) -- Highlights as a Runner
+    AddEsp(characterModel, headPart, false, true, false, false, false, false) -- Highlights as a Runner
     ```
 
     Edge Cases:
@@ -394,7 +396,7 @@ _G["BuildHighlight"].Enabled = true
     - If `Head` is not a valid `BasePart`, its color remains unchanged.
     - If none of the boolean parameters are `true`, the function does nothing.
 ]=]
-local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean, IsRunner:boolean, IsSapper:boolean, IsBomber:boolean, IsHeadless:boolean)
+local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean, IsRunner:boolean, IsSapper:boolean, IsBomber:boolean, IsHeadless:boolean, IsCuirassier:boolean)
     if (typeof(Character) ~= "Instance") or not Character:IsA("Model") then
         return
     end
@@ -413,6 +415,9 @@ local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean, IsRunn
     if (type(IsHeadless) ~= "boolean") then
         return
     end
+	if (type(IsCuirassier) ~= "boolean") then
+		return
+	end
     if Character:HasTag("Highlighted_") then
         return
     end
@@ -423,6 +428,8 @@ local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean, IsRunn
         or (IsSapper and "Sapper") 
         or (IsBomber and "Bomber")
         or (IsHeadless and "Headless")
+		or (IsCuirassier and "Cuirassier")
+		or "Backup"
     local NewHighlight:any
 
     if (type(Type) == "string") then
@@ -1139,6 +1146,7 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Ins
         local IsSapper:boolean = (Type == "Sapper")
         local IsBomber:boolean = (Type == "Barrel")
         local IsHeadless:boolean = (Type == "Headless")
+		local IsCuirassier:boolean = (Type == "Cuirassier")
         
         if not Character then
             return
@@ -1164,14 +1172,13 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Ins
             Head = nil
         end
 
-        task.spawn(pcall, AddEsp,
-            Character,
-            Head,
+        task.spawn(pcall, AddEsp, Character, Head,
             IsIgniter,
             IsRunner,
             IsSapper,
             IsBomber,
-            IsHeadless
+            IsHeadless,
+			IsCuirassier
         )
     end
 end)
