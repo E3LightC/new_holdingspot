@@ -1322,7 +1322,7 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 end)
 
 _G["BuildingFetchTypeBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
-	if not Process and Key.KeyCode == Enum.KeyCode.KeypadThree then 
+	if not Process and Key.KeyCode == (Enum.KeyCode.KeypadThree )then 
 		if (BuildingFetchType == "Closest") then 
 			BuildingFetchType = "LeastHealth"
 		else
