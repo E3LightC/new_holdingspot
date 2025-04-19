@@ -2,7 +2,7 @@
 --// https://www.roblox.com/games/12334109280/Guts-Blackpowder
 --//    Made with Wave. https://getwave.gg
 --//    Each function has a description if whoever is reading this is curious about what they do.
---//    * This script is entirely made from boredom and my passion for exploiting/pen-testing. *
+--//    * This script is entirely made from boredom and my passion for exploiting/pen-testing! *
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Recent Changes \\\\--
@@ -16,8 +16,8 @@
 --//        All failures, errors, warnings, and other information are output to the Roblox Developer Console with standardized tags 
 --//   (e.g., "[FAIL # EXAMPLE_CONTEXT]: ...", "[INFO # EXAMPLE_CONTEXT]: ...", "[DEBUG # EXAMPLE_CONTEXT]: ...").
 --// [Input Bindings]
---//        [Q]: Triggers a shove action against nearby zombie entities within `ShoveRange`, if the equipped tool supports shoving.
---//        [Z] / [X]: Activates an AoE melee attack, targeting all valid zombie entities within range based on the equipped weapon's parameters.
+--//        [Q]: Triggers a shove action against nearby agents within `ShoveRange`, if the equipped tool supports shoving.
+--//        [Z] / [X]: Activates an AoE melee attack, targeting all valid agents within a range based on the equipped weapon's parameters.
 --//        [G]: Automatically equips a shove-capable tool from the Backpack, if one is available.
 --//        [Keypad 1]: Executes a log retrieval action. (Limited to the "Berezina" map.)
 --//        [Keypad 2]: Toggles the auto-repair system on or off.
@@ -25,19 +25,21 @@
 --//        [Keypad 4]: Enables or disables "RubiksCube" mode (details below).
 --//        [U], [F], [G], [H], [J], [Y], [T]: Triggers playback of a predefined fife or drum song. Song mappings are configurable via the `MusicSelections` table.
 --// [Combat Behavior]
---//        All melee attacks are forcibly registered as headshots, applying either the weapon’s specific headshot multiplier 
+--//        All melee attacks are forcibly registered as headshots, in which the weapon script that controls said weapon will apply either the weapon’s specific headshot multiplier 
 --//   or a default multiplier of 1.5x for increased damage output.
 --// [Visuals / ESP System]
---//        Zombie entities are dynamically highlighted with Roblox's `Highlight` instance based on their classification. 
+--//        Agents are dynamically highlighted with Roblox's `Highlight` instance based on their classification. 
 --//   Colors are pulled from the `ESPColors` table, allowing for consistent team or role-based visual cues. 
 --//   Highlighting is gated by tag-checking to prevent redundant application.
 --// [Tool Manipulation / Exploit Behavior]
---//        While "RubiksCube" mode is enabled, equipping a hammer or claw hammer forcibly distorts the character’s model 
---//   by repeatedly triggering the `UpdateLook` remote. (Note: this effect is processed server-side.)
---//        Client-fired RemoteEvent calls to `OnAFKSignalReceived` and `ForceKill` are blocked and will not propagate.
---//   (Note: This does not block RemoteEvent calls triggered externally via exploit tools or injection methods.)
---//        Auto-repair requires a hammer-type tool to be equipped. The player’s character position determines the structure's proximity
---//   rather than the tool itself, due to design limitations in tool implementation.
+--//        When "RubiksCube" mode is active, the script hooks into the `__namecall` metamethod on `game`. 
+--//   Any client-side RemoteEvent call where the first argument is `"UpdateLook"` will have its parameters dynamically scrambled 
+--//   before being sent. This results in visible character distortion effects, processed server-side.
+--//        RemoteEvent calls to `OnAFKSignalReceived` and `ForceKill` are intercepted and blocked locally, 
+--//   preventing them from reaching the server.
+--//   (Note: This does not stop RemoteEvent calls initiated via external exploit tools.)
+--//        The auto-repair feature requires a hammer tool to be equipped. Structural proximity is calculated 
+--//   based on the character’s position, not the tool itself, due to how the tool is implemented.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Key Bindings Overview \\\\--
@@ -191,23 +193,23 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
                 if TimeOutWasReached then
                     StringToOutput = StringToOutput:format("the time out being reached.")
                 elseif not TimeOutWasReached then
-                    StringToOutput = StringToOutput:format(`the ".Parent" property of the "Parent" parameter being invalid.`)
+                    StringToOutput = StringToOutput:format(`the "Parent" property of the "Parent" parameter being invalid.`)
                 end
             else
-                StringToOutput = StringToOutput:format(`the ".Parent" property of the "Parent" parameter being invalid.`)
+                StringToOutput = StringToOutput:format(`the "Parent" property of the "Parent" parameter being invalid.`)
             end
 
-            print(StringToOutput..`  ||| Current script line: {debug.info(1, "l")}`)
+            print(StringToOutput)
         end
 
         return InstanceToReturn
     else
         if (typeof(Parent) ~= "Instance") then
-            warn(`[FAIL # WaitForChildWhichIsA]: "Parent" is not an Instance.`)
+            warn(`[FAIL # WaitForChildWhichIsA]: "Parent" parameter is not an Instance.`)
             return nil
         end
         if (type(ClassName) ~= "string") then
-            warn(`[FAIL # WaitForChildWhichIsA]: "ClassName" is not a string.`)
+            warn(`[FAIL # WaitForChildWhichIsA]: "ClassName" parameter is not a string.`)
             return nil
         end
     end
@@ -234,32 +236,32 @@ local BotsFolder:Folder = (Workspace:FindFirstChild("Bots") or Workspace:WaitFor
 local BuildingsFolder:Folder = (Workspace:FindFirstChild("Buildings") or Workspace:WaitForChild("Buildings", math.huge))::Folder
 local Camera:Camera = (Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera"))::Camera
 
-local Debug = true
-local DebugPrints = false
-local UseVectorLibrary = true
+local Debug:boolean = true
+local DebugPrints:boolean = false
+local UseVectorLibrary:boolean = true
 
-local RubiksCube = false
+local RubiksCube:boolean = false
 
-local CanRepair = true
-local BuildingBindEnabled = false
-local HammerCanWarn = true
-local BuildingFetchType = "Closest"
-
-local HammerWarnDelay = 1
+local CanRepair:boolean = true
+local BuildingBindEnabled:boolean = false
+local HammerCanWarn:boolean = true
+local BuildingFetchType:string = "Closest"
+local HammerWarnDelay = 1.5
 local WaitTimeUntilRepair = 0.125
-local DefaultBeatWaitTime = 0.15
-local ZombieESPWait = 0.25
 
-local LastBeatTick = 0
-local _TimeSinceLastBeat = 0
+local DefaultBeatWaitTime:number = 0.15
+local ZombieESPWait:number = 0.25
 
-local ShoveRange = 15 --// default range variable used for shoving.
-local MurderRange = 11 --// Used as a backup if can't find weapon range.
+local LastBeatTick:number = 0
+local _TimeSinceLastBeat:number = 0
+
+local ShoveRange:number = 15 --// default range variable used for shoving.
+local MurderRange:number = 11 --// Used as a backup if can't find weapon range.
 
 local HeadSizeToUse:Vector3 = (UseVectorLibrary and vector.create(6, 9, 4.5)) or Vector3.new(6, 9, 4.5)
-local HeadTransparency = 0.6
+local HeadTransparency:number = 0.6
 
-local PreferredWeapon = "Pike"
+local PreferredWeapon:string = "Pike"
 --// true = Ignore Agent
 --// false = Include Agent
 local AgentTypeList = {
@@ -418,7 +420,7 @@ _G["BuildHighlight"].Enabled = true
     local characterModel = game.Workspace.NPC
     local headPart = characterModel:FindFirstChild("Head")
 
-    AddEsp(characterModel, headPart, false, true, false, false, false, false) -- Highlights as a Runner
+    AddEsp(characterModel, headPart, false, true, false, false, false, false) --// Highlights as a Runner
     ```
 
     Edge Cases:
@@ -459,7 +461,7 @@ local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean, IsRunn
         or (IsBomber and "Bomber")
         or (IsHeadless and "Headless")
 		or (IsCuirassier and "Cuirassier")
-		or "Backup";
+		or "Backup"
     local NewHighlight:any
 
     if (type(Type) == "string") then
@@ -509,7 +511,16 @@ end
 
     Example Usage:
     ```lua
-    local fakeAccuracyThread = SetupFakeAccuracyBeat(game.ReplicatedStorage.AccuracyEvent, 0.2)
+	local accuracyEvent = game.ReplicatedStorage:WaitForChild("AccuracyEvent")
+	local fakeAccuracyThread = SetupFakeAccuracyBeat(accuracyEvent, 0.2)
+	
+	--// Stop the coroutine after 5 seconds
+	task.delay(5, function()
+	    if coroutine.status(fakeAccuracyThread) == "suspended" then
+	        coroutine.close(fakeAccuracyThread)
+	        print("Fake accuracy beat coroutine stopped after 5 seconds.")
+	    end
+	end)
     ```
 
     Edge Cases:
@@ -685,38 +696,56 @@ end
 
 --[=[
     Description:
-    This function retrieves agents within the "Zombies" and "Bots" folders located within a specified range of 
-    a given position or the player's character. Agents whose "Type" attribute matches an entry in the `AgentTypeList` 
-    table with a truthy value is excluded from the results. The function calculates distances in a 2D plane (ignoring Y-axis differences).
+    Retrieves nearby agents from the "Zombies" and "Bots" folders that fall within a specified 2D range of a target position 
+    or the player’s character. Agents with a "Type" attribute marked as `true` in the `AgentTypeList` are excluded from the results. 
+    The distance is calculated on a horizontal plane (Y-axis is ignored).
 
     Parameters:
-    - `Position` (Vector3 | boolean): Specifies the center point for the search. If a Vector3 is provided, it is used as the position. 
-      If `false` is passed, the function uses the player's character's position.
-    - `Range` (number): Defines the radius of the search. Negative values are treated as positive. A default of 4 is used 
-      for invalid or zero values.
+    - `Position` (Vector3 | boolean | nil): If a Vector3 is provided, it will be used as the center of the range check. 
+      If false or nil is passed, the function will attempt to use the LocalPlayer’s character position instead.
+    - `Range` (number): The detection radius in studs. Negative values are made positive. Values of 0 or invalid types default to 4.
 
     Returns:
-    - `{[number]: any}`: A list of agents (models) within the specified range. Returns an empty table if no valid agents are found.
+    - `{[number]: any}`: A table containing valid agent models that were found within the specified range. Returns an empty table 
+      if none are found or if validation fails.
 
     Behavior:
-    - Validates the input parameter 'Range'. If it is invalid or set to zero, the function assigns a default value of 4 to ensure proper functionality.
-    - If the `Position` parameter is `false`, the function will attempt to use the LocalPlayer's character position. Logs warnings 
-      if the character or its HumanoidRootPart/PrimaryPart is missing.
-    - Iterates through the "Zombies" and "Bots" folders to find agents. Checks if:
-      - The agent is a valid model with a parent.
-      - The agent does not have a `ForceField` instance.
-      - The agent's "Type" attribute is either absent or mapped to a false value in the `AgentTypeList`.
-    - Calculates distances in a 2D plane between the specified position and each agent.
-    - Adds valid agents to the results table. Includes agents with unknown or unlisted "Type" attributes.
+    - Validates the `Range` input and applies a fallback value of 4 for edge cases (e.g., 0, NaN, non-number).
+    - Determines whether to use a given position or fall back to the player’s character.
+    - Warns in the output console if the player character or its root part is unavailable.
+    - Iterates through the "Zombies" and "Bots" folders to find matching agents:
+        - Agents must be valid models, have a parent, and must not have a `ForceField` instance.
+        - The agent’s type must either not exist in `AgentTypeList`, or be explicitly marked as `false`.
+        - Agents with unknown or unlisted "Type" attributes are included by default.
+    - Calculates agent distance in a 2D plane (XZ only) and includes them if within range.
+    - Adds `false` into the results table in case of failed agent validation, as a fallback behavior.
 
     Notes:
-    - Logs warnings for invalid inputs or missing character components.
-    - Excludes agents with "Type" attributes marked as truthy in the `AgentTypeList`.
-    - Implements robust handling for edge cases, including scenarios with missing agents or the addition of new agent types.
+    - Uses either Lua's global `vector` library or the standard `Vector3` class depending on the `UseVectorLibrary` flag.
+    - Useful for enemy detection, NPC proximity checks, or environmental interaction logic based on spatial queries.
+    - Logs formatted failure messages to the Developer Console to assist with debugging.
 
     Use Cases:
-    - This function is ideal for detecting nearby enemies, NPCs, or objects in a game environment based on proximity.
-    - It supports filtering by agent type and handling dynamic game scenarios.
+    - Identifying enemies or bots near the player or a specific point in the game world.
+    - Filtering entities based on customizable type exclusions via `AgentTypeList`.
+    - Supporting dynamic proximity-based interactions in PvE or PvP systems.
+
+    Example Usage:
+    ```lua
+    --// Find all agents within 10 studs of the player
+    local nearbyAgents = GetAgentsInRange(false, 10)
+
+    --// Find all agents near a specific world position
+    local origin = Vector3.new(50, 0, -25)
+    local agentsNearPoint = GetAgentsInRange(origin, 12)
+
+    --// Iterate and do something with each agent
+    for _, agent in ipairs(nearbyAgents) do
+        if agent and agent:IsA("Model") then
+            print(`Found nearby agent: {agent.Name}`)
+        end
+    end
+    ```
 ]=]
 local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[number]:any}
 	local AgentsInRange:{[number]:any} = {}
@@ -1012,7 +1041,7 @@ end
 
     Notes:
     - The function checks that the local player's character exists and is properly parented.
-    - Each building is represented by a "Bound" part, a `BasePart` instance within the player's building folder in `BuildingsFolder`.
+    - Each building is represented by a Bound part, which is a BasePart instance located inside the player’s building folder within the BuildingsFolder.
     - The closest building is determined using the `DistanceFromCharacter` method, ensuring accurate distance measurements relative to the local player.
     - The "BuildingHealth" instance is checked against its `MaxHealth` attribute to exclude buildings already at full health.
 
@@ -1100,26 +1129,26 @@ end
 
 --[=[
     Description:
-    Counts the total number of valid indices in a given table, including both array-like and dictionary-like indices. 
+    Counts the total number of valid indices in a specified table, including array-like and dictionary-like indices. 
     If the input is invalid or `nil`, logs appropriate warnings and returns `0`.
 
     Parameters:
-    - `Table: {[any]: any}`: The table whose indices are to be counted.
+    - `Table: {[any]: any}`: The table whose indexes are to be counted.
 
     Returns:
-    - `number`: The total count of valid indices in the table.
+    - `number`: The total count of valid indexes with the `Table` parameter.
     - `0`: If the input is `nil` or not of type `table`.
 
     Notes:
     - Differentiates between valid and invalid inputs, ensuring reliable results.
-    - Treats all table indices (numeric and non-numeric) as valid for counting.
+    - Treats all table indexes (numeric and non-numeric) as valid for counting.
     - Provides helpful warnings for debugging when the input is `nil` or not a table.
 
     Example Usage:
     ```lua
-    local SampleTable = {1, 2, 3, ["Key"] = "Value"}
+    local SampleTable = {1, 2, 3, ["Key"] = workspace}
     local MaxIndex = GetMaxIndexOfTable(SampleTable)
-    print("Total indices:", MaxIndex)  -- Output: 4
+    print(`Total indexes: {MaxIndex}`)  --// Output: 4
     ```
 
     Use Cases:
