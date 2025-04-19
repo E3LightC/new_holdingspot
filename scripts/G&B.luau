@@ -237,7 +237,7 @@ local Remotes:Folder = (ReplicatedStorage:FindFirstChild("Remotes") or Replicate
 local AFKSignal:RemoteEvent = (Remotes:FindFirstChild("OnAFKSignalReceived") or Remotes:WaitForChild("OnAFKSignalReceived", math.huge))::RemoteEvent
 
 local ZombiesFolder:Folder = (Workspace:FindFirstChild("Zombies") or Workspace:WaitForChild("Zombies", math.huge))::Folder
-local BotsFolder:Folder = (Workspace:FindFirstChild("Bots") or Workspace:WaitForChild("Bots", math.huge))::Folder
+local BotsFolder:Folder = (Workspace:FindFirstChild("Bots") or Workspace:WaitForChild("Bots", 2))::Folder
 local BuildingsFolder:Folder = (Workspace:FindFirstChild("Buildings") or Workspace:WaitForChild("Buildings", math.huge))::Folder
 local Camera:Camera = (Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera"))::Camera
 
@@ -819,8 +819,11 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
 			end
 		end
 	end
-
-	if (#BotsFolder:GetChildren() > 0) then 
+	
+	if not BotsFolder then
+		BotsFolder = (Workspace:FindFirstChild("Bots"))
+	end
+	if BotsFolder and (#BotsFolder:GetChildren() > 0) then 
 		for _, Agent in ipairs(BotsFolder:GetChildren()) do 
 			if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and not Agent:FindFirstChildWhichIsA("ForceField") then 
 				local HRP = Agent.PrimaryPart or Agent:FindFirstChild("HumanoidRootPart")
