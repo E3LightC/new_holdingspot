@@ -156,7 +156,7 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
 		end
 
 		local UseTimeOut = (type(TimeOut) == "number")
-		local EndedEarly: boolean = false
+		local EndedEarly:boolean = false
 		local TimeOutWasReached:boolean = false
 
 		if not UseTimeOut then
@@ -1322,7 +1322,7 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 end)
 
 _G["BuildingFetchTypeBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
-	if not Process and Key.KeyCode == (Enum.KeyCode.KeypadThree )then 
+	if not Process and Key.KeyCode == (Enum.KeyCode.KeypadThree) then 
 		if (BuildingFetchType == "Closest") then 
 			BuildingFetchType = "LeastHealth"
 		else
