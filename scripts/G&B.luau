@@ -394,69 +394,51 @@ _G["BuildHighlight"].Enabled = true
 
 --[=[
     Description:
-    Adds an ESP (Extra Sensory Perception) highlight effect to a given character model, visually marking them based on their type.
-    The function assigns distinct colors for different character roles and optionally changes the color of the head part.
+    Applies an ESP (Extra Sensory Perception) highlight effect to a given character model, allowing enemy types to be visually identified 
+    through colored overlays and optional head recoloring.
 
     Parameters:
-    - `Character: Model`: The character model to be highlighted.
-    - `Head: BasePart?` (optional): The head part of the character, which may be recolored based on the assigned type.
-    - `IsIgniter: boolean`: Whether the character is classified as an "Igniter."
-    - `IsRunner: boolean`: Whether the character is classified as a "Runner."
-    - `IsSapper: boolean`: Whether the character is classified as a "Sapper."
-    - `IsBomber: boolean`: Whether the character is classified as a "Bomber."
-    - `IsHeadless: boolean`: Whether the character is classified as "Headless."
-	- `IsCuirassier: boolean`: Whether the character is classified as "Cuirassier."
+    - `Character: Model`: The character model to highlight. Must be a valid `Model` instance.
+    - `Head: BasePart?`: (Optional) The character's head part. If valid, its color is updated to match the assigned type.
+    - `IsIgniter: boolean?`: If true, classifies the character as an "Igniter."
+    - `IsRunner: boolean?`: If true, classifies the character as a "Runner."
+    - `IsSapper: boolean?`: If true, classifies the character as a "Sapper."
+    - `IsBomber: boolean?`: If true, classifies the character as a "Bomber."
+    - `IsHeadless: boolean?`: If true, classifies the character as "Headless."
+    - `IsCuirassier: boolean?`: If true, classifies the character as a "Cuirassier."
 
     Returns:
-    - None (modifies the `Character` model in-place).
+    - None (modifies the `Character` in-place).
 
-    Features:
-    - Ensures `Character` is a valid `Model` before proceeding.
-    - Prevents duplicate highlights by checking if the character is already tagged as `"Highlighted_"`.
-    - Uses a predefined `ESPColors` table to assign colors based on the character type.
-    - Dynamically selects the appropriate type from the provided boolean flags.
-    - Assigns a `Highlight` instance to the character model for visual identification.
-    - Optionally updates the color of the `Head` part if provided and valid.
-
-    Notes:
-    - If the character is already highlighted, the function exits early.
-    - If multiple boolean flags are `true`, the function prioritizes them in the order: `Igniter > Runner > Sapper > Bomber > Headless > Cuirassier`.
-    - The highlight effect is always set to `AlwaysOnTop` to ensure visibility.
-    - `FillTransparency` is set to `0.5` to provide a semi-transparent highlight.
+    Behavior:
+    - Validates that `Character` is a `Model` and not already highlighted (tagged `"Highlighted_"`).
+    - Determines the character’s type based on the first truthy flag in this priority order:
+        `Igniter > Runner > Sapper > Bomber > Headless > Cuirassier`.
+    - If a valid type is resolved, applies a `Highlight` instance using the corresponding color from `ESPColors`.
+    - Sets the highlight to always render on top, with 50% fill transparency.
+    - Optionally changes the `Head` part's color if it exists and is valid.
 
     Example Usage:
     ```lua
-    local characterModel = game.Workspace.NPC
+    local characterModel = workspace.EnemyNPC
     local headPart = characterModel:FindFirstChild("Head")
 
-    AddEsp(characterModel, headPart, false, true, false, false, false, false) --// Highlights as a Runner
+    AddEsp(characterModel, headPart, nil, true)
+    --// Applies "Runner" highlight and recolors the head (if provided)
     ```
 
+    Notes:
+    - Based on the first matching flag, only one type will be assigned.
+    - The `"Highlighted_"` tag prevents reapplying the effect multiple times.
+    - `ESPColors` must define a color mapping for each supported type.
+
     Edge Cases:
-    - If `Character` is not a valid `Model`, the function exits without modifications.
+    - The function exits immediately if `Character` is not a valid `Model`.
+    - If no type flags are truthy, no highlight is applied.
     - If `Head` is not a valid `BasePart`, its color remains unchanged.
-    - The function does nothing if none of the boolean parameters are `true`.
 ]=]
-local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean, IsRunner:boolean, IsSapper:boolean, IsBomber:boolean, IsHeadless:boolean, IsCuirassier:boolean)
+local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean?, IsRunner:boolean?, IsSapper:boolean?, IsBomber:boolean?, IsHeadless:boolean?, IsCuirassier:boolean?)
 	if (typeof(Character) ~= "Instance") or not Character:IsA("Model") then
-		return
-	end
-	if (type(IsIgniter) ~= "boolean") then
-		return
-	end
-	if (type(IsRunner) ~= "boolean") then
-		return
-	end
-	if (type(IsSapper) ~= "boolean") then
-		return
-	end
-	if (type(IsBomber) ~= "boolean") then
-		return
-	end
-	if (type(IsHeadless) ~= "boolean") then
-		return
-	end
-	if (type(IsCuirassier) ~= "boolean") then
 		return
 	end
 	if Character:HasTag("Highlighted_") then
@@ -470,10 +452,10 @@ local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean, IsRunn
 		or (IsBomber and "Bomber")
 		or (IsHeadless and "Headless")
 		or (IsCuirassier and "Cuirassier")
-		or "Backup"
+        or "None"
 	local NewHighlight:any
 
-	if (type(Type) == "string") then
+	if (type(Type) == "string") and (Type ~= "None") then
 		NewHighlight = Instance.new("Highlight")
 		Character:AddTag("Highlighted_")
 		NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
@@ -708,7 +690,7 @@ end
     Description:
     Retrieves nearby agents from the "Zombies" and "Bots" folders that fall within a specified 2D range of a target position 
     or the player’s character. Agents with a "Type" attribute marked as `true` in the `AgentTypeList` are excluded from the results. 
-    The distance is calculated on a horizontal plane (Y-axis is ignored).
+    The distance is calculated on a horizontal plane (the Y-axis is ignored).
 
     Parameters:
     - `Position` (Vector3 | boolean | nil): If a Vector3 is provided, it will be used as the center of the range check. 
@@ -725,13 +707,13 @@ end
     - Warns in the output console if the player character or its root part is unavailable.
     - Iterates through the "Zombies" and "Bots" folders to find matching agents:
         - Agents must be valid models, have a parent, and must not have a `ForceField` instance.
-        - The agent’s type must either not exist in `AgentTypeList`, or be explicitly marked as `false`.
+        - The agent’s type must either not exist in `AgentTypeList` or be explicitly marked as `false`.
         - Agents with unknown or unlisted "Type" attributes are included by default.
     - Calculates agent distance in a 2D plane (XZ only) and includes them if within range.
     - Adds `false` into the results table in case of failed agent validation, as a fallback behavior.
 
     Notes:
-    - Uses either Lua's global `vector` library or the standard `Vector3` class depending on the `UseVectorLibrary` flag.
+    - Uses either Lua's global `vector` library or the standard `Vector3` class, depending on the `UseVectorLibrary` flag.
     - Useful for enemy detection, NPC proximity checks, or environmental interaction logic based on spatial queries.
     - Logs formatted failure messages to the Developer Console to assist with debugging.
 
@@ -912,10 +894,6 @@ end
     Notes:
     - This function is useful for scenarios requiring flexible execution modes (e.g., UI updates vs. heavy computations).
     - Asynchronous mode can improve performance for computationally intensive or delayed tasks.
-
-    Use Cases:
-    - Iterating over configuration tables, applying transformations, or triggering specific actions for each entry.
-    - Dynamically handling large datasets in-game systems with minimal blocking of the main thread.
  
 ]=]
 local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(...) end), Instant:boolean?)
