@@ -543,7 +543,7 @@ local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:
 	if (type(BeatWaitTime) ~= "number") then
 		BeatWaitTime = DefaultBeatWaitTime
 	elseif (type(BeatWaitTime) == "number") then
-		if (BeatWaitTime <= 0) or (BeatWaitTime >= 5) then
+		if (BeatWaitTime <= 0) or (BeatWaitTime >= 5) or (BeatWaitTime ~= BeatWaitTime) then
 			BeatWaitTime = 0.15
 		end
 	end
