@@ -3,12 +3,13 @@
 --//    Made with Wave. https://getwave.gg
 --//    Each function has a description if whoever is reading this is curious about what they do.
 --//    * This script is entirely made from boredom and my passion for exploiting/pen-testing. *
+--||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Recent Changes \\\\--
 --//        Updated ESP System to also add highlights to the new "Cuirassier" zombie type, which was recently seen in action in G&B's new playtest, 
 --//   and has multiple variants sitting inside the G&B Dev Zone.
 --//        Changed "Feature Overview" and "Key Bindings Overview" to be more technical.
---||||||||||||||||||||||||--
+--||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
 --// [System Logging]
@@ -37,6 +38,7 @@
 --//   (Note: This does not block RemoteEvent calls triggered externally via exploit tools or injection methods.)
 --//        Auto-repair requires a hammer-type tool to be equipped. The player’s character position determines the structure's proximity
 --//   rather than the tool itself, due to design limitations in tool implementation.
+--||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Key Bindings Overview \\\\--
 --// [Combat Actions]
@@ -51,6 +53,7 @@
 --// [Music Controls]
 --//        [U], [F], [G], [H], [J], [Y], [T]: Plays predefined musical tracks using either a fife or a drum, depending on the equipped instrument. 
 --//				Song mappings can be customized through the `MusicSelections` table.
+--||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --[///////////////////////////////////////////////////////////////////////////////////////////////////]--
 --[///////////////////////////////////////////////////////////////////////////////////////////////////]--
