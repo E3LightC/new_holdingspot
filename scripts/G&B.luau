@@ -72,7 +72,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local CanUseHookMetamethod:boolean = (typeof(hookmetamethod) == "function")
 if not CanUseHookMetamethod then
-	warn("[WARNING]: Your executor does not support 'hookmetamethod'. The script will still run, but some hooking functionality will not execute.")
+	warn("[WARNING]: Your executor does not support 'hookmetamethod'. The script will still run, but the hooking functionality will not execute.")
 end
 
 --// Types for silencing warnings.
