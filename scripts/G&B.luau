@@ -617,6 +617,7 @@ end
     - If `Character` is `nil`, the function logs a warning and exits early.
     - If `Character.Parent` is `nil`, a warning is logged, and execution stops.
     - If `ListTools` is `true`, but no melee weapons are found, an empty table is returned instead of `nil`.
+
 ]=]
 local function GetMeleeWeapon(ListTools:boolean?):(...any)
 	local Character = LocalPlayer.Character
@@ -751,6 +752,7 @@ end
         end
     end
     ```
+
 ]=]
 local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[number]:any}
 	local AgentsInRange:{[number]:any} = {}
@@ -910,6 +912,7 @@ end
     Use Cases:
     - Iterating over configuration tables, applying transformations, or triggering specific actions for each entry.
     - Dynamically handling large datasets in-game systems with minimal blocking of the main thread.
+ 
 ]=]
 local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(...) end), Instant:boolean?)
 	if (type(Instant) ~= "boolean") then
@@ -995,6 +998,7 @@ end
     - Real-time monitoring and repair systems for player-owned buildings.
     - Identifying weak points in a player's structure during gameplay.
     - Strategically prioritizing building maintenance or defense based on health status.
+
 ]=]
 local function GetBuildingWithLeastHealth():(any)
 	local LocalPlayerUserId:number = LocalPlayer.UserId
@@ -1077,6 +1081,7 @@ end
     - Identifying the nearest building for repair or defense during gameplay.
     - Monitoring player-owned structures based on proximity for strategic purposes.
     - Facilitating dynamic interactions with player-made structures in multiplayer games.
+
 ]=]
 local function GetClosestBuilding():any
 	if not LocalPlayer.Character or not LocalPlayer.Character.Parent then
@@ -1168,6 +1173,7 @@ end
     - If the `Table` parameter is `nil`, the function logs a warning and returns `0`.
     - If the `Table` is not a table, logs a warning and returns `0`.
     - Empty tables return a count of `0`.
+
 ]=]
 local function GetMaxIndexOfTable(Table:{[any]: any})
 	if (Table ~= nil) then 
