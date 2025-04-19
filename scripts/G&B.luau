@@ -74,6 +74,10 @@ local CanUseHookMetamethod:boolean = (typeof(hookmetamethod) == "function")
 if not CanUseHookMetamethod then
 	warn("[WARNING]: Your executor does not support 'hookmetamethod'. The script will still run, but the hooking functionality will not execute.")
 end
+local CanUseGetNameCallMethod:boolean = (typeof(getnamecallmethod) == "function")
+if CanUseHookMetamethod and not CanUseGetNameCallMethod then
+	warn("[WARNING]: Your executor does not support 'getnamecallmethod'. The script will still run, but the hooking functionality will not execute.")
+end
 
 --// Types for silencing warnings.
 type VectorLibrary = { 
@@ -1725,7 +1729,7 @@ if Debug then
     end)]]
 end
 
-if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod then 
+if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMethod then 
 	_G["AlreadyActive"] = true
 
 	OldNameCall = hookmetamethod(game, "__namecall", function(Remote, ...)
