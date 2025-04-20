@@ -1222,7 +1222,6 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Ins
 			Head.Massless = true
 			Head.Size = HeadSizeToUse or (UseVectorLibrary and vector.create(3, 3, 3)) or Vector3.new(3, 3, 3)
 			Head.Transparency = HeadTransparency
-			Head = nil
 		end
 
 		task.spawn(pcall, AddEsp, Character, Head,
@@ -1233,6 +1232,7 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Ins
 			IsHeadless,
 			IsCuirassier
 		)
+        Head = nil
 	end
 end)
 
