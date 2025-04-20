@@ -368,6 +368,10 @@ if _G["GrabLogBind"] ~= nil then
 	_G["GrabLogBind"]:Disconnect()
 	_G["GrabLogBind"] = nil
 end
+if _G["BlockBarrelBind"] ~= nil then 
+	_G["BlockBarrelBind"]:Disconnect()
+	_G["BlockBarrelBind"] = nil
+end
 if _G["OnCharacterAdded"] then
 	_G["OnCharacterAdded"]:Disconnect()
 	_G["OnCharacterAdded"] = nil
@@ -1380,6 +1384,26 @@ _G["RubiksCubeBind"] = UserInputService.InputBegan:Connect(function(Key, Process
 	end
 end)
 
+_G["BlockBarrelBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
+	if not Process then 
+		if (Key.KeyCode == Enum.KeyCode.KeypadFive) then 
+			if not ReplicatedFirst:FindFirstChild("BlockBarrel") then
+                if not _G["_BlockBarrel"] 
+                    _G["_BlockBarrel"] = Instance.new("BoolValue")
+                    _G["_BlockBarrel"].Name = "BlockBarrel"
+                end
+
+                _G["_BlockBarrel"].Parent = ReplicatedStorage
+            elseif ReplicatedFirst:FindFirstChild("BlockBarrel") then 
+                _G["_BlockBarrel"].Parent = ReplicatedFirst
+            end
+
+            local Enabled = (_G["_BlockBarrel"].Parent == ReplicatedStorage) and "enabled" or "disabled"
+			print(`[INFO # BlockBarrelBind]: Barrel blocking is now {Enabled}.`)
+		end
+	end
+end)
+
 _G["ShoveEquipper"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then
 		if (Key.KeyCode == Enum.KeyCode.G) and LocalPlayer.Character then
@@ -1729,7 +1753,7 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 
 							return nil
 						elseif (Args[1] == "HitZombie") or (Args[1] == "Bayonet_HitZombie") or (Args[1] == "ThrustCharge") then 
-							if (Args[2] ~= nil) and Args[2].Parent and (Args[2]:GetAttribute("Type") == "Barrel") then
+							if (Args[2] ~= nil) and Args[2].Parent and (Args[2]:GetAttribute("Type") == "Barrel") and ReplicatedStorage:FindFirstChild("BlockBarrel") then
 								print("[INFO # Namecall Hook]: Player just attempted to hit a barrel zombie, blocking request and replacing with request with nil.")
 								return nil
 							end
@@ -1740,8 +1764,6 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 								elseif not Args[4] then
 									Args[4] = true
 									Args[6] = "Head"
-									Args[5] = (Args[5] * 50) --// Knockback parameter.
-									Args[7] = (Args[7] * 50) --// Knockback parameter.
 									Remote["FireServer"](Remote, unpack(Args))
 
 									return nil
