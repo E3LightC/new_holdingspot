@@ -23,6 +23,7 @@
 --//        [Keypad 2]: Toggles the auto-repair system on or off.
 --//        [Keypad 3]: Switches the internal lookup method to identify nearby repairable structures.
 --//        [Keypad 4]: Enables or disables "RubiksCube" mode (details below).
+--//        [Keypad 5]: Enables or disables if "Barrel" zombies can be attacked.
 --//        [U], [F], [G], [H], [J], [Y], [T]: Triggers playback of a predefined fife or drum song. Song mappings are configurable via the `MusicSelections` table.
 --// [Combat Behavior]
 --//        All melee attacks are forcibly registered as headshots, in which the weapon script that controls said weapon will apply either the weapon’s specific headshot multiplier 
@@ -52,6 +53,7 @@
 --//        [Keypad 2]: Toggles the auto-repair system to automate building repairs.
 --//        [Keypad 3]: Switches the targeting method used by auto-repair to locate valid structures.
 --//        [Keypad 4]: Toggles **RubiksCube** mode, which scrambles the character model using `UpdateLook` on hammer tools.
+--//        [Keypad 5]: Enables or disables if "Barrel" zombies can be attacked.
 --// [Music Controls]
 --//        [U], [F], [G], [H], [J], [Y], [T]: Plays predefined musical tracks using either a fife or a drum, depending on the equipped instrument. 
 --//				Song mappings can be customized through the `MusicSelections` table.
@@ -1387,14 +1389,14 @@ end)
 _G["BlockBarrelBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if (Key.KeyCode == Enum.KeyCode.KeypadFive) then 
-			if not ReplicatedFirst:FindFirstChild("BlockBarrel") then
-                if not _G["_BlockBarrel"] 
+			if not ReplicatedStorage:FindFirstChild("BlockBarrel") then
+                if not _G["_BlockBarrel"] then
                     _G["_BlockBarrel"] = Instance.new("BoolValue")
                     _G["_BlockBarrel"].Name = "BlockBarrel"
                 end
 
                 _G["_BlockBarrel"].Parent = ReplicatedStorage
-            elseif ReplicatedFirst:FindFirstChild("BlockBarrel") then 
+            elseif ReplicatedStorage:FindFirstChild("BlockBarrel") then 
                 _G["_BlockBarrel"].Parent = ReplicatedFirst
             end
 
