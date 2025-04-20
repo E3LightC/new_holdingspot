@@ -39,7 +39,7 @@
 --//   preventing them from reaching the server.
 --//   (Note: This does not stop RemoteEvent calls initiated via external exploit tools.)
 --//        The auto-repair feature requires a hammer tool to be equipped. Structural proximity is calculated 
---//   based on the character’s position, not the tool itself, due to how the tool is implemented.
+--//   based on the character’s position, not the tool itself, due to how it is implemented.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Key Bindings Overview \\\\--
@@ -319,7 +319,6 @@ if _G["FlameTouchRemover"] ~= nil then
 	_G["FlameTouchRemover"]:Disconnect()
 	_G["FlameTouchRemover"] = nil
 end
-
 if _G["ShoveBind"] ~= nil then 
 	_G["ShoveBind"]:Disconnect()
 	_G["ShoveBind"] = nil
@@ -328,17 +327,14 @@ if _G["ShoveEquipper"] ~= nil then
 	_G["ShoveEquipper"]:Disconnect()
 	_G["ShoveEquipper"] = nil
 end
-
 if _G["MurderBind"] ~= nil then 
 	_G["MurderBind"]:Disconnect()
 	_G["MurderBind"] = nil
 end
-
 if _G["RubiksCubeBind"] ~= nil then
 	_G["RubiksCubeBind"]:Disconnect()
 	_G["RubiksCubeBind"] = nil
 end
-
 if _G["MusicBind"] ~= nil then
 	_G["MusicBind"]:Disconnect()
 	_G["MusicBind"] = nil
@@ -347,12 +343,10 @@ if _G["FakeAccuracyBeat"] ~= nil then
 	coroutine.close(_G["FakeAccuracyBeat"])
 	_G["FakeAccuracyBeat"] = nil
 end
-
 if _G["OnCameraDescendantAdded"] ~= nil then 
 	_G["OnCameraDescendantAdded"]:Disconnect()
 	_G["OnCameraDescendantAdded"]= nil
 end
-
 if _G["BuildingBind"] ~= nil then
 	_G["BuildingBind"]:Disconnect()
 	_G["BuildingBind"] = nil
@@ -370,12 +364,10 @@ if _G["BuildingFetchTypeBind"] ~= nil then
 	_G["BuildingFetchTypeBind"]:Disconnect()
 	_G["BuildingFetchTypeBind"] = nil
 end
-
 if _G["GrabLogBind"] ~= nil then 
 	_G["GrabLogBind"]:Disconnect()
 	_G["GrabLogBind"] = nil
 end
-
 if _G["OnCharacterAdded"] then
 	_G["OnCharacterAdded"]:Disconnect()
 	_G["OnCharacterAdded"] = nil
