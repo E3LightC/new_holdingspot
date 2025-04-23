@@ -9,6 +9,7 @@
 --//        Updated ESP System to also add highlights to the new "Cuirassier" zombie type, which was recently seen in action in G&B's new playtest, 
 --//   and has multiple variants sitting inside the G&B Dev Zone.
 --//        Changed "Feature Overview" and "Key Bindings Overview" to be more technical.
+--//        Added new keybind: [Keypad 5]: Enables or disables if "Barrel" zombies can be attacked.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
@@ -1552,7 +1553,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 											[3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
 											[4] = true;
 											[5] = (UseVectorLibrary and vector.create(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096))) or Vector3.new(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096));
-											[6] = "HumanoidRootPart";
+											[6] = (Agent:FindFirstChild("Head") and "Head") or "HumanoidRootPart";
 											[7] = (Agent.PrimaryPart and Agent.PrimaryPart.CFrame.LookVector * 5) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).CFrame.LookVector * 5;
 										}
 
@@ -1765,7 +1766,7 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 									return Remote["FireServer"](Remote, unpack(Args))
 								elseif not Args[4] then
 									Args[4] = true
-									Args[6] = "Head"
+									Args[6] = (Args[2] and Args[2]:FindFirstChild("Head") and "Head") or Args[6]
 									Remote["FireServer"](Remote, unpack(Args))
 
 									return nil
