@@ -10,6 +10,7 @@
 --//   and has multiple variants sitting inside the G&B Dev Zone.
 --//        Changed "Feature Overview" and "Key Bindings Overview" to be more technical.
 --//        Added new keybind: [Keypad 5]: Enables or disables if "Barrel" zombies can be attacked.
+--//        More debugging/logging features.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
@@ -108,6 +109,80 @@ type DebugLibrary = {
 
 local vector:VectorLibrary = (getfenv().vector) --// Since Wave doesn't have Lua's global "vector" class?
 local debug:DebugLibrary = (getfenv().debug) --// Since debug.info isn't registered for some reason?
+
+--[=[
+    Description:
+    Generates a formatted rich text string by replacing numeric placeholders in a template string with styled font segments.
+    Placeholders are defined using square brackets (e.g., `[1]`, `[2]`) and are replaced by corresponding values from the variadic arguments.
+
+    Parameters:
+    - `TemplateString: string`: The base string containing numbered placeholders to be replaced (e.g., "Hello, [1]!").
+    - `...`: Variadic arguments. Each argument should be a table containing the following fields:
+        - `Text: string`: The text content to insert at the placeholder.
+        - `Color: Color3|string` (optional): The color of the text. Can be a `Color3` or a hex color string (e.g., "#FF0000"). Defaults to white (`#FFFFFF`) if unspecified or invalid.
+        - `Font: string` (optional): The font face to use. Defaults to `"Merriweather"`.
+
+    Returns:
+    - `string`: The formatted rich text string with placeholders replaced. Returns `nil` if `TemplateString` is not a string.
+
+    Behavior:
+    - Parses the `TemplateString` and replaces placeholders in the format `[n]` where `n` is a 1-based index.
+    - For each placeholder, retrieves the corresponding argument from `...`:
+        - If valid and contains a `Text` string, it is wrapped in a `<font>` tag with the specified color and font.
+        - If the argument exists but `Text` is missing or not a string, it substitutes `"[INVALID_TEXT]"`.
+        - If the argument is missing entirely, it substitutes `"[INVALID_DATA]"`.
+    - Supports both `Color3` values and raw hex strings for the color field.
+
+    Example Usage:
+    ```lua
+    local result = GenerateText("Welcome, [1]! You've unlocked the [2].", 
+        { Text = "Player1", Color = Color3.fromRGB(255, 215, 0), Font = "Garamond" },
+        { Text = "Golden Sword", Color = "#FFD700" }
+    )
+    -- Output: 'Welcome, <font color="#FFD700" face="Garamond">Player1</font>! You've unlocked the <font color="#FFD700" face="Merriweather">Golden Sword</font>.'
+    ```
+
+    Notes:
+    - Useful for constructing rich text messages in Roblox UI (e.g., TextLabels supporting `RichText = true`).
+    - Font names must be supported by Roblox for proper rendering.
+
+]=]
+local function GenerateText(TemplateString:string, ...)
+    if (type(TemplateString) ~= "string") then 
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
+        warn(`[FAIL # WaitForChildWhichIsA]: "TemplateString" parameter is not a string.  ||| Current script line: {debug.info(1, "l")}`)
+
+        return 
+    end
+
+	local Parameters = {...}
+	local Result = TemplateString:gsub("%[(%d+)%]", function(IndexString)
+		local CurrentIndex = tonumber(IndexString)
+		local Data = Parameters[CurrentIndex]
+
+        local DataTextIsString = (Data and (type(Data["Text"]) == "string")) or false
+
+		if Data and DataTextIsString then
+			local Color = ((typeof(Data["Color"]) == "Color3") and `#{Data["Color"]:ToHex()}`) 
+                or ((type(Data["Color"]) == "string") and Data["Color"]) 
+                or "#FFFFFF"
+			local Font = Data["Font"] or "Merriweather"
+
+			return string.format('<font color="%s" face="%s">%s</font>', Color, Font, Data["Text"])
+		elseif Data and not DataTextIsString then
+			local Color = ((typeof(Data["Color"]) == "Color3") and `#{Data["Color"]:ToHex()}`) 
+                or ((type(Data["Color"]) == "string") and Data["Color"]) 
+                or "#FFFFFF"
+			local Font = Data["Font"] or "Merriweather"
+
+			return string.format('<font color="%s" face="%s">%s</font>', Color, Font, ("[INVALID_TEXT]"))
+        elseif not Data then 
+            return ("[INVALID_DATA]")
+		end
+	end)
+
+	return Result
+end
 
 --[=[
     Description:
@@ -216,12 +291,13 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
 
 		return InstanceToReturn
 	else
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# WaitForChildWhichIsA] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
 		if (typeof(Parent) ~= "Instance") then
-			warn(`[FAIL # WaitForChildWhichIsA]: "Parent" parameter is not an Instance.`)
+			warn(`[FAIL # WaitForChildWhichIsA]: "Parent" parameter is not an Instance.  ||| Current script line: {debug.info(1, "l")}`)
 			return nil
 		end
 		if (type(ClassName) ~= "string") then
-			warn(`[FAIL # WaitForChildWhichIsA]: "ClassName" parameter is not a string.`)
+			warn(`[FAIL # WaitForChildWhichIsA]: "ClassName" parameter is not a string.  ||| Current script line: {debug.info(1, "l")}`)
 			return nil
 		end
 	end
@@ -241,6 +317,7 @@ local LocalPlayer:Player = Players.LocalPlayer
 local Backpack:Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
 
 local Remotes:Folder = (ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:WaitForChild("Remotes", math.huge))::Folder
+local ClientSubtitles:RemoteEvent = (ReplicatedStorage:FindFirstChild("ClientSubtitles") or ReplicatedStorage:WaitForChild("ClientSubtitles", math.huge))::RemoteEvent
 local AFKSignal:RemoteEvent = (Remotes:FindFirstChild("OnAFKSignalReceived") or Remotes:WaitForChild("OnAFKSignalReceived", math.huge))::RemoteEvent
 
 local ZombiesFolder:Folder = (Workspace:FindFirstChild("Zombies") or Workspace:WaitForChild("Zombies", math.huge))::Folder
@@ -258,8 +335,8 @@ local CanRepair:boolean = true
 local BuildingBindEnabled:boolean = false
 local HammerCanWarn:boolean = true
 local BuildingFetchType:string = "Closest"
-local HammerWarnDelay = 1.5
-local WaitTimeUntilRepair = 0.125
+local HammerWarnDelay:number = 1.5
+local WaitTimeUntilRepair:number = 0.125
 
 local DefaultBeatWaitTime:number = 0.15
 local ZombieESPWait:number = 0.25
@@ -438,6 +515,9 @@ _G["BuildHighlight"].Enabled = true
 ]=]
 local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean?, IsRunner:boolean?, IsSapper:boolean?, IsBomber:boolean?, IsHeadless:boolean?, IsCuirassier:boolean?)
 	if (typeof(Character) ~= "Instance") or not Character:IsA("Model") then
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
+        warn(`[FAIL # WaitForChildWhichIsA]: "Character" parameter is not an Instance, nor a Model.  ||| Current script line: {debug.info(1, "l")}`)
+
 		return
 	end
 	if Character:HasTag("Highlighted_") then
@@ -520,6 +600,7 @@ end
 ]=]
 local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:number?):(thread)
 	if (typeof(RemoteEventToUse) ~= "Instance") or not RemoteEventToUse:IsA("RemoteEvent") then 
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# SetupFakeAccuracyBeat] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
 		warn(`[FAIL # SetupFakeAccuracyBeat]: "RemoteEventToUse" is not an Instance, nor a RemoteEvent.  ||| Current script line: {debug.info(1, "l")}`)
 
 		return coroutine.create(function() end)
@@ -608,12 +689,14 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 	local Character = LocalPlayer.Character
 
 	if not Character then 
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
 		warn(`[FAIL # GetMeleeWeapon]: Your character doesn't exist?  ||| Current script line: {debug.info(1, "l")}`)
 
 		return
 	end
 
-	if (Character.Parent == nil) then 
+	if (Character.Parent == nil) then
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
 		warn(`[FAIL # GetMeleeWeapon]: Your character's parent is equal to nil.  ||| Current script line: {debug.info(1, "l")}`)
 
 		return
@@ -743,8 +826,10 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
 	local AgentsInRange:{[number]:any} = {}
 
 	if (type(Range) ~= "number") then 
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GetAgentsInRange] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
 		warn(`[FAIL # GetAgentsInRange]: "Range" is not a number.  ||| Current script line: {debug.info(1, "l")}`)
-		return AgentsInRange
+		
+        return AgentsInRange
 	end
 
 	if (Range == 0) or (Range ~= Range) then 
@@ -758,6 +843,7 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
 	if not UsePosition then
 		local Character:Model = LocalPlayer.Character
 		if not Character or not Character.Parent then
+            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetAgentsInRange]: You do not have a character?  ||| Current script line: {debug.info(1, "l")}`)
 
 			return AgentsInRange
@@ -765,6 +851,7 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
 
 		CharHRP = (Character:FindFirstChild("HumanoidRootPart") or Character.PrimaryPart)::BasePart
 		if not CharHRP or CharHRP:IsA("Model") then 
+            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetAgentsInRange]: No HumanoidRootPart/PrimaryPart found inside the player's character.  ||| Current script line: {debug.info(1, "l")}`)
 
 			return AgentsInRange
@@ -902,12 +989,14 @@ local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(
 
 	if (Table ~= nil) and (Function ~= nil) then 
 		if (type(Table) ~= "table") then 
+            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# IterateWithFunction] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
 			warn(`[FAIL # IterateWithFunction]: "Table" is not a table.  ||| Current script line: {debug.info(1, "l")}`)
 
 			return
 		end
 
 		if (type(Function) ~= "function") then 
+            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# IterateWithFunction] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
 			warn(`[FAIL # IterateWithFunction]: "Function" is not a function.  ||| Current script line: {debug.info(1, "l")}`)
 
 			return
@@ -923,6 +1012,7 @@ local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(
 			end
 		end
 	else
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# IterateWithFunction] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
 		if (Table == nil) then 
 			warn(`[FAIL # IterateWithFunction]: "Table" is equal to nil.  ||| Current script line: {debug.info(1, "l")}`)
 
@@ -1010,8 +1100,10 @@ local function GetBuildingWithLeastHealth():(any)
 		if (typeof(Healths[1]) == "Instance") then 
 			return Healths[1]
 		elseif not Healths[1] then 
+            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetBuildingWithLeastHealth]: Failed to get a "BuildingHealth" NumberValue.  ||| Current script line: {debug.info(1, "l")}`)
-			return false
+			
+            return false
 		end
 	else
 		warn(`[FAIL # GetBuildingWithLeastHealth]: No buildings found?  ||| Current script line: {debug.info(1, "l")}`)
@@ -1111,8 +1203,10 @@ local function GetClosestBuilding():any
 
 			return ((Bounds[1].Parent)::Part):WaitForChild("BuildingHealth")
 		elseif not Bounds[1] then 
+            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetClosestBuilding]: Failed to find the closest building.  ||| Current script line: {debug.info(1, "l")}`)
-			return false
+			
+            return false
 		end
 	else
 		warn(`[FAIL # GetClosestBuilding]: No buildings found?  ||| Current script line: {debug.info(1, "l")}`)
@@ -1158,8 +1252,10 @@ end
 ]=]
 local function GetMaxIndexOfTable(Table:{[any]: any})
 	if (Table ~= nil) then 
-		if (type(Table) ~= "table") then 
+		if (type(Table) ~= "table") then
+            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GetMaxIndexOfTable] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetMaxIndexOfTable]: "Table" is not a table. Returning 0.  ||| Current script line: {debug.info(1, "l")}`)
+
 			return 0
 		end
 
@@ -1174,6 +1270,7 @@ local function GetMaxIndexOfTable(Table:{[any]: any})
 
 		return CountToReturn
 	else
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GetMaxIndexOfTable] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
 		if (Table == nil) then 
 			warn(`[FAIL # GetMaxIndexOfTable]: "Table" is equal to nil. Returning 0.  ||| Current script line: {debug.info(1, "l")}`)
 
@@ -1368,6 +1465,7 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 						end
 					end)
 				elseif not Remote then 
+                    ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
 					warn(`[FAIL # MusicBind]: Failed to find instrument remote event for the "{FoundInstrument.Name}".  ||| Current script line: {debug.info(1, "l")}`)
 					return
 				end
@@ -1433,7 +1531,8 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 				local HRP = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
 				local AgentsInRange = GetAgentsInRange(false, ShoveRange)
 
-				if (type(AgentsInRange) ~= "table") then 
+				if (type(AgentsInRange) ~= "table") then
+                    ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4) 
 					warn(`[FAIL # ShoveBind]: AgentsInRange is not a table.  ||| Current script line: {debug.info(1, "l")}  ||| Current script line: {debug.info(1, "l")}`)
 
 					return
@@ -1446,6 +1545,7 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 				end
 
 				if not HRP then 
+                    ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
 					warn(`[FAIL # ShoveBind]: Character has no HumanoidRootPart/Torso?  ||| Current script line: {debug.info(1, "l")}`)
 
 					table.clear(AgentsInRange)
@@ -1481,13 +1581,13 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 						IterateWithFunction(AgentsInRange, function(Key, Agent)
 							if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
-								local StunArgs:{[number]:any} = {
+								local StunParameters:{[number]:any} = {
 									[1] = "FeedbackStun";
 									[2] = Agent;
 									[3] = Agent.PrimaryPart and Agent.PrimaryPart.Position or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
 								}
 
-								Remote:FireServer(unpack(StunArgs))
+								Remote:FireServer(unpack(StunParameters))
 							end
 
 							task.wait()
@@ -1495,6 +1595,7 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 						table.clear(AgentsInRange)
 					elseif not Remote then 
+                        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
 						warn(`[FAIL # ShoveBind]: "Remote" if statement failed.  ||| Current script line: {debug.info(1, "l")}`)
 
 						table.clear(AgentsInRange)
@@ -1526,6 +1627,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 						local AgentsInRange:{[number]:Model} = GetAgentsInRange(false, (LimitRange and (LimitRange * 1.8)) or MurderRange)
 
 						if (type(AgentsInRange) ~= "table") then 
+                            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
 							warn(`[FAIL # MurderBind]: AgentsInRange is not a table.  ||| Current script line: {debug.info(1, "l")}`)
 
 							continue
@@ -1547,7 +1649,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 								IterateWithFunction(AgentsInRange, function(Key:any, Agent:Model) 
 									if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
-										local HitArgs:{[number]:any} = {
+										local HitParameters:{[number]:any} = {
 											[1] = "HitZombie";
 											[2] = Agent;
 											[3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
@@ -1557,7 +1659,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 											[7] = (Agent.PrimaryPart and Agent.PrimaryPart.CFrame.LookVector * 5) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).CFrame.LookVector * 5;
 										}
 
-										WeaponRemote:FireServer(unpack(HitArgs))
+										WeaponRemote:FireServer(unpack(HitParameters))
 									end
 								end)
 							elseif (Weapon.Name == "Musket") then
@@ -1565,14 +1667,14 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 								for _, Agent in pairs(AgentsInRange) do 
 									if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
-										local HitArgs:{[number]:any} = {
+										local HitParameters:{[number]:any} = {
 											[1] = "Bayonet_HitZombie";
 											[2] = Agent;
 											[3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
 											[4] = true;
 										}
 
-										WeaponRemote:FireServer(unpack(HitArgs))
+										WeaponRemote:FireServer(unpack(HitParameters))
 										break
 									end
 								end
@@ -1580,6 +1682,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 							table.clear(AgentsInRange)
 						else
+                            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
 							warn(`[FAIL # MurderBind]: "WeaponRemote" if statement failed.  ||| Current script line: {debug.info(1, "l")}`)
 
 							table.clear(AgentsInRange)
@@ -1664,6 +1767,7 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 					end
 				end
 
+                ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
 				warn(`[FAIL # GrabLogBind]: "Modes" or "Holdout" if statements failed?  ||| Current script line: {debug.info(1, "l")}`)
 				return
 			elseif not Berezina then 
@@ -1730,7 +1834,7 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 	_G["AlreadyActive"] = true
 
 	OldNameCall = hookmetamethod(game, "__namecall", function(Remote, ...)
-		local Args = {...}
+		local Parameters = {...}
 		local NamecallMethod = getnamecallmethod()
 
 		if (Remote == LocalPlayer) and (NamecallMethod:lower() == "kick") then
@@ -1741,7 +1845,7 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 		if not checkcaller() then
 			if (NamecallMethod == "FireServer") then
 				--// always returns "nil" technically
-				--// (OldNameCall(Remote, unpack(Args)) == nil) = true / (Remote:FireServer(unpack(Args)) == nil) = true
+				--// (OldNameCall(Remote, unpack(Parameters)) == nil) = true / (Remote:FireServer(unpack(Parameters)) == nil) = true
 				if (Remote == AFKSignal) or (Remote.Name == "OnAFKSignalReceived") then
 					print(`[INFO # Namecall Hook]: "OnAFKSignalReceived" attempted to fire.`)
 					return nil
@@ -1749,25 +1853,25 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 					print(`[INFO # Namecall Hook]: "ForceKill" remote attempted to fire.`)
 					return nil
 				else
-					if (Args[1] ~= nil) then 
-						if (Args[1] == "UpdateAccuracy") then 
-							Args[2] = 100
-							Remote["FireServer"](Remote, unpack(Args))
+					if (Parameters[1] ~= nil) then 
+						if (Parameters[1] == "UpdateAccuracy") then 
+							Parameters[2] = 100
+							Remote["FireServer"](Remote, unpack(Parameters))
 
 							return nil
-						elseif (Args[1] == "HitZombie") or (Args[1] == "Bayonet_HitZombie") or (Args[1] == "ThrustCharge") then 
-							if (Args[2] ~= nil) and Args[2].Parent and (Args[2]:GetAttribute("Type") == "Barrel") and ReplicatedStorage:FindFirstChild("BlockBarrel") then
+						elseif (Parameters[1] == "HitZombie") or (Parameters[1] == "Bayonet_HitZombie") or (Parameters[1] == "ThrustCharge") then 
+							if (Parameters[2] ~= nil) and Parameters[2].Parent and (Parameters[2]:GetAttribute("Type") == "Barrel") and ReplicatedStorage:FindFirstChild("BlockBarrel") then
 								print("[INFO # Namecall Hook]: Player just attempted to hit a barrel zombie, blocking request and replacing with request with nil.")
 								return nil
 							end
 
-							if (type(Args[4]) == "boolean") then 
-								if Args[4] then
-									return Remote["FireServer"](Remote, unpack(Args))
-								elseif not Args[4] then
-									Args[4] = true
-									Args[6] = (Args[2] and Args[2]:FindFirstChild("Head") and "Head") or Args[6]
-									Remote["FireServer"](Remote, unpack(Args))
+							if (type(Parameters[4]) == "boolean") then 
+								if Parameters[4] then
+									return Remote["FireServer"](Remote, unpack(Parameters))
+								elseif not Parameters[4] then
+									Parameters[4] = true
+									Parameters[6] = (Parameters[2] and Parameters[2]:FindFirstChild("Head") and "Head") or Parameters[6]
+									Remote["FireServer"](Remote, unpack(Parameters))
 
 									return nil
 								end
@@ -1775,11 +1879,11 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 								return nil
 							end
 
-							return Remote["FireServer"](Remote, unpack(Args))
-						elseif (Args[1] == "CancelReload") then 
+							return Remote["FireServer"](Remote, unpack(Parameters))
+						elseif (Parameters[1] == "CancelReload") then 
 							print("[INFO # Namecall Hook]: CancelReload argument blocked.")
 							return nil
-						elseif (Args[1] == "Swing") then 
+						elseif (Parameters[1] == "Swing") then 
 							local Character = LocalPlayer.Character
 
 							if Character then 
@@ -1792,15 +1896,15 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 								)::Tool
 
 								if ToolFound then 
-									Args[2] = "Over"
-									Remote["FireServer"](Remote, unpack(Args))
+									Parameters[2] = "Over"
+									Remote["FireServer"](Remote, unpack(Parameters))
 
 									return nil
 								end
 							end
 
 							return Remote["FireServer"](Remote, ...)
-						elseif (Args[1] == "UpdateLook") and RubiksCube then
+						elseif (Parameters[1] == "UpdateLook") and RubiksCube then
 							--// probably a much better way to do this but
 							--// i got lazy!
 							--// only works with the hammer/claw hammer now
@@ -1809,57 +1913,57 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 							local RandomNum2 = math.random(1, 6)
 							local RandomNum3 = math.random(1, 6)
 
-							Args[2] = math.random(-100, 1000)
+							Parameters[2] = math.random(-100, 1000)
 
 							if RandomNum1 == 1 then
-								Args[3] = LocalPlayer.Character.Torso["Neck"] or Args[3]
+								Parameters[3] = LocalPlayer.Character.Torso["Neck"] or Parameters[3]
 							elseif RandomNum1 == 2 then
-								Args[3] = LocalPlayer.Character.Torso["Right Hip"] or Args[3]
+								Parameters[3] = LocalPlayer.Character.Torso["Right Hip"] or Parameters[3]
 							elseif RandomNum1 == 3 then
-								Args[3] = LocalPlayer.Character.Torso["Left Shoulder"] or Args[3]
+								Parameters[3] = LocalPlayer.Character.Torso["Left Shoulder"] or Parameters[3]
 							elseif RandomNum1 == 4 then
-								Args[3] = LocalPlayer.Character.Torso["Right Shoulder"] or Args[3]
+								Parameters[3] = LocalPlayer.Character.Torso["Right Shoulder"] or Parameters[3]
 							elseif RandomNum1 == 5 then
-								Args[3] = LocalPlayer.Character.Torso["Left Hip"] or Args[3]
+								Parameters[3] = LocalPlayer.Character.Torso["Left Hip"] or Parameters[3]
 							elseif RandomNum1 == 6 then
-								Args[3] = LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[3]
+								Parameters[3] = LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Parameters[3]
 							else
-								Args[3] = LocalPlayer.Character.Torso["Neck"] or Args[3]
+								Parameters[3] = LocalPlayer.Character.Torso["Neck"] or Parameters[3]
 							end
 
 							if RandomNum2 == 1 then
-								Args[4] = LocalPlayer.Character.Torso["Neck"] or Args[4]
+								Parameters[4] = LocalPlayer.Character.Torso["Neck"] or Parameters[4]
 							elseif RandomNum2 == 2 then
-								Args[4] = LocalPlayer.Character.Torso["Right Hip"] or Args[4]
+								Parameters[4] = LocalPlayer.Character.Torso["Right Hip"] or Parameters[4]
 							elseif RandomNum2 == 3 then
-								Args[4] = LocalPlayer.Character.Torso["Left Shoulder"] or Args[4]
+								Parameters[4] = LocalPlayer.Character.Torso["Left Shoulder"] or Parameters[4]
 							elseif RandomNum2 == 4 then
-								Args[4] = LocalPlayer.Character.Torso["Right Shoulder"] or Args[4]
+								Parameters[4] = LocalPlayer.Character.Torso["Right Shoulder"] or Parameters[4]
 							elseif RandomNum2 == 5 then
-								Args[4] = LocalPlayer.Character.Torso["Left Hip"] or Args[4]
+								Parameters[4] = LocalPlayer.Character.Torso["Left Hip"] or Parameters[4]
 							elseif RandomNum2 == 6 then
-								Args[4] = LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[4]
+								Parameters[4] = LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Parameters[4]
 							else
-								Args[4] = LocalPlayer.Character.Torso["Neck"] or Args[4]
+								Parameters[4] = LocalPlayer.Character.Torso["Neck"] or Parameters[4]
 							end
 
 							if RandomNum3 == 1 then
-								Args[5] = LocalPlayer.Character.Torso["Neck"] or Args[5]
+								Parameters[5] = LocalPlayer.Character.Torso["Neck"] or Parameters[5]
 							elseif RandomNum3 == 2 then
-								Args[5] = LocalPlayer.Character.Torso["Right Hip"] or Args[5]
+								Parameters[5] = LocalPlayer.Character.Torso["Right Hip"] or Parameters[5]
 							elseif RandomNum3 == 3 then
-								Args[5] = LocalPlayer.Character.Torso["Left Shoulder"] or Args[5]
+								Parameters[5] = LocalPlayer.Character.Torso["Left Shoulder"] or Parameters[5]
 							elseif RandomNum3 == 4 then
-								Args[5] = LocalPlayer.Character.Torso["Right Shoulder"] or Args[5]
+								Parameters[5] = LocalPlayer.Character.Torso["Right Shoulder"] or Parameters[5]
 							elseif RandomNum3 == 5 then
-								Args[5] = LocalPlayer.Character.Torso["Left Hip"] or Args[5]
+								Parameters[5] = LocalPlayer.Character.Torso["Left Hip"] or Parameters[5]
 							elseif RandomNum3 == 6 then
-								Args[5] = LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Args[5]
+								Parameters[5] = LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Parameters[5]
 							else
-								Args[5] = LocalPlayer.Character.Torso["Neck"] or Args[5]
+								Parameters[5] = LocalPlayer.Character.Torso["Neck"] or Parameters[5]
 							end
 
-							return OldNameCall(Remote, unpack(Args))
+							return OldNameCall(Remote, unpack(Parameters))
 						end
 					end
 				end
@@ -1920,3 +2024,4 @@ warn(
 		end)()
 	)
 )
+ClientSubtitles:Fire("<b><i>Script succesfully executed</i></b>, check developer console by pressing F9 or typing \"/console\" into chat to see more information.")
