@@ -702,7 +702,7 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 		return
 	end
 
-	local List:any = {}
+	local List:{any} = {}
 
 	if not ListTools then
 		if Character:FindFirstChild(PreferredWeapon) then 
@@ -741,6 +741,8 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 			end
 		end
 	end
+
+    Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
 	if Backpack:FindFirstChildWhichIsA("Tool") then
 		for _, Tool in ipairs(Backpack:GetChildren()) do 
 			if (typeof(Tool) == "Instance") and Tool:IsA("Tool") and Tool.Parent then 
@@ -1566,6 +1568,12 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 					local Remote = Weapon:FindFirstChildWhichIsA("RemoteEvent")
 
 					if Remote then
+                        local ParentWasBackpack:boolean = false
+                        if (Weapon.Parent == Backpack) then
+                            ParentWasBackpack = true
+                            Weapon.Parent = Character
+                        end
+
 						if (Weapon.Name == "Axe") or (Weapon.Name == "Pickaxe") then
 							Remote:FireServer("BraceBlock")
 
@@ -1593,6 +1601,9 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 							task.wait()
 						end)
 
+                        if ParentWasBackpack then 
+                            Weapon.Parent = Backpack
+                        end
 						table.clear(AgentsInRange)
 					elseif not Remote then 
                         ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
