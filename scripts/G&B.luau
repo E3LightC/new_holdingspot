@@ -10,7 +10,7 @@
 --//   and has multiple variants sitting inside the G&B Dev Zone.
 --//        Changed "Feature Overview" and "Key Bindings Overview" to be more technical.
 --//        Added new keybind: [Keypad 5]: Enables or disables if "Barrel" zombies can be attacked.
---//        More debugging/logging features.
+--//        More debugging/logging features, also utilizing G&B's ClientSubtitles BindableEvent.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
@@ -109,50 +109,57 @@ type DebugLibrary = {
 
 local vector:VectorLibrary = (getfenv().vector) --// Since Wave doesn't have Lua's global "vector" class?
 local debug:DebugLibrary = (getfenv().debug) --// Since debug.info isn't registered for some reason?
+local ClientSubtitles:RemoteEvent = (ReplicatedStorage:FindFirstChild("ClientSubtitles") or ReplicatedStorage:WaitForChild("ClientSubtitles", math.huge))::RemoteEvent
 
 --[=[
     Description:
-    Generates a formatted rich text string by replacing numeric placeholders in a template string with styled font segments.
-    Placeholders are defined using square brackets (e.g., `[1]`, `[2]`) and are replaced by corresponding values from the variadic arguments.
+    Dynamically generates a formatted rich text string by substituting placeholders in a template string with styled text data.
+    This is primarily used for UI text rendering with `<font>` tags for color and font customization.
 
     Parameters:
-    - `TemplateString: string`: The base string containing numbered placeholders to be replaced (e.g., "Hello, [1]!").
-    - `...`: Variadic arguments. Each argument should be a table containing the following fields:
-        - `Text: string`: The text content to insert at the placeholder.
-        - `Color: Color3|string` (optional): The color of the text. Can be a `Color3` or a hex color string (e.g., "#FF0000"). Defaults to white (`#FFFFFF`) if unspecified or invalid.
-        - `Font: string` (optional): The font face to use. Defaults to `"Merriweather"`.
+    - `TemplateString: string`: The base string containing indexed placeholders like `[1]`, `[2]`, etc. 
+      These placeholders are replaced by the corresponding formatted text objects from the variable arguments.
+    - `...`: A variable number of table arguments representing styled text data. Each table should contain:
+        - `Text: string` (required): The text to insert.
+        - `Color: Color3|string` (optional): The text color (as a `Color3` or hex string). Defaults to white (`#FFFFFF`) if not provided.
+        - `Font: string` (optional): The font face name (e.g., `"Gotham"`, `"Merriweather"`). Defaults to `"Merriweather"`.
 
     Returns:
-    - `string`: The formatted rich text string with placeholders replaced. Returns `nil` if `TemplateString` is not a string.
+    - `string`: A rich text string with `<font>` tags applied based on the input data. If the template is invalid, it returns `"NO_TEMPLATE"`. 
 
     Behavior:
-    - Parses the `TemplateString` and replaces placeholders in the format `[n]` where `n` is a 1-based index.
-    - For each placeholder, retrieves the corresponding argument from `...`:
-        - If valid and contains a `Text` string, it is wrapped in a `<font>` tag with the specified color and font.
-        - If the argument exists but `Text` is missing or not a string, it substitutes `"[INVALID_TEXT]"`.
-        - If the argument is missing entirely, it substitutes `"[INVALID_DATA]"`.
-    - Supports both `Color3` values and raw hex strings for the color field.
+    - Validates that `TemplateString` is a string. If invalid, it warns in the developer console and fires an in-game subtitle message. 
+    - Each placeholder like `[1]` or `[2]` is replaced by the corresponding text object in the variable arguments.
+    - If a placeholder has no matching data, it inserts `[INVALID_DATA]`.
+    - If the `Text` field is missing a string, it inserts `[INVALID_TEXT]` with the provided color and font. 
+    - Colors can be defined using `Color3` or hex strings (e.g., `"#FF0000"`). Font defaults to `"Merriweather"`. 
 
     Example Usage:
     ```lua
-    local result = GenerateText("Welcome, [1]! You've unlocked the [2].", 
-        { Text = "Player1", Color = Color3.fromRGB(255, 215, 0), Font = "Garamond" },
-        { Text = "Golden Sword", Color = "#FFD700" }
+    local result = GenerateText(
+        "Alert: [1] - Status: [2]",
+        {Text = "Overheating"; Color = Color3.fromRGB(255, 85, 85)},
+        {Text = "Critical"; Color = "#FFD700"; Font = "Gotham"}
     )
-    -- Output: 'Welcome, <font color="#FFD700" face="Garamond">Player1</font>! You've unlocked the <font color="#FFD700" face="Merriweather">Golden Sword</font>.'
+    -- result: 'Alert: <font color="#FF5555" face="Merriweather">Overheating</font> - Status: <font color="#FFD700" face="Gotham">Critical</font>'
     ```
 
     Notes:
-    - Useful for constructing rich text messages in Roblox UI (e.g., TextLabels supporting `RichText = true`).
-    - Font names must be supported by Roblox for proper rendering.
+    - Internally uses `string.gsub` to replace placeholders in the form `[index]`.
+    - This function helps create and format styled subtitles, warnings, or dialog boxes with consistent formatting.
+
+    Edge Cases:
+    - If `TemplateString` is not a string, fires a red error subtitle and returns `"NO_TEMPLATE"`.
+    - If a placeholder index is out of bounds or the corresponding argument is nil, `[INVALID_DATA]` is used.
+    - If the `Text` field is missing a string, `[INVALID_TEXT]` is inserted instead. 
 
 ]=]
 local function GenerateText(TemplateString:string, ...)
     if (type(TemplateString) ~= "string") then 
-        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
-        warn(`[FAIL # WaitForChildWhichIsA]: "TemplateString" parameter is not a string.  ||| Current script line: {debug.info(1, "l")}`)
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GenerateText] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
+        warn(`[FAIL # GenerateText]: "TemplateString" parameter is not a string.  ||| Current script line: {debug.info(1, "l")}`)
 
-        return 
+        return ("NO_TEMPLATE")
     end
 
 	local Parameters = {...}
@@ -291,7 +298,7 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
 
 		return InstanceToReturn
 	else
-        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# WaitForChildWhichIsA] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# WaitForChildWhichIsA] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
 		if (typeof(Parent) ~= "Instance") then
 			warn(`[FAIL # WaitForChildWhichIsA]: "Parent" parameter is not an Instance.  ||| Current script line: {debug.info(1, "l")}`)
 			return nil
@@ -317,7 +324,6 @@ local LocalPlayer:Player = Players.LocalPlayer
 local Backpack:Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
 
 local Remotes:Folder = (ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:WaitForChild("Remotes", math.huge))::Folder
-local ClientSubtitles:RemoteEvent = (ReplicatedStorage:FindFirstChild("ClientSubtitles") or ReplicatedStorage:WaitForChild("ClientSubtitles", math.huge))::RemoteEvent
 local AFKSignal:RemoteEvent = (Remotes:FindFirstChild("OnAFKSignalReceived") or Remotes:WaitForChild("OnAFKSignalReceived", math.huge))::RemoteEvent
 
 local ZombiesFolder:Folder = (Workspace:FindFirstChild("Zombies") or Workspace:WaitForChild("Zombies", math.huge))::Folder
@@ -515,8 +521,8 @@ _G["BuildHighlight"].Enabled = true
 ]=]
 local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean?, IsRunner:boolean?, IsSapper:boolean?, IsBomber:boolean?, IsHeadless:boolean?, IsCuirassier:boolean?)
 	if (typeof(Character) ~= "Instance") or not Character:IsA("Model") then
-        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
-        warn(`[FAIL # WaitForChildWhichIsA]: "Character" parameter is not an Instance, nor a Model.  ||| Current script line: {debug.info(1, "l")}`)
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# AddEsp] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
+        warn(`[FAIL # AddEsp]: "Character" parameter is not an Instance, nor a Model.  ||| Current script line: {debug.info(1, "l")}`)
 
 		return
 	end
@@ -600,7 +606,7 @@ end
 ]=]
 local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:number?):(thread)
 	if (typeof(RemoteEventToUse) ~= "Instance") or not RemoteEventToUse:IsA("RemoteEvent") then 
-        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# SetupFakeAccuracyBeat] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# SetupFakeAccuracyBeat] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
 		warn(`[FAIL # SetupFakeAccuracyBeat]: "RemoteEventToUse" is not an Instance, nor a RemoteEvent.  ||| Current script line: {debug.info(1, "l")}`)
 
 		return coroutine.create(function() end)
@@ -689,14 +695,14 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 	local Character = LocalPlayer.Character
 
 	if not Character then 
-        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetMeleeWeapon] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 		warn(`[FAIL # GetMeleeWeapon]: Your character doesn't exist?  ||| Current script line: {debug.info(1, "l")}`)
 
 		return
 	end
 
 	if (Character.Parent == nil) then
-        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetMeleeWeapon] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 		warn(`[FAIL # GetMeleeWeapon]: Your character's parent is equal to nil.  ||| Current script line: {debug.info(1, "l")}`)
 
 		return
@@ -828,7 +834,7 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
 	local AgentsInRange:{[number]:any} = {}
 
 	if (type(Range) ~= "number") then 
-        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GetAgentsInRange] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetAgentsInRange] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
 		warn(`[FAIL # GetAgentsInRange]: "Range" is not a number.  ||| Current script line: {debug.info(1, "l")}`)
 		
         return AgentsInRange
@@ -845,7 +851,7 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
 	if not UsePosition then
 		local Character:Model = LocalPlayer.Character
 		if not Character or not Character.Parent then
-            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
+            ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetAgentsInRange] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetAgentsInRange]: You do not have a character?  ||| Current script line: {debug.info(1, "l")}`)
 
 			return AgentsInRange
@@ -853,7 +859,7 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
 
 		CharHRP = (Character:FindFirstChild("HumanoidRootPart") or Character.PrimaryPart)::BasePart
 		if not CharHRP or CharHRP:IsA("Model") then 
-            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
+            ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetAgentsInRange] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetAgentsInRange]: No HumanoidRootPart/PrimaryPart found inside the player's character.  ||| Current script line: {debug.info(1, "l")}`)
 
 			return AgentsInRange
@@ -991,14 +997,14 @@ local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(
 
 	if (Table ~= nil) and (Function ~= nil) then 
 		if (type(Table) ~= "table") then 
-            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# IterateWithFunction] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
+            ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# IterateWithFunction] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
 			warn(`[FAIL # IterateWithFunction]: "Table" is not a table.  ||| Current script line: {debug.info(1, "l")}`)
 
 			return
 		end
 
 		if (type(Function) ~= "function") then 
-            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# IterateWithFunction] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
+            ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# IterateWithFunction] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
 			warn(`[FAIL # IterateWithFunction]: "Function" is not a function.  ||| Current script line: {debug.info(1, "l")}`)
 
 			return
@@ -1014,7 +1020,7 @@ local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(
 			end
 		end
 	else
-        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# IterateWithFunction] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# IterateWithFunction] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
 		if (Table == nil) then 
 			warn(`[FAIL # IterateWithFunction]: "Table" is equal to nil.  ||| Current script line: {debug.info(1, "l")}`)
 
@@ -1102,7 +1108,7 @@ local function GetBuildingWithLeastHealth():(any)
 		if (typeof(Healths[1]) == "Instance") then 
 			return Healths[1]
 		elseif not Healths[1] then 
-            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
+            ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetBuildingWithLeastHealth] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetBuildingWithLeastHealth]: Failed to get a "BuildingHealth" NumberValue.  ||| Current script line: {debug.info(1, "l")}`)
 			
             return false
@@ -1205,7 +1211,7 @@ local function GetClosestBuilding():any
 
 			return ((Bounds[1].Parent)::Part):WaitForChild("BuildingHealth")
 		elseif not Bounds[1] then 
-            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
+            ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetClosestBuilding] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetClosestBuilding]: Failed to find the closest building.  ||| Current script line: {debug.info(1, "l")}`)
 			
             return false
@@ -1255,7 +1261,7 @@ end
 local function GetMaxIndexOfTable(Table:{[any]: any})
 	if (Table ~= nil) then 
 		if (type(Table) ~= "table") then
-            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GetMaxIndexOfTable] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
+            ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetMaxIndexOfTable] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetMaxIndexOfTable]: "Table" is not a table. Returning 0.  ||| Current script line: {debug.info(1, "l")}`)
 
 			return 0
@@ -1272,7 +1278,7 @@ local function GetMaxIndexOfTable(Table:{[any]: any})
 
 		return CountToReturn
 	else
-        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GetMaxIndexOfTable] Invalid parameters were identified, check developer console for more information."; Color = "#FF5555";}), 4)
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetMaxIndexOfTable] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
 		if (Table == nil) then 
 			warn(`[FAIL # GetMaxIndexOfTable]: "Table" is equal to nil. Returning 0.  ||| Current script line: {debug.info(1, "l")}`)
 
@@ -1467,7 +1473,7 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 						end
 					end)
 				elseif not Remote then 
-                    ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
+                    ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# MusicBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 					warn(`[FAIL # MusicBind]: Failed to find instrument remote event for the "{FoundInstrument.Name}".  ||| Current script line: {debug.info(1, "l")}`)
 					return
 				end
@@ -1534,7 +1540,7 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 				local AgentsInRange = GetAgentsInRange(false, ShoveRange)
 
 				if (type(AgentsInRange) ~= "table") then
-                    ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4) 
+                    ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# ShoveBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4) 
 					warn(`[FAIL # ShoveBind]: AgentsInRange is not a table.  ||| Current script line: {debug.info(1, "l")}  ||| Current script line: {debug.info(1, "l")}`)
 
 					return
@@ -1547,7 +1553,7 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 				end
 
 				if not HRP then 
-                    ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
+                    ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# ShoveBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 					warn(`[FAIL # ShoveBind]: Character has no HumanoidRootPart/Torso?  ||| Current script line: {debug.info(1, "l")}`)
 
 					table.clear(AgentsInRange)
@@ -1606,7 +1612,7 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                         end
 						table.clear(AgentsInRange)
 					elseif not Remote then 
-                        ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
+                        ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# ShoveBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 						warn(`[FAIL # ShoveBind]: "Remote" if statement failed.  ||| Current script line: {debug.info(1, "l")}`)
 
 						table.clear(AgentsInRange)
@@ -1638,7 +1644,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 						local AgentsInRange:{[number]:Model} = GetAgentsInRange(false, (LimitRange and (LimitRange * 1.8)) or MurderRange)
 
 						if (type(AgentsInRange) ~= "table") then 
-                            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
+                            ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# MurderBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 							warn(`[FAIL # MurderBind]: AgentsInRange is not a table.  ||| Current script line: {debug.info(1, "l")}`)
 
 							continue
@@ -1693,7 +1699,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 							table.clear(AgentsInRange)
 						else
-                            ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
+                            ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# MurderBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 							warn(`[FAIL # MurderBind]: "WeaponRemote" if statement failed.  ||| Current script line: {debug.info(1, "l")}`)
 
 							table.clear(AgentsInRange)
@@ -1778,7 +1784,7 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 					end
 				end
 
-                ClientSubtitles:Fire(GenerateText("[1]", {Text = "[# GenerateText] A if statement has failed, check developer console for more information."; Color = "#FF5555";}), 4)
+                ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GrabLogBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 				warn(`[FAIL # GrabLogBind]: "Modes" or "Holdout" if statements failed?  ||| Current script line: {debug.info(1, "l")}`)
 				return
 			elseif not Berezina then 
@@ -2035,4 +2041,4 @@ warn(
 		end)()
 	)
 )
-ClientSubtitles:Fire("Script successfully executed, check developer console by pressing F9 or typing \"/console\" into chat to see more information.")
+ClientSubtitles:Fire("   Script successfully executed, check developer console by pressing F9 or typing \"/console\" into chat to see more information.   ")
