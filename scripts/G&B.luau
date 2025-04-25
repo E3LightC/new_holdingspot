@@ -462,9 +462,6 @@ if _G["OnCharacterAdded"] then
 	_G["OnCharacterAdded"]:Disconnect()
 	_G["OnCharacterAdded"] = nil
 end
---//
-
-task.wait(0.2) --// Allow Luau's garbage collector to cleanup.
 
 _G["BuildHighlight"] = Instance.new("Highlight")
 _G["BuildHighlight"].DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
@@ -714,7 +711,7 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 		if Character:FindFirstChild(PreferredWeapon) then 
 			local Tool = (Character:FindFirstChild(PreferredWeapon))::Tool
 
-			return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
+			return {{Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")}}
 		end
 	elseif ListTools then
 		if Character:FindFirstChild(PreferredWeapon) then 
@@ -733,7 +730,7 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 						continue
 					end
 
-					return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
+					return {{Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")}}
 				else
 					if (Tool.Name == "Musket") or (Tool.Name == "Shovel") then 
 						if ListTools then
@@ -741,7 +738,7 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 							continue
 						end
 
-						return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
+						return {{Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")}}
 					end
 				end
 			end
@@ -758,7 +755,7 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 						continue
 					end
 
-					return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
+					return {{Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")}}
 				else
 					if (Tool.Name == "Musket") or (Tool.Name == "Shovel") then 
 						if ListTools then
@@ -766,7 +763,7 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 							continue
 						end
 
-						return Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")
+						return {{Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")}}
 					end
 				end
 			end
