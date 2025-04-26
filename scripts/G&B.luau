@@ -113,45 +113,42 @@ local ClientSubtitles:RemoteEvent = (ReplicatedStorage:FindFirstChild("ClientSub
 
 --[=[
     Description:
-    Dynamically generates a formatted rich text string by substituting placeholders in a template string with styled text data.
-    This is primarily used for UI text rendering with `<font>` tags for color and font customization.
+    Generates a rich text string by replacing numbered placeholders in a template with formatted font tags.
+    Useful for dynamically inserting colored and styled text into UI elements.
 
     Parameters:
-    - `TemplateString: string`: The base string containing indexed placeholders like `[1]`, `[2]`, etc. 
-      These placeholders are replaced by the corresponding formatted text objects from the variable arguments.
-    - `...`: A variable number of table arguments representing styled text data. Each table should contain:
-        - `Text: string` (required): The text to insert.
-        - `Color: Color3|string` (optional): The text color (as a `Color3` or hex string). Defaults to white (`#FFFFFF`) if not provided.
-        - `Font: string` (optional): The font face name (e.g., `"Gotham"`, `"Merriweather"`). Defaults to `"Merriweather"`.
+    - `TemplateString: string`: The template string containing placeholders like `[1]`, `[2]`, etc.
+    - `...: table`: A variable list of tables, each with:
+        - `Text: string` (required) — the text to insert.
+        - `Color: Color3 or string` (optional) — the color of the text, either a hex string or a Color3.
+        - `Font: string` (optional) — the font to use, defaults to `"Roboto"`.
 
     Returns:
-    - `string`: A rich text string with `<font>` tags applied based on the input data. If the template is invalid, it returns `"NO_TEMPLATE"`. 
+    - `string`: The generated rich text string. If an error occurs, returns `"[NO_TEMPLATE]"`.
 
     Behavior:
-    - Validates that `TemplateString` is a string. If invalid, it warns in the developer console and fires an in-game subtitle message. 
-    - Each placeholder like `[1]` or `[2]` is replaced by the corresponding text object in the variable arguments.
-    - If a placeholder has no matching data, it inserts `[INVALID_DATA]`.
-    - If the `Text` field is missing a string, it inserts `[INVALID_TEXT]` with the provided color and font. 
-    - Colors can be defined using `Color3` or hex strings (e.g., `"#FF0000"`). Font defaults to `"Merriweather"`. 
+    - Replaces `[n]` markers in the template with corresponding formatted text.
+    - Invalid or missing data results in `[INVALID_DATA]` or `[INVALID_TEXT]` placeholders.
+    - If `TemplateString` is invalid, sends a client subtitle warning and logs a warning to the developer console.
+    - Defaults to white color (`#FFFFFF`) and `"Roboto"` font if not specified.
+
+    Notes:
+    - This function supports both Color3 and hex string color formats.
+    - Designed for use with Roblox's `RichText` feature enabled.
 
     Example Usage:
     ```lua
-    local result = GenerateText(
-        "Alert: [1] - Status: [2]",
-        {Text = "Overheating"; Color = Color3.fromRGB(255, 85, 85)},
-        {Text = "Critical"; Color = "#FFD700"; Font = "Gotham"}
+    local text = GenerateText("[1] won against [2]!", 
+        {Text = "Player1", Color = Color3.new(1, 1, 0)}, 
+        {Text = "Boss", Color = "#FF0000"}
     )
-    -- result: 'Alert: <font color="#FF5555" face="Merriweather">Overheating</font> - Status: <font color="#FFD700" face="Gotham">Critical</font>'
+    TextLabel.Text = text
     ```
 
-    Notes:
-    - Internally uses `string.gsub` to replace placeholders in the form `[index]`.
-    - This function helps create and format styled subtitles, warnings, or dialog boxes with consistent formatting.
-
     Edge Cases:
-    - If `TemplateString` is not a string, fires a red error subtitle and returns `"NO_TEMPLATE"`.
-    - If a placeholder index is out of bounds or the corresponding argument is nil, `[INVALID_DATA]` is used.
-    - If the `Text` field is missing a string, `[INVALID_TEXT]` is inserted instead. 
+    - If `TemplateString` is not a string, a client subtitle is fired and "[NO_TEMPLATE]" is returned.
+    - If a replacement table is missing, "[INVALID_DATA]" is inserted.
+    - If `Text` inside the replacement table is not a string, "[INVALID_TEXT]" is inserted.
 
 ]=]
 local function GenerateText(TemplateString:string, ...)
@@ -159,33 +156,27 @@ local function GenerateText(TemplateString:string, ...)
         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GenerateText] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
         warn(`[FAIL # GenerateText]: "TemplateString" parameter is not a string.  ||| Current script line: {debug.info(1, "l")}`)
 
-        return ("NO_TEMPLATE")
+        return ("[NO_TEMPLATE]")
     end
 
 	local Parameters = {...}
 	local Result = TemplateString:gsub("%[(%d+)%]", function(IndexString)
 		local CurrentIndex = tonumber(IndexString)
 		local Data = Parameters[CurrentIndex]
-
-        local DataTextIsString = (Data and (type(Data["Text"]) == "string")) or false
-
-		if Data and DataTextIsString then
-			local Color = ((typeof(Data["Color"]) == "Color3") and `#{Data["Color"]:ToHex()}`) 
-                or ((type(Data["Color"]) == "string") and Data["Color"]) 
-                or "#FFFFFF"
-			local Font = Data["Font"] or "Merriweather"
-
-			return string.format('<font color="%s" face="%s">%s</font>', Color, Font, Data["Text"])
-		elseif Data and not DataTextIsString then
-			local Color = ((typeof(Data["Color"]) == "Color3") and `#{Data["Color"]:ToHex()}`) 
-                or ((type(Data["Color"]) == "string") and Data["Color"]) 
-                or "#FFFFFF"
-			local Font = Data["Font"] or "Merriweather"
-
-			return string.format('<font color="%s" face="%s">%s</font>', Color, Font, ("[INVALID_TEXT]"))
-        elseif not Data then 
+        
+        if (type(Data) ~= "table") then 
             return ("[INVALID_DATA]")
-		end
+        end
+        if (type(Data["Text"]) ~= "string") then 
+            Data["Text"] = ("[INVALID_TEXT]")
+        end
+
+		local Color = ((typeof(Data["Color"]) == "Color3") and `#{Data["Color"]:ToHex()}`) 
+            or ((type(Data["Color"]) == "string") and Data["Color"]) 
+            or "#FFFFFF"
+		local Font = Data["Font"] or "Roboto"
+
+		return string.format("<font color=\"%s\" face=\"%s\">%s</font>", Color, Font, Data["Text"])
 	end)
 
 	return Result
