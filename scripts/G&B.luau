@@ -2038,4 +2038,4 @@ warn(
 		end)()
 	)
 )
-ClientSubtitles:Fire("   Script successfully executed, check developer console by pressing F9 or typing \"/console\" into chat to see more information.   ")
+ClientSubtitles:Fire("   Script successfully executed, <i>check developer console by pressing F9 or typing \"/console\" into chat to see more information.</i>   ")
