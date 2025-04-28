@@ -1843,7 +1843,7 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 		local NamecallMethod = getnamecallmethod()
 
 		if (Remote == LocalPlayer) and (NamecallMethod:lower() == "kick") then
-			print("[INFO # AntiKick]: An attempt to kick the LocalPlayer was just prevented.")
+			print(`[INFO # AntiKick]: An attempt to kick the "LocalPlayer" was just prevented.`)
 			return
 		end
 
@@ -1851,6 +1851,7 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 			if (NamecallMethod == "FireServer") then
 				--// always returns "nil" technically
 				--// (OldNameCall(Remote, unpack(Parameters)) == nil) = true / (Remote:FireServer(unpack(Parameters)) == nil) = true
+				
 				if (Remote == AFKSignal) or (Remote.Name == "OnAFKSignalReceived") then
 					print(`[INFO # Namecall Hook]: "OnAFKSignalReceived" attempted to fire.`)
 					return nil
@@ -1981,9 +1982,9 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 	OldIndex = hookmetamethod(game, "__index", function(Self, Method)
 		if (Self == LocalPlayer) and (Method:lower() == "kick") then
 			if not _G["__PlaceholderFunction"] then
-				_G["__PlaceholderFunction"] = function()
+				_G["__PlaceholderFunction"] = (function()
 					print("[INFO # AntiKick]: An attempt to kick the LocalPlayer was just prevented.")
-				end
+				end)
 			end
 
 			return _G["__PlaceholderFunction"]
