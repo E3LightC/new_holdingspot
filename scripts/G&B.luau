@@ -1,6 +1,6 @@
 --//// Discord: @_x4yz \\\\--
 --// https://www.roblox.com/games/12334109280/Guts-Blackpowder
---//    Made with Wave. https://getwave.gg
+--//    Made with Wave. https://getwave.gg | This script should work with most executors, as most of it is standard Roblox Luau.
 --//    Each function has a description if whoever is reading this is curious about what they do.
 --//    * This script is entirely made from boredom and my passion for exploiting/pen-testing! *
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
@@ -74,11 +74,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local UserInputService = game:GetService("UserInputService")
 
-local CanUseHookMetamethod:boolean = (typeof(hookmetamethod) == "function")
+local CanUseHookMetamethod:boolean = (type(hookmetamethod) == "function")
+local CanUseGetNameCallMethod:boolean = (type(getnamecallmethod) == "function")
 if not CanUseHookMetamethod then
 	warn("[WARNING]: Your executor does not support 'hookmetamethod'. The script will still run, but the hooking functionality will not execute.")
 end
-local CanUseGetNameCallMethod:boolean = (typeof(getnamecallmethod) == "function")
 if CanUseHookMetamethod and not CanUseGetNameCallMethod then
 	warn("[WARNING]: Your executor does not support 'getnamecallmethod'. The script will still run, but the hooking functionality will not execute.")
 end
@@ -113,7 +113,7 @@ local ClientSubtitles:RemoteEvent = (ReplicatedStorage:FindFirstChild("ClientSub
 
 --[=[
     Description:
-    Generates a rich text string by replacing numbered placeholders in a template with formatted font tags.
+    Generates a rich text string by replacing numbered placeholders with formatted font tags in a template.
     Useful for dynamically inserting colored and styled text into UI elements.
 
     Parameters:
@@ -124,12 +124,12 @@ local ClientSubtitles:RemoteEvent = (ReplicatedStorage:FindFirstChild("ClientSub
         - `Font: string` (optional) — the font to use, defaults to `"Roboto"`.
 
     Returns:
-    - `string`: The generated rich text string. If an error occurs, returns `"[NO_TEMPLATE]"`.
+    - `string`: The generated rich text string. If an error occurs, it returns `"[NO_TEMPLATE]"`.
 
     Behavior:
     - Replaces `[n]` markers in the template with corresponding formatted text.
     - Invalid or missing data results in `[INVALID_DATA]` or `[INVALID_TEXT]` placeholders.
-    - If `TemplateString` is invalid, sends a client subtitle warning and logs a warning to the developer console.
+    - If `TemplateString` is invalid, it sends a client subtitle warning and logs a warning to the developer console.
     - Defaults to white color (`#FFFFFF`) and `"Roboto"` font if not specified.
 
     Notes:
@@ -223,7 +223,7 @@ end
     ```
 
     Edge Cases:
-    - Logs a warning and returns `nil` if `Parent` is not an instance or `ClassName` is not a string.
+    - Logs a warning and returns `nil` if `Parent` is not an `Instance`, or `ClassName` is not a string.
     - Terminates early and logs information if the parent is invalidated during the wait.
     - Honors the timeout if provided, even if the parent instance remains valid.
 
