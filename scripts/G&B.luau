@@ -10,7 +10,7 @@
 --//   and has multiple variants sitting inside the G&B Dev Zone.
 --//        Changed "Feature Overview" and "Key Bindings Overview" to be more technical.
 --//        Added new keybind: [Keypad 5]: Enables or disables if "Barrel" zombies can be attacked.
---//        More debugging/logging features, also utilizing G&B's ClientSubtitles BindableEvent.
+--//        More debugging/logging features, also utilizing G&B's "ClientSubtitles" BindableEvent.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
