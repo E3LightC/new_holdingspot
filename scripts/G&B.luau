@@ -1786,17 +1786,17 @@ end)
 
 if Debug then
 	if DebugPrints then
-		print(`[DEBUG # INFO]: Connecting workspace.DescendantAdded script signal for global "FlameTouchRemover".`)
+		print(`[DEBUG # INFO]: Connecting "workspace.DescendantAdded" script signal for global "FlameTouchRemover".`)
 	end
 	_G["FlameTouchRemover"] = Workspace.DescendantAdded:Connect(function(NewWorkspaceChild)
 		if NewWorkspaceChild then
 			if (NewWorkspaceChild.Name == "IgniterFire") and NewWorkspaceChild:IsA("BasePart") then
-				NewWorkspaceChild.CanTouch = false
 				local TouchInterest = NewWorkspaceChild:WaitForChild("TouchInterest", 3)
 
 				if TouchInterest then
 					TouchInterest:Destroy()
 				end
+                NewWorkspaceChild.CanTouch = false
 			end
 		end
 	end)
