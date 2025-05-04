@@ -9,56 +9,46 @@
 --//        Updated ESP System to also add highlights to the new "Cuirassier" zombie type, which was recently seen in action in G&B's new playtest, 
 --//   and has multiple variants sitting inside the G&B Dev Zone.
 --//        Changed "Feature Overview" and "Key Bindings Overview" to be more technical.
---//        Added new keybind: [Keypad 5]: Enables or disables if "Barrel" zombies can be attacked.
 --//        More debugging/logging features, also utilizing G&B's "ClientSubtitles" BindableEvent.
+--//        Removed Rubik's cube bind [Keypad 4], and replaced with a key bind to that enable or disable if "Barrel" zombies can be attacked.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
 --// [System Logging]
---//        All failures, errors, warnings, and other information are output to the Roblox Developer Console with standardized tags 
+--//        All failures, errors, warnings, and other information are output to the Roblox Developer Console; also look out for outputs with standardized tags.
 --//   (e.g., "[FAIL # EXAMPLE_CONTEXT]: ...", "[INFO # EXAMPLE_CONTEXT]: ...", "[DEBUG # EXAMPLE_CONTEXT]: ...").
 --// [Input Bindings]
---//        [Q]: Triggers a shove action against nearby agents within `ShoveRange`, if the equipped tool supports shoving.
---//        [Z] / [X]: Activates an AoE melee attack, targeting all valid agents within a range based on the equipped weapon's parameters.
---//        [G]: Automatically equips a shove-capable tool from the Backpack, if one is available.
---//        [Keypad 1]: Executes a log retrieval action. (Limited to the "Berezina" map.)
---//        [Keypad 2]: Toggles the auto-repair system on or off.
---//        [Keypad 3]: Switches the internal lookup method to identify nearby repairable structures.
---//        [Keypad 4]: Enables or disables "RubiksCube" mode (details below).
---//        [Keypad 5]: Enables or disables if "Barrel" zombies can be attacked.
+--//        [Q] — Shove nearby agents (if tool allows) (ignores "Barrel" agents).
+--//        [Z] / [X] — AoE melee attack with current weapon.
+--//        [G] — Auto-equip shove-capable tool from Backpack.
+--//        [Numpad 1] — Retrieve logs (Berezina map only).
+--//        [Numpad 2] — Toggle auto-repair system.
+--//        [Numpad 3] — Switch auto-repair targeting mode.
+--//        [Numpad 4] — Allow/disallow "Barrel" agents targeting.
 --//        [U], [F], [G], [H], [J], [Y], [T]: Triggers playback of a predefined fife or drum song. Song mappings are configurable via the `MusicSelections` table.
 --// [Combat Behavior]
---//        All melee attacks are forcibly registered as headshots, in which the weapon script that controls said weapon will apply either the weapon’s specific headshot multiplier 
---//   or a default multiplier of 1.5x for increased damage output.
+--//        All melee attacks are forcibly registered as headshots, in which the base melee module that controls said weapon on the server side will apply either the weapon’s specific headshot multiplier 
+--//   or a default multiplier of 2.3x for increased damage output.
 --// [Visuals / ESP System]
---//        Agents are dynamically highlighted with Roblox's `Highlight` instance based on their classification. 
---//   Colors are pulled from the `ESPColors` table, allowing for consistent team or role-based visual cues. 
---//   Highlighting is gated by tag-checking to prevent redundant application.
+--//        Agents are highlighted using Roblox's `Highlight` based on type, with colors from `ESPColors`. 
+--//   Tags prevent redundant highlights.
 --// [Tool Manipulation / Exploit Behavior]
---//        When "RubiksCube" mode is active, the script hooks into the `__namecall` metamethod on `game`. 
---//   Any client-side RemoteEvent call where the first argument is `"UpdateLook"` will have its parameters dynamically scrambled 
---//   before being sent. This results in visible character distortion effects, processed server-side.
---//        RemoteEvent calls to `OnAFKSignalReceived` and `ForceKill` are intercepted and blocked locally, 
---//   preventing them from reaching the server.
---//   (Note: This does not stop RemoteEvent calls initiated via external exploit tools.)
---//        The auto-repair feature requires a hammer tool to be equipped. Structural proximity is calculated 
---//   based on the character’s position, not the tool itself, due to how it is implemented.
+--//        RemoteEvents `OnAFKSignalReceived` and `ForceKill` are locally blocked (external exploit calls not affected).
+--//        Auto-repair uses a hammer tool and checks character proximity, not the tool’s proximity when repairing structures.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Key Bindings Overview \\\\--
---// [Combat Actions]
---//        [Q]: Executes a shove against nearby zombie entities within `ShoveRange`, if supported by the current tool.
---//        [Z] / [X]: Triggers a kill aura, dealing AoE melee damage to all valid zombies within range based on the equipped weapon.
---//        [G]: Searches the Backpack for a compatible shove-capable tool and equips it automatically.
---// [Utility Actions]
---//        [Keypad 1]: Initiates a log retrieval action. Only available on the **Berezina** map.
---//        [Keypad 2]: Toggles the auto-repair system to automate building repairs.
---//        [Keypad 3]: Switches the targeting method used by auto-repair to locate valid structures.
---//        [Keypad 4]: Toggles **RubiksCube** mode, which scrambles the character model using `UpdateLook` on hammer tools.
---//        [Keypad 5]: Enables or disables if "Barrel" zombies can be attacked.
---// [Music Controls]
---//        [U], [F], [G], [H], [J], [Y], [T]: Plays predefined musical tracks using either a fife or a drum, depending on the equipped instrument. 
---//				Song mappings can be customized through the `MusicSelections` table.
+--// [Combat]
+--//        [Q] — Shove nearby agents (if tool allows).
+--//        [Z] / [X] — AoE melee attack.
+--//        [G] — Auto-equip shove-capable tool from Backpack.
+--// [Utility]
+--//        [Numpad 1] — Retrieve logs (Berezina map only).
+--//        [Numpad 2] — Toggle auto-repair system.
+--//        [Numpad 3] — Switch auto-repair targeting mode.
+--//        [Numpad 4] — Allow/disallow "Barrel" zombie targeting.
+--// [Music]
+--//        [U, F, G, H, J, Y, T] — Play fife/drum songs; mapped via `MusicSelections`.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --[///////////////////////////////////////////////////////////////////////////////////////////////////]--
@@ -130,7 +120,7 @@ local ClientSubtitles:RemoteEvent = (ReplicatedStorage:FindFirstChild("ClientSub
     - Replaces `[n]` markers in the template with corresponding formatted text.
     - Invalid or missing data results in `[INVALID_DATA]` or `[INVALID_TEXT]` placeholders.
     - If `TemplateString` is invalid, it sends a client subtitle warning and logs a warning to the developer console.
-    - Defaults to white color (`#FFFFFF`) and `"Roboto"` font if not specified.
+    - Defaults to white color (`#FFFFFF`) and `"Merriweather"` font if not specified.
 
     Notes:
     - This function supports both Color3 and hex string color formats.
@@ -174,7 +164,7 @@ local function GenerateText(TemplateString:string, ...)
 		local Color = ((typeof(Data["Color"]) == "Color3") and `#{Data["Color"]:ToHex()}`) 
             or ((type(Data["Color"]) == "string") and Data["Color"]) 
             or "#FFFFFF"
-		local Font = Data["Font"] or "Roboto"
+		local Font = Data["Font"] or "Merriweather"
 
 		return string.format("<font color=\"%s\" face=\"%s\">%s</font>", Color, Font, Data["Text"])
 	end)
@@ -326,8 +316,6 @@ local Debug:boolean = true
 local DebugPrints:boolean = false
 local UseVectorLibrary:boolean = true
 
-local RubiksCube:boolean = false
-
 local CanRepair:boolean = true
 local BuildingBindEnabled:boolean = false
 local HammerCanWarn:boolean = true
@@ -407,10 +395,6 @@ end
 if _G["MurderBind"] ~= nil then 
 	_G["MurderBind"]:Disconnect()
 	_G["MurderBind"] = nil
-end
-if _G["RubiksCubeBind"] ~= nil then
-	_G["RubiksCubeBind"]:Disconnect()
-	_G["RubiksCubeBind"] = nil
 end
 if _G["MusicBind"] ~= nil then
 	_G["MusicBind"]:Disconnect()
@@ -578,7 +562,7 @@ end
 	local accuracyEvent = game.ReplicatedStorage:WaitForChild("AccuracyEvent")
 	local fakeAccuracyThread = SetupFakeAccuracyBeat(accuracyEvent, 0.2)
 	
-	--// Stop the coroutine after 5 seconds
+	--// Stop the coroutine after a 5-second delay
 	task.delay(5, function()
 	    if coroutine.status(fakeAccuracyThread) == "suspended" then
 	        coroutine.close(fakeAccuracyThread)
@@ -1131,7 +1115,7 @@ end
     - Iterates through the folder to find all "Bound" parts associated with buildings.
     - Sorts the buildings by distance from the local player's character.
     - Retrieves the "BuildingHealth" instance of the closest building and checks its health.
-    - Returns the "BuildingHealth" instance if the building's health is below its maximum value.
+    - Returns the "BuildingHealth" instance if the building's health is less than its maximum value.
     - Logs warnings if no valid buildings are found or the closest building has invalid data.
 
     Example Usage:
@@ -1472,18 +1456,9 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	end
 end)
 
-_G["RubiksCubeBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
-	if not Process then 
-		if (Key.KeyCode == Enum.KeyCode.KeypadFour) then 
-			RubiksCube = not RubiksCube
-			print(`[INFO # RubiksCubeBind]: "RubiksCube" is now equal to: {RubiksCube}`)
-		end
-	end
-end)
-
 _G["BlockBarrelBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
-		if (Key.KeyCode == Enum.KeyCode.KeypadFive) then 
+		if (Key.KeyCode == Enum.KeyCode.KeypadFour) then 
 			if not ReplicatedStorage:FindFirstChild("BlockBarrel") then
                 if not _G["_BlockBarrel"] then
                     _G["_BlockBarrel"] = Instance.new("BoolValue")
@@ -1865,7 +1840,7 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 							Remote["FireServer"](Remote, unpack(Parameters))
 
 							return nil
-						elseif (Parameters[1] == "HitZombie") or (Parameters[1] == "Bayonet_HitZombie") or (Parameters[1] == "ThrustCharge") then 
+						elseif (Parameters[1] == "HitZombie") or (Parameters[1] == "Bayonet_HitZombie") then 
 							if (Parameters[2] ~= nil) and Parameters[2].Parent and (Parameters[2]:GetAttribute("Type") == "Barrel") and ReplicatedStorage:FindFirstChild("BlockBarrel") then
 								print("[INFO # Namecall Hook]: Player just attempted to hit a barrel zombie, blocking request and replacing with request with nil.")
 								return nil
@@ -1876,7 +1851,12 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 									return Remote["FireServer"](Remote, unpack(Parameters))
 								elseif not Parameters[4] then
 									Parameters[4] = true
-									Parameters[6] = (Parameters[2] and Parameters[2]:FindFirstChild("Head") and "Head") or Parameters[6]
+									if (Parameters[1] == "Bayonet_HitZombie") then 
+										--// Bayonet_HitZombie takes 5 parameters, instead of 6.
+										Parameters[5] = (Parameters[2] and Parameters[2]:FindFirstChild("Head") and "Head") or Parameters[5]
+									else
+										Parameters[6] = (Parameters[2] and Parameters[2]:FindFirstChild("Head") and "Head") or Parameters[6]
+									end
 									Remote["FireServer"](Remote, unpack(Parameters))
 
 									return nil
@@ -1886,8 +1866,21 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 							end
 
 							return Remote["FireServer"](Remote, unpack(Parameters))
+						elseif (Parameters[1] == "ChargeBayonet") or (Parameters[1] == "ThrustCharge")  then 
+							local Agent = Parameters[2] and Parameters[2].Parent and (Parameters[2]:IsA("BindableEvent") and Parameters[2].Parent) or Parameters[2]
+							if not Agent then 
+								return nil
+							end
+
+							if Agent.Parent and (Agent:GetAttribute("Type") == "Barrel") and ReplicatedStorage:FindFirstChild("BlockBarrel") then
+								print("[INFO # Namecall Hook]: Player just attempted to hit a barrel zombie, blocking request and replacing with request with nil.")
+								return nil
+							end
+
+							Remote["FireServer"](Remote, unpack(Parameters))
+							return nil
 						elseif (Parameters[1] == "CancelReload") then 
-							print("[INFO # Namecall Hook]: CancelReload argument blocked.")
+							print(`[INFO # Namecall Hook]: "CancelReload" argument blocked.`)
 							return nil
 						elseif (Parameters[1] == "Swing") then 
 							local Character = LocalPlayer.Character
@@ -1902,7 +1895,11 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 								)::Tool
 
 								if ToolFound then 
-									Parameters[2] = "Over"
+									if (ToolFound.Name == "Heavy Sabre") then 
+										Parameters[2] = "Thrust"
+									else
+										Parameters[2] = "Over"
+									end
 									Remote["FireServer"](Remote, unpack(Parameters))
 
 									return nil
@@ -1910,66 +1907,6 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 							end
 
 							return Remote["FireServer"](Remote, ...)
-						elseif (Parameters[1] == "UpdateLook") and RubiksCube then
-							--// probably a much better way to do this but
-							--// i got lazy!
-							--// only works with the hammer/claw hammer now
-
-							local RandomNum1 = math.random(1, 6)
-							local RandomNum2 = math.random(1, 6)
-							local RandomNum3 = math.random(1, 6)
-
-							Parameters[2] = math.random(-100, 1000)
-
-							if RandomNum1 == 1 then
-								Parameters[3] = LocalPlayer.Character.Torso["Neck"] or Parameters[3]
-							elseif RandomNum1 == 2 then
-								Parameters[3] = LocalPlayer.Character.Torso["Right Hip"] or Parameters[3]
-							elseif RandomNum1 == 3 then
-								Parameters[3] = LocalPlayer.Character.Torso["Left Shoulder"] or Parameters[3]
-							elseif RandomNum1 == 4 then
-								Parameters[3] = LocalPlayer.Character.Torso["Right Shoulder"] or Parameters[3]
-							elseif RandomNum1 == 5 then
-								Parameters[3] = LocalPlayer.Character.Torso["Left Hip"] or Parameters[3]
-							elseif RandomNum1 == 6 then
-								Parameters[3] = LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Parameters[3]
-							else
-								Parameters[3] = LocalPlayer.Character.Torso["Neck"] or Parameters[3]
-							end
-
-							if RandomNum2 == 1 then
-								Parameters[4] = LocalPlayer.Character.Torso["Neck"] or Parameters[4]
-							elseif RandomNum2 == 2 then
-								Parameters[4] = LocalPlayer.Character.Torso["Right Hip"] or Parameters[4]
-							elseif RandomNum2 == 3 then
-								Parameters[4] = LocalPlayer.Character.Torso["Left Shoulder"] or Parameters[4]
-							elseif RandomNum2 == 4 then
-								Parameters[4] = LocalPlayer.Character.Torso["Right Shoulder"] or Parameters[4]
-							elseif RandomNum2 == 5 then
-								Parameters[4] = LocalPlayer.Character.Torso["Left Hip"] or Parameters[4]
-							elseif RandomNum2 == 6 then
-								Parameters[4] = LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Parameters[4]
-							else
-								Parameters[4] = LocalPlayer.Character.Torso["Neck"] or Parameters[4]
-							end
-
-							if RandomNum3 == 1 then
-								Parameters[5] = LocalPlayer.Character.Torso["Neck"] or Parameters[5]
-							elseif RandomNum3 == 2 then
-								Parameters[5] = LocalPlayer.Character.Torso["Right Hip"] or Parameters[5]
-							elseif RandomNum3 == 3 then
-								Parameters[5] = LocalPlayer.Character.Torso["Left Shoulder"] or Parameters[5]
-							elseif RandomNum3 == 4 then
-								Parameters[5] = LocalPlayer.Character.Torso["Right Shoulder"] or Parameters[5]
-							elseif RandomNum3 == 5 then
-								Parameters[5] = LocalPlayer.Character.Torso["Left Hip"] or Parameters[5]
-							elseif RandomNum3 == 6 then
-								Parameters[5] = LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart["Root Hip"] or Parameters[5]
-							else
-								Parameters[5] = LocalPlayer.Character.Torso["Neck"] or Parameters[5]
-							end
-
-							return OldNameCall(Remote, unpack(Parameters))
 						end
 					end
 				end
