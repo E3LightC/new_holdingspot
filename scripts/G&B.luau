@@ -16,7 +16,7 @@
 --//// Feature Overview \\\\--
 --// [System Logging]
 --//        All failures, errors, warnings, and other information are output to the Roblox Developer Console; also look out for outputs with standardized tags.
---//   (e.g., "[FAIL # EXAMPLE_CONTEXT]: ...", "[INFO # EXAMPLE_CONTEXT]: ...", "[DEBUG # EXAMPLE_CONTEXT]: ...").
+--//   (e.g., "[FAIL # EXAMPLE_CONTEXT]: ...", "[INFO # EXAMPLE_CONTEXT]: ...", "[DEBUG # EXAMPLE_CONTEXT]: ...", "[WARNING]: ...").
 --// [Input Bindings]
 --//        [Q] — Shove nearby agents (if tool allows) (ignores "Barrel" agents).
 --//        [Z] / [X] — AoE melee attack with current weapon.
