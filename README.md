@@ -13,61 +13,55 @@
   ```lua
 --//// Discord: @_x4yz \\\\--
 --// https://www.roblox.com/games/12334109280/Guts-Blackpowder
+--//    Made with Wave. https://getwave.gg | This script should work with most executors, as most of it is standard Roblox Luau.
+--//    Each function has a description if whoever is reading this is curious about what they do.
+--//    * This script is entirely made from boredom and my passion for exploiting/pen-testing! *
+--||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Recent Changes \\\\--
 --//        Updated ESP System to also add highlights to the new "Cuirassier" zombie type, which was recently seen in action in G&B's new playtest, 
 --//   and has multiple variants sitting inside the G&B Dev Zone.
 --//        Changed "Feature Overview" and "Key Bindings Overview" to be more technical.
---//        Added new keybind: [Keypad 5]: Enables or disables if "Barrel" zombies can be attacked.
---//        More debugging/logging features, also utilizing G&B's ClientSubtitles BindableEvent.
+--//        More debugging/logging features, also utilizing G&B's "ClientSubtitles" BindableEvent.
+--//        Removed Rubik's cube bind [Keypad 4], and replaced with a key bind to that enable or disable if "Barrel" zombies can be attacked.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
 --// [System Logging]
---//        All failures, errors, warnings, and other information are output to the Roblox Developer Console with standardized tags 
+--//        All failures, errors, warnings, and other information are output to the Roblox Developer Console; also look out for outputs with standardized tags.
 --//   (e.g., "[FAIL # EXAMPLE_CONTEXT]: ...", "[INFO # EXAMPLE_CONTEXT]: ...", "[DEBUG # EXAMPLE_CONTEXT]: ...").
 --// [Input Bindings]
---//        [Q]: Triggers a shove action against nearby agents within `ShoveRange`, if the equipped tool supports shoving.
---//        [Z] / [X]: Activates an AoE melee attack, targeting all valid agents within a range based on the equipped weapon's parameters.
---//        [G]: Automatically equips a shove-capable tool from the Backpack, if one is available.
---//        [Keypad 1]: Executes a log retrieval action. (Limited to the "Berezina" map.)
---//        [Keypad 2]: Toggles the auto-repair system on or off.
---//        [Keypad 3]: Switches the internal lookup method to identify nearby repairable structures.
---//        [Keypad 4]: Enables or disables "RubiksCube" mode (details below).
---//        [Keypad 5]: Enables or disables if "Barrel" zombies can be attacked.
+--//        [Q] — Shove nearby agents (if tool allows) (ignores "Barrel" agents).
+--//        [Z] / [X] — AoE melee attack with current weapon.
+--//        [G] — Auto-equip shove-capable tool from Backpack.
+--//        [Numpad 1] — Retrieve logs (Berezina map only).
+--//        [Numpad 2] — Toggle auto-repair system.
+--//        [Numpad 3] — Switch auto-repair targeting mode.
+--//        [Numpad 4] — Allow/disallow "Barrel" agents targeting.
 --//        [U], [F], [G], [H], [J], [Y], [T]: Triggers playback of a predefined fife or drum song. Song mappings are configurable via the `MusicSelections` table.
 --// [Combat Behavior]
---//        All melee attacks are forcibly registered as headshots, in which the weapon script that controls said weapon will apply either the weapon’s specific headshot multiplier 
---//   or a default multiplier of 1.5x for increased damage output.
+--//        All melee attacks are forcibly registered as headshots, in which the base melee module that controls said weapon on the server side will apply either the weapon’s specific headshot multiplier 
+--//   or a default multiplier of 2.3x for increased damage output.
 --// [Visuals / ESP System]
---//        Agents are dynamically highlighted with Roblox's `Highlight` instance based on their classification. 
---//   Colors are pulled from the `ESPColors` table, allowing for consistent team or role-based visual cues. 
---//   Highlighting is gated by tag-checking to prevent redundant application.
+--//        Agents are highlighted using Roblox's `Highlight` based on type, with colors from `ESPColors`. 
+--//   Tags prevent redundant highlights.
 --// [Tool Manipulation / Exploit Behavior]
---//        When "RubiksCube" mode is active, the script hooks into the `__namecall` metamethod on `game`. 
---//   Any client-side RemoteEvent call where the first argument is `"UpdateLook"` will have its parameters dynamically scrambled 
---//   before being sent. This results in visible character distortion effects, processed server-side.
---//        RemoteEvent calls to `OnAFKSignalReceived` and `ForceKill` are intercepted and blocked locally, 
---//   preventing them from reaching the server.
---//   (Note: This does not stop RemoteEvent calls initiated via external exploit tools.)
---//        The auto-repair feature requires the use of a hammer tool. Structural proximity is calculated 
---//   based on the character’s position, not the tool itself, due to how it is implemented.
+--//        RemoteEvents `OnAFKSignalReceived` and `ForceKill` are locally blocked (external exploit calls not affected).
+--//        Auto-repair uses a hammer tool and checks character proximity, not the tool’s proximity when repairing structures.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Key Bindings Overview \\\\--
---// [Combat Actions]
---//        [Q]: Executes a shove against nearby zombie entities within `ShoveRange`, if supported by the current tool.
---//        [Z] / [X]: Triggers a kill aura, dealing AoE melee damage to all valid zombies within range based on the equipped weapon.
---//        [G]: Searches the Backpack for a compatible shove-capable tool and equips it automatically.
---// [Utility Actions]
---//        [Keypad 1]: Initiates a log retrieval action. Only available on the **Berezina** map.
---//        [Keypad 2]: Toggles the auto-repair system to automate building repairs.
---//        [Keypad 3]: Switches the targeting method used by auto-repair to locate valid structures.
---//        [Keypad 4]: Toggles **RubiksCube** mode, which scrambles the character model using `UpdateLook` on hammer tools.
---//        [Keypad 5]: Enables or disables if "Barrel" zombies can be attacked.
---// [Music Controls]
---//        [U], [F], [G], [H], [J], [Y], [T]: Plays predefined musical tracks using either a fife or a drum, depending on the equipped instrument. 
---//				Song mappings can be customized through the `MusicSelections` table.
+--// [Combat]
+--//        [Q] — Shove nearby agents (if tool allows).
+--//        [Z] / [X] — AoE melee attack.
+--//        [G] — Auto-equip shove-capable tool from Backpack.
+--// [Utility]
+--//        [Numpad 1] — Retrieve logs (Berezina map only).
+--//        [Numpad 2] — Toggle auto-repair system.
+--//        [Numpad 3] — Switch auto-repair targeting mode.
+--//        [Numpad 4] — Allow/disallow "Barrel" zombie targeting.
+--// [Music]
+--//        [U, F, G, H, J, Y, T] — Play fife/drum songs; mapped via `MusicSelections`.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/G%26B.luau", true))()
