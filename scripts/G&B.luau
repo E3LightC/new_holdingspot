@@ -16,7 +16,7 @@
 --//// Feature Overview \\\\--
 --// [System Logging]
 --//        All failures, errors, warnings, and other information are output to the Roblox Developer Console; also look out for outputs with standardized tags.
---//   (e.g., "[FAIL # EXAMPLE_CONTEXT]: ...", "[INFO # EXAMPLE_CONTEXT]: ...", "[DEBUG # EXAMPLE_CONTEXT]: ...", "[WARNING]: ...").
+--//   (e.g., "[FAIL # EXAMPLE_CONTEXT]: ...", "[INFO # EXAMPLE_CONTEXT]: ...", "[DEBUG # EXAMPLE_CONTEXT]: ...").
 --// [Input Bindings]
 --//        [Q] — Shove nearby agents (if tool allows) (ignores "Barrel" agents).
 --//        [Z] / [X] — AoE melee attack with current weapon.
@@ -1689,13 +1689,10 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 			if Berezina then 
 				local Modes = Berezina:FindFirstChild("Modes") or Berezina:WaitForChild("Modes", 1)
-
 				if Modes then 
 					local Holdout = Modes:FindFirstChild("Holdout") or Modes:WaitForChild("Holdout", 1)
-
 					if Holdout then 
 						local EscapeRoute = Holdout:FindFirstChild("EscapeRoute") or Holdout:WaitForChild("EscapeRoute")
-
 						if EscapeRoute then
 							local Logs = (EscapeRoute:FindFirstChild("SupplyWagon") and (EscapeRoute:FindFirstChild("SupplyWagon")::Instance):FindFirstChild("Logs") or false)
 
@@ -1761,7 +1758,7 @@ end)
 
 if Debug then
 	if DebugPrints then
-		print(`[DEBUG # INFO]: Connecting "workspace.DescendantAdded" script signal for global "FlameTouchRemover".`)
+		print(`[DEBUG # INFO]: Connecting "Workspace.DescendantAdded" script signal for global "FlameTouchRemover".`)
 	end
 	_G["FlameTouchRemover"] = Workspace.DescendantAdded:Connect(function(NewWorkspaceChild)
 		if NewWorkspaceChild then
