@@ -10,7 +10,7 @@
 --//   and has multiple variants sitting inside the G&B Dev Zone.
 --//        Changed "Feature Overview" and "Key Bindings Overview" to be more technical.
 --//        More debugging/logging features, also utilizing G&B's "ClientSubtitles" BindableEvent.
---//        Removed Rubik's cube bind [Keypad 4], and replaced with a key bind to that enable or disable if "Barrel" zombies can be attacked.
+--//        Removed Rubik's cube bind [Keypad 4], and replaced with a key bind to enable or disable if "Barrel" zombies can be attacked.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
@@ -707,7 +707,7 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 
 					return {{Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")}}
 				else
-					if (Tool.Name == "Musket") or (Tool.Name == "Shovel") then 
+					if (Tool.Name == "Musket") or (Tool.Name == "Shovel") or (Tool.Name == "Rifle") then 
 						if ListTools then
 							table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
 							continue
@@ -732,7 +732,7 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 
 					return {{Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")}}
 				else
-					if (Tool.Name == "Musket") or (Tool.Name == "Shovel") then 
+					if (Tool.Name == "Musket") or (Tool.Name == "Shovel") or (Tool.Name == "Rifle") then 
 						if ListTools then
 							table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
 							continue
@@ -1596,7 +1596,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if (Key.KeyCode == Enum.KeyCode.Z) or (Key.KeyCode == Enum.KeyCode.X) then 
 			if LocalPlayer.Character and LocalPlayer.Character.Parent then
-				local List:{{}} = GetMeleeWeapon(true)
+				local List:{{}} = GetMeleeWeapon(false)
 
 				for _, Table in pairs(List) do 
 					local Weapon = Table[1]
@@ -1619,8 +1619,8 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 							continue
 						end
 
-						if WeaponRemote and WeaponRemote:IsA("RemoteEvent") then 						
-							if (Weapon.Name ~= "Musket") then
+						if WeaponRemote and WeaponRemote:IsA("RemoteEvent") then			
+							if (Weapon.Name ~= "Musket") and (Weapon.Name ~= "Rifle") then
 								if (Weapon.Name == "Spade") then 
 									WeaponRemote:FireServer("Swing", "Over")
 								else
@@ -1642,7 +1642,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 										WeaponRemote:FireServer(unpack(HitParameters))
 									end
 								end)
-							elseif (Weapon.Name == "Musket") then
+							elseif (Weapon.Name == "Musket") or (Weapon.Name == "Rifle") then
 								WeaponRemote:FireServer("ThrustBayonet")
 
 								for _, Agent in pairs(AgentsInRange) do 
@@ -1674,7 +1674,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 						continue
 					end
 
-					task.wait(0.5)
+					task.wait()
 				end
 			end
 		end
