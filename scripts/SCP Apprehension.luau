@@ -10,9 +10,11 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
 local Holder = Workspace:WaitForChild("Holder")
+local Baseplate = Workspace:WaitForChild("Baseplate")
 
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local RemoteFunction = Remotes:WaitForChild("RemoteFunction")
+local PlayerRemote = Remotes:WaitForChild(`Player{LocalPlayer.UserId}`)
 
 _G["__TimesRan"] = (type(_G["__TimesRan"]) ~= "number") and 1 or (_G["__TimesRan"] + 1)
 local OldTimesRan = _G["__TimesRan"]
@@ -20,6 +22,10 @@ local OldTimesRan = _G["__TimesRan"]
 if _G["__BringItem"] then
 	_G["__BringItem"]:Disconnect()
 	_G["__BringItem"] = nil
+end
+if _G["__DropItemsAtBaseplate"] then
+	_G["__DropItemsAtBaseplate"]:Disconnect()
+	_G["__DropItemsAtBaseplate"] = nil
 end
 
 local NewRandom = Random.new()
@@ -251,7 +257,7 @@ task.spawn(function()
     while true do 
         if (OldTimesRan == _G["__TimesRan"]) then
             task.spawn(UpdateEsps)
-            task.wait(0.1)
+            task.wait(0.125)
         else
             task.spawn(DeleteOldEsps)
             break
@@ -271,10 +277,34 @@ _G["__BringItem"] = UserInputService.InputBegan:Connect(function(Key, Process)
 		if (type(ItemName) ~= "string") then
 			return
 		end
-		
+
 		Item, Primary = GetItem(ItemName)
 		if Item and Item:FindFirstChild("Pickup") and Primary and Character_Primary then
 			RemoteFunction:InvokeServer("VerifyPickup", {Position = Character_Primary.Position; Parent = Item})
 		end
+	end
+end)
+
+_G["__DropItemsAtBaseplate"] = UserInputService.InputBegan:Connect(function(Key, Process)
+	if (Key.KeyCode == Enum.KeyCode.KeypadOne) and not Process and LocalPlayer.Character then
+		local Character = LocalPlayer.Character
+		local Character_Primary = Character.PrimaryPart or Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Head")
+		if not Character_Primary then
+			return
+		end
+
+		local Old = Character_Primary.CFrame
+		local CFrameToSet = (Baseplate.CFrame * CFrame.new(0, 25, 0))
+		Character_Primary.CFrame = CFrameToSet
+
+		task.wait(0.15)
+		for Num = 1, 8 do 
+			Character_Primary.CFrame = CFrameToSet
+			PlayerRemote:FireServer("DropItem", Num)
+			task.wait()
+		end
+
+		task.wait(0.05)
+		Character_Primary.CFrame = Old
 	end
 end)
