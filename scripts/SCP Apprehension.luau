@@ -2,11 +2,23 @@
 --// https://www.roblox.com/games/3264184746/SCP-Apprehension
 
 local Workspace = game:GetService("Workspace")
-local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local RemoteFunction = Remotes:WaitForChild("RemoteFunction")
 
 _G["__TimesRan"] = (type(_G["__TimesRan"]) ~= "number") and 1 or (_G["__TimesRan"] + 1)
 local OldTimesRan = _G["__TimesRan"]
+
+if _G["__PickupP90"] then
+	_G["__PickupP90"]:Disconnect()
+	_G["__PickupP90"] = nil
+end
 
 local NewRandom = Random.new()
 local EspColors = {
@@ -18,7 +30,7 @@ local EspColors = {
 }
 local Adornments = {}
 
-local function AddEspBoxForItem(Model: Model)
+local function AddEspBoxForItem(Model:Model)
     if not Model then 
 		return 
 	end
@@ -56,7 +68,7 @@ local function AddEspBoxForItem(Model: Model)
 
     Adornment.Name = "__EspBox"
     Adornment.Adornee = PrimaryPart
-    Adornment.Size = Model:GetExtentsSize() + Vector3.new(2.5, 2.5, 2.5)
+    Adornment.Size = Model:GetExtentsSize() + Vector3.new(1.25, 1.25, 1.25)
     Adornment.AlwaysOnTop = true
     Adornment.ZIndex = 10
     Adornment.Transparency = 0.2
@@ -97,6 +109,27 @@ local function UpdateEsps()
     end
 end
 
+local function GetItem(Name: string): Model?
+	local ClosestModel:Model = nil
+	local ClosestDistance = math.huge
+	local Primary:BasePart
+
+	for _, Model in pairs(Workspace:GetDescendants()) do
+		if Model:IsA("Model") and (Model.Name == Name) and Model:FindFirstChild("Pickup") then
+			Primary = Model.PrimaryPart or Model:FindFirstChild("Handle")
+			if Primary then
+				local Distance = (Primary.Position - Workspace.CurrentCamera.CFrame.Position).Magnitude
+				if (Distance < ClosestDistance) then
+					ClosestDistance = Distance
+					ClosestModel = Model
+				end
+			end
+		end
+	end
+
+	return ClosestModel, Primary
+end
+
 local function DeleteOldEsps()
     for UsedGUID, Adornment in pairs(Adornments) do
         if Adornment and Adornment.Parent and (type(UsedGUID) == "string") then
@@ -110,7 +143,7 @@ task.spawn(function()
     while true do 
         if (OldTimesRan == _G["__TimesRan"]) then
             task.spawn(UpdateEsps)
-            task.wait(0.125)
+            task.wait(0.1)
         else
             task.spawn(DeleteOldEsps)
             break
@@ -118,4 +151,28 @@ task.spawn(function()
 
 		task.wait()
     end
+end)
+
+_G["__PickupP90"] = UserInputService.InputBegan:Connect(function(Key, Process)
+	if (Key.KeyCode == Enum.KeyCode.Z) and not Process and LocalPlayer.Character then
+		local Character = LocalPlayer.Character
+		local Character_Primary = Character.PrimaryPart or Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Head")
+		local Item:Model?, Primary:BasePart? = GetItem("P90")
+
+		if Item and Item:FindFirstChild("Pickup") and Primary and Character_Primary then
+			local Old = Character_Primary.CFrame
+			Character_Primary.CFrame = Primary.CFrame
+
+			repeat
+				if not Primary or not Item or not Primary.Parent or not Item.Parent then
+					break
+				end
+
+				Character_Primary.CFrame = Primary.CFrame * CFrame.new(0, -4, 0)
+				task.wait(0.025)
+			until RemoteFunction:InvokeServer("VerifyPickup", Primary) or not Item or not Primary
+
+			Character_Primary.CFrame = Old
+		end
+	end
 end)
