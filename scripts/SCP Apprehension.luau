@@ -133,13 +133,13 @@ local function AddEspBoxForModel(Model:Model, EspColorName:string)
 	local Size = Model:GetExtentsSize()
 	local CenterCFrame = Model:GetModelCFrame()
 
-	local Part = Model:FindFirstChild("__GateEspCenter") or Instance.new("Part")
+	local Part = Model:FindFirstChild("__EspCenter") or Instance.new("Part")
 	Part.Anchored = true
 	Part.CanCollide = false
 	Part.Size = Vector3.new(0.1, 0.1, 0.1)
 	Part.CFrame = CenterCFrame
 	Part.Transparency = 1
-	Part.Name = "__GateEspCenter"
+	Part.Name = "__EspCenter"
 	Part.Parent = Model
 
 	local Adornment = Instance.new("BoxHandleAdornment")
