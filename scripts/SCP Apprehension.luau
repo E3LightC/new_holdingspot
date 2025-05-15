@@ -9,6 +9,8 @@ local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 
+local Holder = Workspace:WaitForChild("Holder")
+
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local RemoteFunction = Remotes:WaitForChild("RemoteFunction")
 
@@ -27,6 +29,8 @@ local EspColors = {
     ["MP5"] = Color3.fromRGB(50, 168, 85); -- green
     ["P90"] = Color3.fromRGB(219, 206, 20); -- yellow
     ["Medkit"] = Color3.fromRGB(219, 33, 20); -- red
+	["Gate"] = Color3.fromRGB(219, 98, 22); -- orange
+	["Elevator"] = Color3.fromRGB(44, 117, 255) -- electric blue
 }
 local KeyCodeItems = {
 	[Enum.KeyCode.Z] = "P90";
@@ -105,16 +109,109 @@ local function AddEspBoxForItem(Model:Model)
     end
 end
 
-local function UpdateEsps()
-    for _, Model in pairs(Workspace:GetDescendants()) do
-        if Model and Model:IsA("Model") and Model:FindFirstChild("Pickup") then
-            if EspColors[Model.Name] and (OldTimesRan == _G["__TimesRan"]) then
-                task.delay(NewRandom:NextNumber(0.1, 0.15), AddEspBoxForItem, Model)
-            end
+local function AddEspBoxForModel(Model:Model, EspColorName:string)
+	if not Model then 
+		return 
+	end
+	if Model:FindFirstChild("__EspBox") then 
+		return 
+	end
+	if (type(EspColorName) ~= "string") then
+		return
+	end
+	local EspColor = EspColors[EspColorName]
+	if (typeof(EspColor) ~= "Color3") then
+		return
+	end
 
-            continue
-        end
-    end
+	local Size = Model:GetExtentsSize()
+	local CenterCFrame = Model:GetModelCFrame()
+
+	local Part = Instance.new("Part")
+	Part.Anchored = true
+	Part.CanCollide = false
+	Part.Size = Vector3.new(0.1, 0.1, 0.1)
+	Part.CFrame = CenterCFrame
+	Part.Transparency = 1
+	Part.Name = "__GateEspCenter"
+	Part.Parent = Model
+
+	local Adornment = Instance.new("BoxHandleAdornment")
+	local NewGUID = HttpService:GenerateGUID()
+	Adornments[NewGUID] = Adornment
+
+	local Connection
+	Connection = Model.Destroying:Connect(function()
+		Adornment.Adornee = nil
+		Adornment:Destroy()
+		Adornments[NewGUID] = nil
+		if Connection then
+			Connection:Disconnect()
+		end
+	end)
+
+	Adornment.Name = "__EspBox"
+	Adornment.Adornee = Part
+	Adornment.Size = (Size + Vector3.new(2.5, 2.5, 2.5))
+	Adornment.AlwaysOnTop = true
+	Adornment.ZIndex = 8
+	Adornment.Transparency = 0.5
+	Adornment.Color3 = EspColor
+	Adornment.Parent = Model
+
+	local Billboard = Instance.new("BillboardGui")
+	Billboard.Name = "__EspLabel"
+	Billboard.Adornee = Part
+	Billboard.Size = UDim2.new(0, 80, 0, 20)
+	Billboard.StudsOffset = Vector3.new(0, Size.Y / 2 + 2, 0)
+	Billboard.AlwaysOnTop = true
+	Billboard.Parent = Part
+
+	local Label = Instance.new("TextLabel")
+	Label.Size = UDim2.new(1, 0, 1, 0)
+	Label.BackgroundTransparency = 1
+	Label.Text = Model.Name
+	Label.TextColor3 = EspColor
+	Label.TextScaled = true
+	Label.TextStrokeTransparency = 0.5
+	Label.TextSize = 12
+	Label.Font = Enum.Font.SourceSansBold
+	Label.Parent = Billboard
+end
+
+local function UpdateEsps()
+	coroutine.wrap(function()
+		for _, Model:Model in pairs(Workspace:GetDescendants()) do
+			if Model and Model:IsA("Model") and Model:FindFirstChild("Pickup") then
+				if EspColors[Model.Name] and (OldTimesRan == _G["__TimesRan"]) then
+					task.delay(NewRandom:NextNumber(0.1, 0.15), AddEspBoxForItem, Model)
+				end
+
+				continue
+			end
+		end
+	end)()
+
+	coroutine.wrap(function()
+		for _, Model:Model in pairs(Holder:GetChildren()) do
+			if Model and (Model.Name == "Gate A") or (Model.Name == "Gate B") then
+				task.delay(NewRandom:NextNumber(0.1, 0.15), AddEspBoxForModel, Model, "Gate")
+			end
+		end
+	end)()
+
+	coroutine.wrap(function()
+		for _, Model:Model in pairs(Holder:GetDescendants()) do
+			if Model and Model:FindFirstChild("Event") and (
+				Model.Name == "Elevator" or 
+				Model.Name == "Elevator2" or 
+				Model.Name == "GateA_Elevator" or 
+				Model.Name == "GateB_Elevator"
+			) then
+				task.delay(NewRandom:NextNumber(0.1, 0.15), AddEspBoxForModel, Model, "Elevator")
+			end
+		end
+	end)()
 end
 
 local function GetItem(Name:string):Model?
@@ -174,8 +271,8 @@ _G["__BringItem"] = UserInputService.InputBegan:Connect(function(Key, Process)
 		if (type(ItemName) ~= "string") then
 			return
 		end
+		
 		Item, Primary = GetItem(ItemName)
-
 		if Item and Item:FindFirstChild("Pickup") and Primary and Character_Primary then
 			RemoteFunction:InvokeServer("VerifyPickup", {Position = Character_Primary.Position; Parent = Item})
 		end
