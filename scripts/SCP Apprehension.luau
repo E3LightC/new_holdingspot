@@ -186,38 +186,31 @@ local function AddEspBoxForModel(Model:Model, EspColorName:string)
 end
 
 local function UpdateEsps()
-	coroutine.wrap(function()
-		for _, Model:Model in pairs(Workspace:GetDescendants()) do
-			if Model and Model:IsA("Model") and Model:FindFirstChild("Pickup") then
-				if EspColors[Model.Name] and (OldTimesRan == _G["__TimesRan"]) then
-					task.delay(NewRandom:NextNumber(0.1, 0.15), AddEspBoxForItem, Model)
-				end
-
-				continue
+	for _, Model:Model in pairs(Workspace:GetDescendants()) do
+		if Model and Model:IsA("Model") and Model:FindFirstChild("Pickup") then
+			if EspColors[Model.Name] and (OldTimesRan == _G["__TimesRan"]) then
+				task.delay(NewRandom:NextNumber(0.1, 0.2), AddEspBoxForItem, Model)
+				task.wait()
 			end
+		else
+			continue
 		end
-	end)()
+	end
 
-	coroutine.wrap(function()
-		for _, Model:Model in pairs(Holder:GetChildren()) do
-			if Model and (Model.Name == "Gate A") or (Model.Name == "Gate B") then
-				task.delay(NewRandom:NextNumber(0.1, 0.15), AddEspBoxForModel, Model, "Gate")
-			end
+	for _, Model:Model in pairs(Holder:GetDescendants()) do
+		if Model and Model:FindFirstChild("Event") and (
+			Model.Name == "Elevator" or 
+			Model.Name == "Elevator2" or 
+			Model.Name == "GateA_Elevator" or 
+			Model.Name == "GateB_Elevator"
+		) then
+			task.delay(NewRandom:NextNumber(0.1, 0.2), AddEspBoxForModel, Model, "Elevator")
+			task.wait()
+		elseif Model and (Model.Name == "Gate A") or (Model.Name == "Gate B") then
+			task.delay(NewRandom:NextNumber(0.1, 0.2), AddEspBoxForModel, Model, "Gate")
+			task.wait()
 		end
-	end)()
-
-	coroutine.wrap(function()
-		for _, Model:Model in pairs(Holder:GetDescendants()) do
-			if Model and Model:FindFirstChild("Event") and (
-				Model.Name == "Elevator" or 
-				Model.Name == "Elevator2" or 
-				Model.Name == "GateA_Elevator" or 
-				Model.Name == "GateB_Elevator"
-			) then
-				task.delay(NewRandom:NextNumber(0.1, 0.15), AddEspBoxForModel, Model, "Elevator")
-			end
-		end
-	end)()
+	end
 end
 
 local function GetItem(Name:string):Model?
@@ -256,7 +249,7 @@ end
 task.spawn(function()
     while true do 
         if (OldTimesRan == _G["__TimesRan"]) then
-            task.spawn(UpdateEsps)
+            UpdateEsps()
             task.wait(0.125)
         else
             task.spawn(DeleteOldEsps)
