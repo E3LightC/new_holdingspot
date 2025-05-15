@@ -28,6 +28,14 @@ local EspColors = {
     ["P90"] = Color3.fromRGB(219, 206, 20); -- yellow
     ["Medkit"] = Color3.fromRGB(219, 33, 20); -- red
 }
+local KeyCodeItems = {
+	[Enum.KeyCode.Z] = "P90";
+	[Enum.KeyCode.X] = "Medkit";
+	[Enum.KeyCode.V] = "05 Keycard";
+	[Enum.KeyCode.B] = "M249";
+	[Enum.KeyCode.N] = "MP5";
+	[Enum.KeyCode.M] = "Facility Manager Keycard";
+}
 local Adornments = {}
 
 local function AddEspBoxForItem(Model:Model)
@@ -71,7 +79,7 @@ local function AddEspBoxForItem(Model:Model)
     Adornment.Size = Model:GetExtentsSize() + Vector3.new(1.25, 1.25, 1.25)
     Adornment.AlwaysOnTop = true
     Adornment.ZIndex = 10
-    Adornment.Transparency = 0.2
+    Adornment.Transparency = 0.5
     Adornment.Color3 = EspColor
     Adornment.Parent = Model
 
@@ -109,25 +117,28 @@ local function UpdateEsps()
     end
 end
 
-local function GetItem(Name: string): Model?
-	local ClosestModel:Model = nil
-	local ClosestDistance = math.huge
-	local Primary:BasePart
-
+local function GetItem(Name:string):Model?
 	for _, Model in pairs(Workspace:GetDescendants()) do
-		if Model:IsA("Model") and (Model.Name == Name) and Model:FindFirstChild("Pickup") then
-			Primary = Model.PrimaryPart or Model:FindFirstChild("Handle")
+		if Model:IsA("Model") and (Model.Name == Name) and Model:FindFirstChild("Pickup") and not (Model.Parent == Workspace) then
+			local Primary = Model.PrimaryPart or Model:FindFirstChild("Handle")
 			if Primary then
-				local Distance = (Primary.Position - Workspace.CurrentCamera.CFrame.Position).Magnitude
-				if (Distance < ClosestDistance) then
-					ClosestDistance = Distance
-					ClosestModel = Model
-				end
+				return Model, Primary
 			end
+		else
+			continue
 		end
 	end
 
-	return ClosestModel, Primary
+	for _, Model in pairs(Workspace:GetChildren()) do
+		if Model:IsA("Model") and (Model.Name == Name) and Model:FindFirstChild("Pickup") then
+			local Primary = Model.PrimaryPart or Model:FindFirstChild("Handle")
+			if Primary then
+				return Model, Primary
+			end
+		else
+			continue
+		end
+	end
 end
 
 local function DeleteOldEsps()
@@ -159,19 +170,11 @@ _G["__BringItem"] = UserInputService.InputBegan:Connect(function(Key, Process)
 		local Character_Primary = Character.PrimaryPart or Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Head")
 		local Item:Model?, Primary:BasePart?
 
-		if (Key.KeyCode == Enum.KeyCode.Z) then
-			Item, Primary = GetItem("P90")
-		elseif (Key.KeyCode == Enum.KeyCode.X) then
-			Item, Primary = GetItem("Medkit")
-		elseif (Key.KeyCode == Enum.KeyCode.V) then
-			Item, Primary = GetItem("05 Keycard")
-		elseif (Key.KeyCode == Enum.KeyCode.B) then
-			Item, Primary = GetItem("M249")
-		elseif (Key.KeyCode == Enum.KeyCode.N) then
-			Item, Primary = GetItem("MP5")
-		elseif (Key.KeyCode == Enum.KeyCode.M) then
-			Item, Primary = GetItem("Facility Manager Keycard")
+		local ItemName = KeyCodeItems[Key.KeyCode]
+		if (type(ItemName) ~= "string") then
+			return
 		end
+		Item, Primary = GetItem(ItemName)
 
 		if Item and Item:FindFirstChild("Pickup") and Primary and Character_Primary then
 			RemoteFunction:InvokeServer("VerifyPickup", {Position = Character_Primary.Position; Parent = Item})
