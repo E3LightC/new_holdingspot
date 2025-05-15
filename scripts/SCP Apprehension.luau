@@ -15,9 +15,9 @@ local RemoteFunction = Remotes:WaitForChild("RemoteFunction")
 _G["__TimesRan"] = (type(_G["__TimesRan"]) ~= "number") and 1 or (_G["__TimesRan"] + 1)
 local OldTimesRan = _G["__TimesRan"]
 
-if _G["__PickupP90"] then
-	_G["__PickupP90"]:Disconnect()
-	_G["__PickupP90"] = nil
+if _G["__BringItem"] then
+	_G["__BringItem"]:Disconnect()
+	_G["__BringItem"] = nil
 end
 
 local NewRandom = Random.new()
@@ -153,11 +153,25 @@ task.spawn(function()
     end
 end)
 
-_G["__PickupP90"] = UserInputService.InputBegan:Connect(function(Key, Process)
-	if (Key.KeyCode == Enum.KeyCode.Z) and not Process and LocalPlayer.Character then
+_G["__BringItem"] = UserInputService.InputBegan:Connect(function(Key, Process)
+	if not Process and LocalPlayer.Character then
 		local Character = LocalPlayer.Character
 		local Character_Primary = Character.PrimaryPart or Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Head")
-		local Item:Model?, Primary:BasePart? = GetItem("P90")
+		local Item:Model?, Primary:BasePart?
+
+		if (Key.KeyCode == Enum.KeyCode.Z) then
+			Item, Primary = GetItem("P90")
+		elseif (Key.KeyCode == Enum.KeyCode.X) then
+			Item, Primary = GetItem("Medkit")
+		elseif (Key.KeyCode == Enum.KeyCode.V) then
+			Item, Primary = GetItem("05 Keycard")
+		elseif (Key.KeyCode == Enum.KeyCode.B) then
+			Item, Primary = GetItem("M249")
+		elseif (Key.KeyCode == Enum.KeyCode.N) then
+			Item, Primary = GetItem("Facility Manager Keycard")
+		elseif (Key.KeyCode == Enum.KeyCode.M) then
+			Item, Primary = GetItem("Facility Manager Keycard")
+		end
 
 		if Item and Item:FindFirstChild("Pickup") and Primary and Character_Primary then
 			RemoteFunction:InvokeServer("VerifyPickup", {Position = Character_Primary.Position; Parent = Item})
