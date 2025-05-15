@@ -168,7 +168,7 @@ _G["__BringItem"] = UserInputService.InputBegan:Connect(function(Key, Process)
 		elseif (Key.KeyCode == Enum.KeyCode.B) then
 			Item, Primary = GetItem("M249")
 		elseif (Key.KeyCode == Enum.KeyCode.N) then
-			Item, Primary = GetItem("Facility Manager Keycard")
+			Item, Primary = GetItem("MP5")
 		elseif (Key.KeyCode == Enum.KeyCode.M) then
 			Item, Primary = GetItem("Facility Manager Keycard")
 		end
