@@ -147,11 +147,22 @@ local function AddEspBoxForModel(Model:Model, EspColorName:string)
 	Adornments[NewGUID] = Adornment
 
 	local Connection
+	local Connection2
+	
 	Connection = Model.Destroying:Connect(function()
 		Adornment.Adornee = nil
 		Adornment:Destroy()
 		Adornments[NewGUID] = nil
 		if Connection then
+			Connection:Disconnect()
+		end
+	end)
+	Connection2 = Adornment.Destroying:Connect(function()
+		Adornments[NewGUID] = nil
+		if Connection then
+			Connection:Disconnect()
+		end
+		if Connection2 then
 			Connection:Disconnect()
 		end
 	end)
