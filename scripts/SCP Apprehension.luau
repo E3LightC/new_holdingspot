@@ -18,50 +18,71 @@ local EspColors = {
 }
 local Adornments = {}
 
-local function AddEspBoxForItem(Model:Model)
-    if not Model then
-        return
-    end
+local function AddEspBoxForItem(Model: Model)
+    if not Model then 
+		return 
+	end
+
     local PrimaryPart = Model.PrimaryPart
     local ModelName = Model.Name
 
-    if (ModelName == "MP5") then
+    if ModelName == "MP5" then
         PrimaryPart = Model:FindFirstChild("Handle")
         Model.PrimaryPart = PrimaryPart
     end
-    if not PrimaryPart then
-        return
-    end
+    if not PrimaryPart then 
+		return 
+	end
 
     local EspColor = EspColors[ModelName]
-    if (typeof(EspColor) ~= "Color3") then 
-        return
-    end
+    if typeof(EspColor) ~= "Color3" then
+		return 
+	end
     if Model:FindFirstChild("__EspBox") then
-        return
-    end
+		return 
+	end
 
     local Adornment = Instance.new("BoxHandleAdornment")
     local NewGUID = HttpService:GenerateGUID()
     Adornments[NewGUID] = Adornment
+
     local Connection
     Connection = Model.Destroying:Connect(function()
         Adornment.Adornee = nil
         Adornment:Destroy()
         Adornments[NewGUID] = nil
         Connection:Disconnect()
-        Connection = nil
     end)
 
-    --warn("adding esp for "..ModelName)
     Adornment.Name = "__EspBox"
-    Adornment.Adornee = Model.PrimaryPart
-    Adornment.Size = (Model:GetExtentsSize() + Vector3.new(2.5, 2.5, 2.5))
+    Adornment.Adornee = PrimaryPart
+    Adornment.Size = Model:GetExtentsSize() + Vector3.new(2.5, 2.5, 2.5)
     Adornment.AlwaysOnTop = true
     Adornment.ZIndex = 10
     Adornment.Transparency = 0.2
-    Adornment.Color3 = EspColors[ModelName]
+    Adornment.Color3 = EspColor
     Adornment.Parent = Model
+
+    if not PrimaryPart:FindFirstChild("__EspLabel") then
+        local Billboard = Instance.new("BillboardGui")
+        Billboard.Name = "__EspLabel"
+        Billboard.Adornee = PrimaryPart
+        Billboard.Size = UDim2.new(0, 50, 0, 20)
+        Billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+        Billboard.AlwaysOnTop = true
+        Billboard.Parent = PrimaryPart
+
+		local Label = Instance.new("TextLabel")
+		Label.Size = UDim2.new(1, 0, 1, 0)
+		Label.BackgroundTransparency = 1
+		Label.Text = ModelName
+		Label.TextColor3 = EspColor
+		Label.TextScaled = true
+		Label.TextStrokeTransparency = 0.5
+		Label.TextSize = 14
+		Label.Font = Enum.Font.SourceSansBold
+		Label.Parent = Billboard
+    end
 end
 
 local function UpdateEsps()
