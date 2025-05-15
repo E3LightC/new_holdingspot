@@ -160,19 +160,7 @@ _G["__PickupP90"] = UserInputService.InputBegan:Connect(function(Key, Process)
 		local Item:Model?, Primary:BasePart? = GetItem("P90")
 
 		if Item and Item:FindFirstChild("Pickup") and Primary and Character_Primary then
-			local Old = Character_Primary.CFrame
-			Character_Primary.CFrame = Primary.CFrame
-
-			repeat
-				if not Primary or not Item or not Primary.Parent or not Item.Parent then
-					break
-				end
-
-				Character_Primary.CFrame = Primary.CFrame * CFrame.new(0, -4, 0)
-				task.wait(0.025)
-			until RemoteFunction:InvokeServer("VerifyPickup", Primary) or not Item or not Primary
-
-			Character_Primary.CFrame = Old
+			RemoteFunction:InvokeServer("VerifyPickup", {Position = Character_Primary.Position; Parent = Item})
 		end
 	end
 end)
