@@ -133,7 +133,7 @@ local function AddEspBoxForModel(Model:Model, EspColorName:string)
 	local Size = Model:GetExtentsSize()
 	local CenterCFrame = Model:GetModelCFrame()
 
-	local Part = Instance.new("Part")
+	local Part = Model:FindFirstChild("__GateEspCenter") or Instance.new("Part")
 	Part.Anchored = true
 	Part.CanCollide = false
 	Part.Size = Vector3.new(0.1, 0.1, 0.1)
