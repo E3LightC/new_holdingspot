@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
 
 local Holder = Workspace:WaitForChild("Holder")
 local Baseplate = Workspace:WaitForChild("Baseplate")
@@ -19,24 +20,28 @@ local PlayerRemote = Remotes:WaitForChild(`Player{LocalPlayer.UserId}`)
 _G["__TimesRan"] = (type(_G["__TimesRan"]) ~= "number") and 1 or (_G["__TimesRan"] + 1)
 local OldTimesRan = _G["__TimesRan"]
 
-if _G["__BringItem"] then
-	_G["__BringItem"]:Disconnect()
-	_G["__BringItem"] = nil
+if _G["__PickupItem"] then
+	_G["__PickupItem"]:Disconnect()
+	_G["__PickupItem"] = nil
 end
 if _G["__DropItemsAtBaseplate"] then
 	_G["__DropItemsAtBaseplate"]:Disconnect()
 	_G["__DropItemsAtBaseplate"] = nil
 end
+if _G["__PickupItemAtMouse"] then
+	_G["__PickupItemAtMouse"]:Disconnect()
+	_G["__PickupItemAtMouse"] = nil
+end
 
 local NewRandom = Random.new()
 local EspColors = {
-    ["Beretta"] = Color3.fromRGB(102, 50, 168); -- purple
-    ["M249"] = Color3.fromRGB(36, 178, 191); -- cyan
-    ["MP5"] = Color3.fromRGB(50, 168, 85); -- green
-    ["P90"] = Color3.fromRGB(219, 206, 20); -- yellow
-    ["Medkit"] = Color3.fromRGB(219, 33, 20); -- red
-	["Gate"] = Color3.fromRGB(219, 98, 22); -- orange
-	["Elevator"] = Color3.fromRGB(44, 117, 255) -- electric blue
+    ["Beretta"] = Color3.fromRGB(102, 50, 168); --// purple
+    ["M249"] = Color3.fromRGB(36, 178, 191); --// cyan
+    ["MP5"] = Color3.fromRGB(50, 168, 85); --// green
+    ["P90"] = Color3.fromRGB(219, 206, 20); --// yellow
+    ["Medkit"] = Color3.fromRGB(219, 33, 20); --// red
+	["Gate"] = Color3.fromRGB(219, 98, 22); --// orange
+	["Elevator"] = Color3.fromRGB(44, 117, 255) --// electric blue
 }
 local KeyCodeItems = {
 	[Enum.KeyCode.Z] = "P90";
@@ -229,10 +234,7 @@ end
 local function GetItem(Name:string):Model?
 	for _, Model in pairs(Workspace:GetDescendants()) do
 		if Model:IsA("Model") and (Model.Name == Name) and Model:FindFirstChild("Pickup") and not (Model.Parent == Workspace) then
-			local Primary = Model.PrimaryPart or Model:FindFirstChild("Handle")
-			if Primary then
-				return Model, Primary
-			end
+			return Model
 		else
 			continue
 		end
@@ -240,10 +242,7 @@ local function GetItem(Name:string):Model?
 
 	for _, Model in pairs(Workspace:GetChildren()) do
 		if Model:IsA("Model") and (Model.Name == Name) and Model:FindFirstChild("Pickup") then
-			local Primary = Model.PrimaryPart or Model:FindFirstChild("Handle")
-			if Primary then
-				return Model, Primary
-			end
+			return Model
 		else
 			continue
 		end
@@ -259,7 +258,7 @@ local function DeleteOldEsps()
     end
 end
 
-task.spawn(function()
+coroutine.wrap(function()
     while true do 
         if (OldTimesRan == _G["__TimesRan"]) then
             UpdateEsps()
@@ -271,21 +270,24 @@ task.spawn(function()
 
 		task.wait()
     end
-end)
+end)()
 
-_G["__BringItem"] = UserInputService.InputBegan:Connect(function(Key, Process)
+_G["__PickupItem"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process and LocalPlayer.Character then
 		local Character = LocalPlayer.Character
 		local Character_Primary = Character.PrimaryPart or Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Head")
-		local Item:Model?, Primary:BasePart?
+		if not Character_Primary then
+			return
+		end
+		local Item:Model?
 
 		local ItemName = KeyCodeItems[Key.KeyCode]
 		if (type(ItemName) ~= "string") then
 			return
 		end
 
-		Item, Primary = GetItem(ItemName)
-		if Item and Item:FindFirstChild("Pickup") and Primary and Character_Primary then
+		Item = GetItem(ItemName)
+		if Item and Item:FindFirstChild("Pickup") then
 			RemoteFunction:InvokeServer("VerifyPickup", {Position = Character_Primary.Position; Parent = Item})
 		end
 	end
@@ -312,5 +314,26 @@ _G["__DropItemsAtBaseplate"] = UserInputService.InputBegan:Connect(function(Key,
 
 		task.wait(0.05)
 		Character_Primary.CFrame = Old
+	end
+end)
+
+_G["__PickupItemAtMouse"] = UserInputService.InputBegan:Connect(function(Key, Process)
+	if (Key.KeyCode == Enum.KeyCode.KeypadTwo) and not Process and LocalPlayer.Character then
+		local Character = LocalPlayer.Character
+		local Character_Primary = Character.PrimaryPart or Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Head")
+		if not Character_Primary then
+			return
+		end
+
+		local Hit:BasePart? = Mouse.Target
+		if not Hit then
+			return
+		end
+		local HitParent:Model? = Hit.Parent
+		if not HitParent or not HitParent:IsA("Model") or not HitParent:FindFirstChild("Pickup") then
+			return
+		end
+
+		RemoteFunction:InvokeServer("VerifyPickup", {Position = Character_Primary.Position; Parent = HitParent})
 	end
 end)
