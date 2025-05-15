@@ -176,7 +176,7 @@ local function AddEspBoxForModel(Model:Model, EspColorName:string)
 	Adornment.Color3 = EspColor
 	Adornment.Parent = Model
 
-    if not PrimaryPart:FindFirstChild("__EspLabel") then
+    if not Part:FindFirstChild("__EspLabel") then
 		local Billboard = Instance.new("BillboardGui")
 		Billboard.Name = "__EspLabel"
 		Billboard.Adornee = Part
