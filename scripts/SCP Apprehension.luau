@@ -176,24 +176,26 @@ local function AddEspBoxForModel(Model:Model, EspColorName:string)
 	Adornment.Color3 = EspColor
 	Adornment.Parent = Model
 
-	local Billboard = Instance.new("BillboardGui")
-	Billboard.Name = "__EspLabel"
-	Billboard.Adornee = Part
-	Billboard.Size = UDim2.new(0, 80, 0, 20)
-	Billboard.StudsOffset = Vector3.new(0, Size.Y / 2 + 2, 0)
-	Billboard.AlwaysOnTop = true
-	Billboard.Parent = Part
+    if not PrimaryPart:FindFirstChild("__EspLabel") then
+		local Billboard = Instance.new("BillboardGui")
+		Billboard.Name = "__EspLabel"
+		Billboard.Adornee = Part
+		Billboard.Size = UDim2.new(0, 80, 0, 20)
+		Billboard.StudsOffset = Vector3.new(0, Size.Y / 2 + 2, 0)
+		Billboard.AlwaysOnTop = true
+		Billboard.Parent = Part
 
-	local Label = Instance.new("TextLabel")
-	Label.Size = UDim2.new(1, 0, 1, 0)
-	Label.BackgroundTransparency = 1
-	Label.Text = Model.Name
-	Label.TextColor3 = EspColor
-	Label.TextScaled = true
-	Label.TextStrokeTransparency = 0.5
-	Label.TextSize = 12
-	Label.Font = Enum.Font.SourceSansBold
-	Label.Parent = Billboard
+		local Label = Instance.new("TextLabel")
+		Label.Size = UDim2.new(1, 0, 1, 0)
+		Label.BackgroundTransparency = 1
+		Label.Text = Model.Name
+		Label.TextColor3 = EspColor
+		Label.TextScaled = true
+		Label.TextStrokeTransparency = 0.5
+		Label.TextSize = 12
+		Label.Font = Enum.Font.SourceSansBold
+		Label.Parent = Billboard
+    end
 end
 
 local function UpdateEsps()
