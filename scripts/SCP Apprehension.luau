@@ -45,11 +45,14 @@ local EspColors = {
 }
 local KeyCodeItems = {
 	[Enum.KeyCode.Z] = "P90";
-	[Enum.KeyCode.X] = "Medkit";
-	[Enum.KeyCode.V] = "05 Keycard";
-	[Enum.KeyCode.B] = "M249";
-	[Enum.KeyCode.N] = "MP5";
+	[Enum.KeyCode.X] = "MP5";
+	[Enum.KeyCode.V] = "M249";
+
+	[Enum.KeyCode.B] = "Medkit";
+	
+	[Enum.KeyCode.N] = "05 Keycard";
 	[Enum.KeyCode.M] = "Facility Manager Keycard";
+	[Enum.KeyCode.KeypadSeven] = "Beretta";
 }
 local Adornments = {}
 
