@@ -32,6 +32,10 @@ if _G["__PickupItemAtMouse"] then
 	_G["__PickupItemAtMouse"]:Disconnect()
 	_G["__PickupItemAtMouse"] = nil
 end
+if _G["__BringAllItems"] then
+	_G["__BringAllItems"]:Disconnect()
+	_G["__BringAllItems"] = nil
+end
 
 local NewRandom = Random.new()
 local EspColors = {
@@ -49,7 +53,7 @@ local KeyCodeItems = {
 	[Enum.KeyCode.V] = "M249";
 
 	[Enum.KeyCode.B] = "Medkit";
-	
+
 	[Enum.KeyCode.N] = "05 Keycard";
 	[Enum.KeyCode.M] = "Facility Manager Keycard";
 	[Enum.KeyCode.KeypadSeven] = "Beretta";
@@ -338,5 +342,31 @@ _G["__PickupItemAtMouse"] = UserInputService.InputBegan:Connect(function(Key, Pr
 		end
 
 		RemoteFunction:InvokeServer("VerifyPickup", {Position = Character_Primary.Position; Parent = HitParent})
+	end
+end)
+
+_G["__BringAllItems"] = UserInputService.InputBegan:Connect(function(Key, Process)
+	if (Key.KeyCode == Enum.KeyCode.KeypadThree) and not Process and LocalPlayer.Character then
+		local Character = LocalPlayer.Character
+		local Character_Primary = Character.PrimaryPart or Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Head")
+		if not Character_Primary then
+			return
+		end
+
+		local Num = 1
+		for _, Model in pairs(Workspace:GetDescendants()) do
+			if Model:IsA("Model") and Model:FindFirstChild("Pickup") then
+				repeat
+					PlayerRemote:FireServer("DropItem", Num)
+					Num += 1
+					task.wait()
+				until RemoteFunction:InvokeServer("VerifyPickup", {Position = Character_Primary.Position; Parent = Model})
+
+				Num = 1
+				PlayerRemote:FireServer("DropItem", Num)
+			else
+				continue
+			end
+		end
 	end
 end)
