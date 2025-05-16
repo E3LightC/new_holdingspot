@@ -6,10 +6,10 @@
 --//        [Z] — Pickup "P90"
 --//        [X] — Pickup "MP5"
 --//        [V] — Pickup "M249"
+--//        [L] — Pickup "Beretta"
 --//        [B] — Pickup "Medkit"
 --//        [N] — Pickup "05 Keycard"
 --//        [M] — Pickup "Facility Manager Keycard"
---//        [L] — Pickup "Beretta"
 --// [Item Utility]
 --//        [Numpad 1] — Drop all items at baseplate
 --//        [Numpad 2] — Pickup item at mouse
