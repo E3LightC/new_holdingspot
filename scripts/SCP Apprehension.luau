@@ -1,5 +1,26 @@
---// @_x4yz
+--//// Discord: @_x4yz \\\\--
 --// https://www.roblox.com/games/3264184746/SCP-Apprehension
+
+--//// Key Bindings Overview \\\\--
+--// [Item Pickup]
+--//        [Z] — Pickup "P90"
+--//        [X] — Pickup "MP5"
+--//        [V] — Pickup "M249"
+--//        [B] — Pickup "Medkit"
+--//        [N] — Pickup "05 Keycard"
+--//        [M] — Pickup "Facility Manager Keycard"
+--//        [L] — Pickup "Beretta"
+--// [Item Utility]
+--//        [Numpad 1] — Drop all items at baseplate
+--//        [Numpad 2] — Pickup item at mouse
+--//        [Numpad 3] — Bring all items to player
+--//        [Numpad 4] — Pickup all items and consume each one
+--//        [Numpad 5] — Pickup item at mouse and consume it
+--||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
+
+--[///////////////////////////////////////////////////////////////////////////////////////////////////]--
+--[/////////////////////////////////////////// CODE BELOW ////////////////////////////////////////////]--
+--[///////////////////////////////////////////////////////////////////////////////////////////////////]--
 
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
@@ -8,6 +29,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
+local Backpack = LocalPlayer.Backpack
 local Mouse = LocalPlayer:GetMouse()
 
 local Holder = Workspace:WaitForChild("Holder")
@@ -36,6 +58,14 @@ if _G["__BringAllItems"] then
 	_G["__BringAllItems"]:Disconnect()
 	_G["__BringAllItems"] = nil
 end
+if _G["__ConsumeAllItems"] then
+	_G["__ConsumeAllItems"]:Disconnect()
+	_G["__ConsumeAllItems"] = nil
+end
+if _G["__ConsumeItemAtMouse"] then
+	_G["__ConsumeItemAtMouse"]:Disconnect()
+	_G["__ConsumeItemAtMouse"] = nil
+end
 
 local NewRandom = Random.new()
 local EspColors = {
@@ -59,6 +89,22 @@ local KeyCodeItems = {
 	[Enum.KeyCode.KeypadSeven] = "Beretta";
 }
 local Adornments = {}
+
+local function GetSlots():{string?|nil?}
+	local LocalPlayer_Inventory = Backpack:FindFirstChild("Inventory")
+	if not LocalPlayer_Inventory then
+		return {}
+	end
+
+	local Slots = {}
+	for _, Slot in pairs(LocalPlayer_Inventory:GetChildren()) do 
+		if Slot and Slot:IsA("StringValue") then
+			table.insert(Slots, {Slot.Name, Slot.Value})
+		end
+	end
+
+	return Slots
+end
 
 local function AddEspBoxForItem(Model:Model)
     if not Model then 
@@ -366,6 +412,70 @@ _G["__BringAllItems"] = UserInputService.InputBegan:Connect(function(Key, Proces
 				PlayerRemote:FireServer("DropItem", Num)
 			else
 				continue
+			end
+		end
+	end
+end)
+
+_G["__ConsumeAllItems"] = UserInputService.InputBegan:Connect(function(Key, Process)
+	if (Key.KeyCode == Enum.KeyCode.KeypadFour) and not Process and LocalPlayer.Character then
+		local Character = LocalPlayer.Character
+		local Character_Primary = Character.PrimaryPart or Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Head")
+		if not Character_Primary then
+			return
+		end
+
+		local Num = 1
+		for _, Model in pairs(Workspace:GetDescendants()) do
+			if Model:IsA("Model") and Model:FindFirstChild("Pickup") then
+				repeat
+					PlayerRemote:FireServer("DropItem", Num)
+					Num += 1
+					task.wait()
+				until RemoteFunction:InvokeServer("VerifyPickup", {Position = Character_Primary.Position; Parent = Model}) or not Model
+
+				Num = 1
+				PlayerRemote:FireServer("UseMedkit", Num)
+			else
+				continue
+			end
+		end
+	end
+end)
+
+_G["__ConsumeItemAtMouse"] = UserInputService.InputBegan:Connect(function(Key, Process) 
+	if (Key.KeyCode == Enum.KeyCode.KeypadFive) and not Process and LocalPlayer.Character then
+		local Character = LocalPlayer.Character
+		local Character_Primary = Character.PrimaryPart or Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Head")
+		if not Character_Primary then return end
+
+		local Hit:BasePart? = Mouse.Target
+		if not Hit then return end
+
+		local HitParent:Model? = Hit.Parent
+		if not HitParent or not HitParent:IsA("Model") or not HitParent:FindFirstChild("Pickup") then
+			return
+		end
+
+		local PreviousSlots = GetSlots()
+		RemoteFunction:InvokeServer("VerifyPickup", {Position = Character_Primary.Position; Parent = HitParent})
+		local CurrentSlots = GetSlots()
+
+		for _, NewSlot in pairs(CurrentSlots) do
+			local Found = false
+			for _, OldSlot in pairs(PreviousSlots) do
+				if (OldSlot[1] == NewSlot[1]) and (OldSlot[2] == NewSlot[2]) then
+					Found = true
+					break
+				end
+			end
+
+			if not Found then
+				local Number = tonumber(NewSlot[1]:match("%d+"))
+				if Number then
+					PlayerRemote:FireServer("UseMedkit", Number)
+				end
+				break
 			end
 		end
 	end
