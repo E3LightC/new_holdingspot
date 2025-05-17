@@ -1302,54 +1302,30 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Ins
 			Head.Transparency = HeadTransparency
 		end
 
-		if IsRunner then
+		if IsRunner and Agent and Agent.Parent and Agent.PrimaryPart then
+			local AgentPrimaryPart = Agent.PrimaryPart
 			local FakePart = Instance.new("Part")
-			FakePart.Anchored = true
-			FakePart.CFrame = Head and Head.CFrame or CFrame.new(0, 0, 0)
 			FakePart.Name = "FakeHead"
-			FakePart.Size = HeadSizeToUse or (UseVectorLibrary and vector.create(3, 3, 3)) or Vector3.new(3, 3, 3)
-			FakePart.Transparency = HeadTransparency
+			FakePart.Size = Head.Size
+			FakePart.Transparency = Head.Transparency
+			FakePart.CFrame = Head.CFrame
+			FakePart.CanCollide = false
+			FakePart.Parent = Character
 
-			Agent.ChildAdded:Connect(function(Hitbox:Model)
-				if Hitbox and Hitbox:IsA("Model") and string.find(Hitbox.Name, "_Reb_") then
-					repeat
-						task.wait()
+			local Weld = Instance.new("Weld")
+			Weld.Part0 = AgentPrimaryPart
+			Weld.Part1 = FakePart
+			Weld.Parent = AgentPrimaryPart
+
+			Agent.ChildAdded:Connect(function(Hitbox: Model)
+				if Hitbox:IsA("Model") and string.find(Hitbox.Name, "_Reb_") then
+					repeat 
+						task.wait() 
 					until not Hitbox or Hitbox.PrimaryPart
 					local PrimaryPart = Hitbox and Hitbox:IsDescendantOf(Workspace) and Hitbox.PrimaryPart
-					local AgentPrimaryPart = Agent and Agent:IsDescendantOf(Workspace) and Agent.PrimaryPart
 
-					if PrimaryPart and AgentPrimaryPart then
+					if PrimaryPart then
 						PrimaryPart.Anchored = true
-						FakePart.Parent = Character
-						FakePart.CFrame = AgentPrimaryPart
-
-						repeat
-							if not Agent or not AgentPrimaryPart or not Agent.Parent or not AgentPrimaryPart.Parent or not FakePart then
-								break
-							end
-							
-							FakePart.CFrame = AgentPrimaryPart.CFrame
-
-							for i, v in pairs(Agent:GetChildren()) do 
-								if v and v:IsA("BasePart") then
-									v.Transparency = 0
-									task.wait()
-								end
-							end
-
-							task.wait()
-						until not Agent or not Hitbox or not AgentPrimaryPart
-						
-						FakePart.Parent = nil
-
-						task.spawn(function()
-							for i, v in pairs(Agent:GetChildren()) do 
-								if v and v:IsA("BasePart") then
-									v.Transparency = 1
-									task.wait()
-								end
-							end
-						end)
 					end
 				end
 			end)
