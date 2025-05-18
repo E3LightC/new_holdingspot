@@ -16,6 +16,16 @@ local NaN = (0/0)
 local PointCooldownTime = 0.025
 local MaxWaitedTimePerZomb = 0.03
 
+local Flags = {
+    "AC Tamper",
+    "MemCheck",
+    "ZombieBox",
+    "ESP",
+    "W1",
+    "W2",
+    "W3"
+}
+
 if getgenv()["__MainInputBegin"] then
     getgenv()["__MainInputBegin"]:Disconnect()
     getgenv()["__MainInputBegin"] = nil
@@ -61,17 +71,39 @@ hookfunction(gcinfo, function()
 	return math.random(1550, 1650)
 end)
 
-if (type(getgenv().DamageKey) ~= "number") then
-    getgenv().DamageKey = -1
+if (type(getgenv()["DamageKey"] ) ~= "number") then
+    getgenv()["DamageKey"]  = -1
 
     local OldNameCall
     OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
         local Parameters = {...}
         local Method = getnamecallmethod()
 
-        if (Method == "InvokeServer") and (typeof(Self) == "Instance") and (Self.Name == "UpdateDamageKey") then
-            if (type(Parameters[1]) == "number") then
-                getgenv().DamageKey = Parameters[1]
+        if not checkcaller() and (typeof(Self) == "Instance") then
+            if (Method == "InvokeServer") then
+                if (Self.Name == "UpdateDamageKey") and (type(Parameters[1]) == "number") then
+                    getgenv()["DamageKey"]  = Parameters[1]
+                end
+            elseif (Method == "FireServer") then
+                if (Self.Name == "Damage") then
+                    local DamageData = Parameters[1]
+                    local DamageKeyFromLocal = Parameters[2]
+
+                    print(DamageData, DamageKeyFromLocal)
+                    if (type(DamageData) == "table") and DamageData["Damage"] and (type(DamageKeyFromLocal) == "number") then
+                        getgenv()["DamageKey"] = DamageKeyFromLocal
+
+                        local DamageMultiplier = getgenv()["DamageMulti"]
+                        DamageData["Damage"] = ((type(DamageMultiplier) == "number") and (DamageData["Damage"] * DamageMultiplier)) or DamageData["Damage"]
+
+                        Self["FireServer"](Self, DamageData, getgenv()["DamageKey"])
+                        return nil
+                    end
+                elseif (Self.Name == "SendData") then
+                    if table.find(Flags, tostring(Parameters[1])) then
+                        return nil
+                    end
+                end 
             end
         end
 
@@ -101,7 +133,7 @@ local function AttemptToDamage(DamageRemote:RemoteEvent, BodyPart:BasePart, Weap
         return
     end
 
-    if (type(getgenv().DamageKey) ~= "number") or (getgenv().DamageKey == -1) then
+    if (type(getgenv()["DamageKey"] ) ~= "number") or (getgenv()["DamageKey"]  == -1) then
         return
     end
     if (typeof(BodyPart) ~= "Instance") or not BodyPart:IsA("BasePart") then
@@ -121,13 +153,13 @@ local function AttemptToDamage(DamageRemote:RemoteEvent, BodyPart:BasePart, Weap
             if not DamageRemote or not DamageRemote.Parent then
                 break
             end
-            DamageRemote:FireServer(DamageData, getgenv().DamageKey)
+            DamageRemote:FireServer(DamageData, getgenv()["DamageKey"] )
         end
         
         return
     end
 
-    DamageRemote:FireServer(DamageData, getgenv().DamageKey)
+    DamageRemote:FireServer(DamageData, getgenv()["DamageKey"] )
 end
 
 local BindFunctions = {
@@ -138,8 +170,15 @@ local BindFunctions = {
         getgenv().IsLoopKillEnabled = not getgenv().IsLoopKillEnabled
 
         if getgenv().IsLoopKillEnabled then
+            local NewRandom = Random.new()
             repeat
-                local Zombie = Baddies:GetChildren()[math.random(1, ((#Baddies:GetChildren() == 0) and 1 or #Baddies:GetChildren()))]
+                local ZombChildren = Baddies:GetChildren()
+                if (#ZombChildren == 0) then
+                    task.wait()
+                    continue
+                end
+
+                local Zombie = ZombChildren[NewRandom:NextInteger(1, #ZombChildren)]
                 local LocalPlayer_Character = LocalPlayer.Character
 
                 if Zombie and LocalPlayer_Character then
@@ -300,3 +339,29 @@ getgenv()["__WorkspaceDescendantAdded"] = Workspace.DescendantAdded:Connect(func
         end
     end
 end)
+for _, Model in pairs(Workspace:GetDescendants()) do 
+    if Model and Model:IsA("Model") and (Model.Name == "MysteryBox") then
+        repeat
+            task.wait()
+        until not Model or Model.PrimaryPart
+
+        local PrimaryPart = Model and Model.PrimaryPart
+        if PrimaryPart then
+            getgenv().MysteryBoxHighlight.Parent = Model
+            getgenv().MysteryBoxHighlight.Adornee = Model
+            getgenv().MysteryBoxHighlight.Size = Vector3.new(8.4, 5.5, 5.2)
+            getgenv().MysteryBoxHighlight.Color3 = Color3.fromRGB(255, 165, 0)
+
+            getgenv().MysteryBoxBillboard.Parent = PrimaryPart
+            getgenv().MysteryBoxLabel.Parent = getgenv().MysteryBoxBillboard
+
+            Model:GetPropertyChangedSignal("Parent"):Connect(function()
+                getgenv().MysteryBoxHighlight.Parent = nil
+                getgenv().MysteryBoxBillboard.Parent = nil
+                getgenv().MysteryBoxLabel.Parent = nil
+            end)
+        end
+
+        break
+    end
+end
