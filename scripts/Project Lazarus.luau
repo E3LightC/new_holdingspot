@@ -138,8 +138,7 @@ local function AttemptToDamage(DamageRemote:RemoteEvent, BodyPart:BasePart, Weap
     if (typeof(BodyPart) ~= "Instance") or not BodyPart:IsA("BasePart") then
         return
     end
-
-    print(Damage)
+    
     local DamageData = {
         Damage = ((type(Damage) == "number" and Damage) or 0);
         WeaponName = ((type(WeaponName) == "string" and WeaponName) or "Knife");
