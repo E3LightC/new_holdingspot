@@ -82,14 +82,13 @@ if (type(getgenv()["DamageKey"] ) ~= "number") then
         if not checkcaller() and (typeof(Self) == "Instance") then
             if (Method == "InvokeServer") then
                 if (Self.Name == "UpdateDamageKey") and (type(Parameters[1]) == "number") then
-                    getgenv()["DamageKey"]  = Parameters[1]
+                    getgenv()["DamageKey"] = Parameters[1]
                 end
             elseif (Method == "FireServer") then
                 if (Self.Name == "Damage") then
                     local DamageData = Parameters[1]
                     local DamageKeyFromLocal = Parameters[2]
 
-                    print(DamageData, DamageKeyFromLocal)
                     if (type(DamageData) == "table") and DamageData["Damage"] and (type(DamageKeyFromLocal) == "number") then
                         getgenv()["DamageKey"] = DamageKeyFromLocal
 
@@ -140,6 +139,7 @@ local function AttemptToDamage(DamageRemote:RemoteEvent, BodyPart:BasePart, Weap
         return
     end
 
+    print(Damage)
     local DamageData = {
         Damage = ((type(Damage) == "number" and Damage) or 0);
         WeaponName = ((type(WeaponName) == "string" and WeaponName) or "Knife");
@@ -153,13 +153,13 @@ local function AttemptToDamage(DamageRemote:RemoteEvent, BodyPart:BasePart, Weap
             if not DamageRemote or not DamageRemote.Parent then
                 break
             end
-            DamageRemote:FireServer(DamageData, getgenv()["DamageKey"] )
+            DamageRemote:FireServer(DamageData, getgenv()["DamageKey"])
         end
         
         return
     end
 
-    DamageRemote:FireServer(DamageData, getgenv()["DamageKey"] )
+    DamageRemote:FireServer(DamageData, getgenv()["DamageKey"])
 end
 
 local BindFunctions = {
@@ -263,7 +263,7 @@ local BindFunctions = {
             local DamageRemote = Humanoid and Humanoid:FindFirstChild("Damage")
 
             if DamageRemote and BodyPart then
-                task.spawn(AttemptToDamage, DamageRemote, BodyPart, WeaponName, nil, NaN)
+                task.spawn(AttemptToDamage, DamageRemote, BodyPart, WeaponName, NaN)
             end
         end
     end);
