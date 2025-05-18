@@ -173,8 +173,10 @@ local BindFunctions = {
             repeat
                 local ZombChildren = Baddies:GetChildren()
                 if (#ZombChildren == 0) then
-                    task.wait()
-                    continue
+                    repeat
+                        ZombChildren = Baddies:GetChildren()
+                        task.wait()
+                    until (#ZombChildren ~= 0)
                 end
 
                 local Zombie = ZombChildren[NewRandom:NextInteger(1, #ZombChildren)]
