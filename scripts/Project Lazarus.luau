@@ -304,22 +304,22 @@ local BindFunctions = {
 		local CurrentlyEquipped = getrenv()["_G"]["Equipped"]
 
 		if (type(CurrentlyEquipped) == "table") then
-			if (type(CurrentlyEquipped)["Ammo"] == "number") and (type(CurrentlyEquipped)["MaxAmmo"] == "number") and (type(CurrentlyEquipped)["MagSize"] == "number") then
+			if (type(CurrentlyEquipped["Ammo"]) == "number") and (type(CurrentlyEquipped["MaxAmmo"]) == "number") and (type(CurrentlyEquipped["MagSize"]) == "number") then
 				CurrentlyEquipped["MagSize"] = math.huge
 				CurrentlyEquipped["Ammo"] = math.huge
 				CurrentlyEquipped["MaxAmmo"] = math.huge
 			end
 
-			if (type(CurrentlyEquipped)["FireTime"] == "number") then
+			if (type(CurrentlyEquipped["FireTime"]) == "number") then
 				CurrentlyEquipped["FireTime"] = 0.025
 			end
 			
-			if (type(CurrentlyEquipped)["Spread"] == "table") then
+			if (type(CurrentlyEquipped["Spread"]) == "table") then
 				CurrentlyEquipped["Spread"]["Min"] = 0
 				CurrentlyEquipped["Spread"]["Max"] = 0
 			end
 
-			if (type(CurrentlyEquipped)["ViewKick"] == "table") and (type(CurrentlyEquipped)["ViewKick"]["Yaw"] == "table") and (type(CurrentlyEquipped)["ViewKick"]["Pitch"] == "table") then
+			if (type(CurrentlyEquipped["ViewKick"]) == "table") and (type(CurrentlyEquipped["ViewKick"]["Yaw"]) == "table") and (type(CurrentlyEquipped["ViewKick"]["Pitch"]) == "table") then
 				CurrentlyEquipped["ViewKick"]["Yaw"]["Min"] = 0
 				CurrentlyEquipped["ViewKick"]["Yaw"]["Max"] = 0
 				CurrentlyEquipped["ViewKick"]["Pitch"]["Min"] = 0
