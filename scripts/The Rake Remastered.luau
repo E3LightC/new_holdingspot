@@ -202,7 +202,7 @@ local function InfiniteStamina()
                 local OldTakeStamina = Required.TakeStamina
                 Required.TakeStamina = function(Self, Amount)
                     if (Amount > 0) then
-                        return OldTakeStamina(Self, Amount)
+                        return
                     end
                     
                     return OldTakeStamina(Self, Amount)
