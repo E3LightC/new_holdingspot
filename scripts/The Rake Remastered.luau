@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 if _G["__MainInputBegin"] then
     _G["__MainInputBegin"]:Disconnect()
@@ -18,12 +19,18 @@ end
 local LocalPlayer = Players.LocalPlayer
 
 local Filter_Folder = Workspace:WaitForChild("Filter")
+local Debris_Folder = Workspace:WaitForChild("Debris")
+
+local TKSMNA = ReplicatedStorage:WaitForChild("TKSMNA")
+
 local ScrapSpawns_Folder = Filter_Folder:WaitForChild("ScrapSpawns")
+local SupplyCrates_Folder = Debris_Folder:WaitForChild("SupplyCrates")
 
 local LastEspUpdate = 0
-local TimeToWaitBeforeNextUpdate = 0.1
+local TimeToWaitBeforeNextUpdate = 0.125
 
 local ScrapEspEnabled = false
+local SupplyCratesEspEnabled = false
 local FlareEspEnabled = false
 local RakeEspEnabled = false
 
@@ -38,6 +45,18 @@ local function GetScraps()
     end
 
     return Scraps
+end
+
+local function GetSupplyCrates()
+    local SupplyCrates = {}
+
+    for _, SupplyCrateModel in pairs(SupplyCrates_Folder:GetDescendants()) do 
+        if SupplyCrateModel and SupplyCrateModel:FindFirstChild("UnlockValue") then
+            table.insert(SupplyCrates, SupplyCrateModel)
+        end
+    end
+
+    return SupplyCrates
 end
 
 local function HighlightScraps()
@@ -92,6 +111,53 @@ local function HighlightScraps()
 	end
 end
 
+local function HighlightSupplyCrates()
+	for _, SupplyCrateModel in ipairs(GetSupplyCrates()) do
+		local Primary = SupplyCrateModel:FindFirstChildWhichIsA("BasePart")
+		if not Primary then
+			continue
+		end
+
+		for _, Child in ipairs(SupplyCrateModel:GetChildren()) do
+			if Child:IsA("BoxHandleAdornment") and (Child.Name == "SupplyBox") then
+				Child:Destroy()
+			elseif Child:IsA("BillboardGui") and (Child.Name == "SupplyGui") then
+				Child:Destroy()
+			end
+		end
+
+		local Box = Instance.new("BoxHandleAdornment")
+		Box.Name = "SupplyBox"
+		Box.Adornee = Primary
+		Box.Size = Primary.Size
+		Box.ZIndex = 5
+		Box.AlwaysOnTop = true
+		Box.Color3 = Color3.fromRGB(0, 255, 127)
+		Box.Transparency = 0.25
+		Box.AdornCullingMode = Enum.AdornCullingMode.Never
+
+		local Gui = Instance.new("BillboardGui")
+		Gui.Name = "SupplyGui"
+		Gui.Adornee = Primary
+		Gui.Size = UDim2.new(0, 100, 0, 30)
+		Gui.StudsOffset = Vector3.new(0, 3, 0)
+		Gui.AlwaysOnTop = true
+
+		local Label = Instance.new("TextLabel")
+		Label.Size = UDim2.new(1, 0, 1, 0)
+		Label.BackgroundTransparency = 1
+		Label.Text = "Supply Crate"
+		Label.TextColor3 = Color3.new(0, 1, 0.5)
+		Label.TextStrokeTransparency = 0.5
+		Label.TextScaled = true
+		Label.Font = Enum.Font.SourceSansBold
+
+		Box.Parent = SupplyCrateModel
+		Gui.Parent = SupplyCrateModel
+		Label.Parent = Gui
+	end
+end
+
 local function HighlightFlare()
 	local FlarePickupModel = Workspace:FindFirstChild("FlareGunPickUp", true)
     if not FlarePickupModel then
@@ -100,20 +166,20 @@ local function HighlightFlare()
     end
 	local Primary = FlarePickupModel:FindFirstChild("FlareGun") or FlarePickupModel:FindFirstChildWhichIsA("BasePart")
 	if not Primary then
-        warn("[FAIL # HighlightFlare]: The Rake has no `PrimaryPart`, nor a HumanoidRootPart.")
+        warn("[FAIL # HighlightFlare]: The flare gun has no part.")
 		return
 	end
 
 	for _, Child in ipairs(FlarePickupModel:GetChildren()) do
-		if Child:IsA("BoxHandleAdornment") and (Child.Name == "RakeBox") then
+		if Child:IsA("BoxHandleAdornment") and (Child.Name == "FlareGunBox") then
 			Child:Destroy()
-		elseif Child:IsA("BillboardGui") and (Child.Name == "RakeGui") then
+		elseif Child:IsA("BillboardGui") and (Child.Name == "FlareGunGui") then
 			Child:Destroy()
 		end
 	end
 
 	local Box = Instance.new("BoxHandleAdornment")
-	Box.Name = "RakeBox"
+	Box.Name = "FlareGunBox"
 	Box.Adornee = Primary
 	Box.Size = FlarePickupModel:GetExtentsSize()
 	Box.ZIndex = 5
@@ -123,7 +189,7 @@ local function HighlightFlare()
 	Box.AdornCullingMode = Enum.AdornCullingMode.Never
 
 	local Gui = Instance.new("BillboardGui")
-	Gui.Name = "RakeGui"
+	Gui.Name = "FlareGunGui"
 	Gui.Adornee = Primary
 	Gui.Size = UDim2.new(0, 100, 0, 20)
 	Gui.StudsOffset = Vector3.new(0, 3, 0)
@@ -169,7 +235,7 @@ local function HighlightRake()
 	Box.Size = RakeModel:GetExtentsSize()
 	Box.ZIndex = 5
 	Box.AlwaysOnTop = true
-	Box.Color3 = Color3.new(0, 1, 1)
+	Box.Color3 = Color3.new(1, 0, 0)
 	Box.Transparency = 0.8
 	Box.AdornCullingMode = Enum.AdornCullingMode.Never
 
@@ -184,7 +250,7 @@ local function HighlightRake()
 	Label.Size = UDim2.new(1, 0, 1, 0)
 	Label.BackgroundTransparency = 1
 	Label.Text = `The Rake`
-	Label.TextColor3 = Color3.new(0, 1, 1)
+	Label.TextColor3 = Color3.new(1, 0, 0)
 	Label.TextStrokeTransparency = 0.5
 	Label.TextScaled = true
 	Label.Font = Enum.Font.SourceSansBold
@@ -195,6 +261,11 @@ local function HighlightRake()
 end
 
 local function InfiniteStamina()
+	for _, Connection in pairs(getconnections(TKSMNA.Event)) do 
+		if Connection and Connection.Enabled then
+			Connection:Disconnect()
+		end
+	end
     for _, Module:ModuleScript in pairs(getloadedmodules()) do
         if (Module.Name == "M_H") then
             local Required = require(Module)
@@ -225,6 +296,10 @@ local BindFunctions = {
         print(`[INFO]: \`FlareEspEnabled\` is now toggled {FlareEspEnabled and "on" or "off"}.`)
     end);
     [Enum.KeyCode.KeypadFour] = (function()
+        SupplyCratesEspEnabled = not SupplyCratesEspEnabled
+        print(`[INFO]: \`SupplyCratesEspEnabled\` is now toggled {SupplyCratesEspEnabled and "on" or "off"}.`)
+    end);
+    [Enum.KeyCode.KeypadFive] = (function()
         RakeEspEnabled = not RakeEspEnabled
         print(`[INFO]: \`RakeEspEnabled\` is now toggled {RakeEspEnabled and "on" or "off"}.`)
     end);
@@ -248,8 +323,11 @@ _G["__RunServiceLoop"] = RunService.Heartbeat:Connect(function()
         if ScrapEspEnabled then
             coroutine.wrap(HighlightScraps)()
         end
+	    if SupplyCratesEspEnabled then
+		    coroutine.wrap(HighlightSupplyCrates)()
+	    end
         if FlareEspEnabled then
-            coroutine.wrap(HighlightFlare)()
+		    coroutine.wrap(HighlightFlare)()
         end
         if RakeEspEnabled then
             coroutine.wrap(HighlightRake)()
