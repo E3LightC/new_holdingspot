@@ -1,0 +1,21 @@
+Everyone is permitted to copy and distribute copies of this license document, but changing the contents of this license is not permitted.
+
+Definition of "Code":
+"Code" refers to all files with their filename ending in `.luau` located in the 
+GitHub repository: https://github.com/E3LightC/new_holdingspot
+
+Permissions:
+The Code may be modified. The individual or entity (hereafter referred to as 
+the "acquirer") may change, alter, or adapt the software and its source code 
+to suit their specific needs, under the following conditions:
+
+Conditions for Modification and Use:
+1. The acquirer must register and document any modifications made to the original Code.
+2. These documented changes must be made publicly accessible and distributed 
+   alongside the derivative version.
+   Example: via a public GitHub repository that forks https://github.com/E3LightC/new_holdingspot and includes the modifications.
+
+Restrictions:
+- Redistribution of this license document is permitted only in its original, 
+  unmodified form.
+- The Code must not be relicensed or sublicensed under terms that conflict with this license.
