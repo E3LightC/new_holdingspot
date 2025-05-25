@@ -1,4 +1,4 @@
-Everyone is permitted to copy and distribute copies of this license document, but changing the contents of this license is not permitted.
+Everyone is permitted to copy and distribute copies of this license document, but changing the contents of this license is prohibited.
 
 Definition of "Code":
 "Code" refers to all files with their filename ending in `.luau` located in the 
@@ -11,7 +11,7 @@ to suit their specific needs, under the following conditions:
 
 Conditions for Modification and Use:
 1. The acquirer must register and document any modifications made to the original Code.
-2. These documented changes must be made publicly accessible and distributed 
+2. These documented changes must be publicly accessible and distributed 
    alongside the derivative version.
    Example: via a public GitHub repository that forks https://github.com/E3LightC/new_holdingspot and includes the modifications.
 
@@ -22,9 +22,4 @@ Restrictions:
 
 
 Disclaimer:
-THE CODE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE 
-FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT 
-OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE CODE OR THE USE OR 
-OTHER DEALINGS IN THE CODE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
