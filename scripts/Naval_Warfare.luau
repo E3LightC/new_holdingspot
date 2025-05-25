@@ -1,4 +1,6 @@
---// @_x4yz
+--//// @_x4yz
+--// https://www.roblox.com/games/2210085102/Naval-Warfare
+
 --// press L to change the target type (Planes or Players).
 
 local Players = game:GetService("Players")
