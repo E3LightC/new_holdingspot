@@ -1,6 +1,20 @@
 --// @_x4yz
 --// https://www.roblox.com/games/443406476/Project-Lazarus-ZOMBIES
 
+--//// Key Bindings Overview \\\\--
+--// [Combat]
+--//        [Keypad 1] — Toggle loop-kill on random zombies.
+--//        [Z] — Hold to farm points on a zombie named "Zombie".
+--//        [E] — Deal direct damage to the zombie under your mouse.
+--//        [T] — Trigger Absolute Zero weapon effect at mouse position.
+--// [Utility]
+--//        [Keypad 2] — Enable infinite ammo, no recoil, and rapid fire.
+--||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+--[///////////////////////////////////////////////////////////////////////////////////////////////////]--
+--[/////////////////////////////////////////// CODE BELOW ////////////////////////////////////////////]--
+--[///////////////////////////////////////////////////////////////////////////////////////////////////]--
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
@@ -41,7 +55,6 @@ end
 if not getgenv().MysteryBoxHighlight then
     getgenv().MysteryBoxHighlight = Instance.new("BoxHandleAdornment")
     getgenv().MysteryBoxHighlight.Name = "__MysteryBoxHighlight"
-    getgenv().MysteryBoxHighlight.Adornee = PrimaryPart
     getgenv().MysteryBoxHighlight.AlwaysOnTop = true
     getgenv().MysteryBoxHighlight.ZIndex = 8
     getgenv().MysteryBoxHighlight.Transparency = 0.6
@@ -49,7 +62,6 @@ end
 if not getgenv().MysteryBoxBillboard then
     getgenv().MysteryBoxBillboard = Instance.new("BillboardGui")
     getgenv().MysteryBoxBillboard.Name = "__EspLabel"
-    getgenv().MysteryBoxBillboard.Adornee = PrimaryPart
     getgenv().MysteryBoxBillboard.Size = UDim2.new(0, 100, 0, 40)
     getgenv().MysteryBoxBillboard.StudsOffset = Vector3.new(0, 2.5, 0)
     getgenv().MysteryBoxBillboard.AlwaysOnTop = true
