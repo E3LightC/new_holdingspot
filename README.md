@@ -44,7 +44,19 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdings
 ```
  * Project Lazarus Script 
 ```lua
---// Project Lazarus Script
+--//// Discord: @_x4yz \\\\--
+--// https://www.roblox.com/games/443406476/Project-Lazarus-ZOMBIES
+
+--//// Key Bindings Overview \\\\--
+--// [Combat]
+--//        [Keypad 1] — Toggle loop-kill on random zombies.
+--//        [Z] — Hold to farm points on a zombie named "Zombie".
+--//        [E] — Deal direct damage to the zombie under your mouse.
+--//        [T] — Trigger Absolute Zero weapon effect at mouse position.
+--// [Utility]
+--//        [Keypad 2] — Enable infinite ammo, no recoil, and rapid fire.
+--||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
 getgenv()["DamageMulti"] = 1 --// damage multiplier, can be changed without re-executing the script.
 loadstring(game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/Project%20Lazarus.luau", true))()
 ```
