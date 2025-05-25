@@ -3,7 +3,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-_G["HitDamageMultiplier"] = 100 --// im assuming this is a multiplier of sorts as it is based on the swing charge ( ( max damage x multiplier/swing charge) ?)
+_G["HitDamageMultiplier"] = 100 --// im assuming this is a multiplier of sorts as it is based on the swing charge ( ( max damage x multiplier or swing charge) ?)
 _G["MainSound"] = ReplicatedStorage:WaitForChild("Sounds"):WaitForChild("Combat").PipeHitAlternate --// hit sound
 _G["MainSoundSpeed"] = 1 --// speed of the sound ↑↑↑
 _G["FootstepMaterial"] = Enum.Material.DiamondPlate --// floor walking sound
