@@ -2,7 +2,7 @@
 # *holding spot for scripts i've made*
 
 # *functioning scripts*
- * [Guts & Blackpowder Script (PC only)](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/G%26B.luau)
+ * [Guts & Blackpowder (PC only)](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/G%26B.luau)
  * [SCP: Apprehension (PC only)](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/SCP%20Apprehension.luau)
  * [Project Lazarus (PC only)](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/Project%20Lazarus.luau)
  * [3008 Script (PC and Mobile)](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/3008.luau)
