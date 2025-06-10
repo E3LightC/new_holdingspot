@@ -64,13 +64,19 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local UserInputService = game:GetService("UserInputService")
 
+local hookmetamethod = getfenv().hookmetamethod
+local getnamecallmethod = getfenv().getnamecallmethod
+local checkcaller = getfenv().checkcaller
+
 local CanUseHookMetamethod:boolean = (type(hookmetamethod) == "function")
 local CanUseGetNameCallMethod:boolean = (type(getnamecallmethod) == "function")
+local CanUseGetCheckCaller:boolean = (type(checkcaller) == "function")
 if not CanUseHookMetamethod then
 	warn("[WARNING]: Your executor does not support 'hookmetamethod'. The script will still run, but the hooking functionality will not execute.")
-end
-if CanUseHookMetamethod and not CanUseGetNameCallMethod then
-	warn("[WARNING]: Your executor does not support 'getnamecallmethod'. The script will still run, but the hooking functionality will not execute.")
+elseif not CanUseGetNameCallMethod then
+    warn("[WARNING]: Your executor does not support 'getnamecallmethod'. The script will still run, but the hooking functionality will not execute.")
+elseif not CanUseGetCheckCaller then
+    warn("[WARNING]: Your executor does not support 'checkcaller'. The script will still run, but the hooking functionality will not execute.")
 end
 
 --// Types for silencing warnings.
@@ -99,7 +105,7 @@ type DebugLibrary = {
 
 local vector:VectorLibrary = (getfenv().vector) --// Since Wave doesn't have Lua's global "vector" class?
 local debug:DebugLibrary = (getfenv().debug) --// Since debug.info isn't registered for some reason?
-local ClientSubtitles:RemoteEvent = (ReplicatedStorage:FindFirstChild("ClientSubtitles") or ReplicatedStorage:WaitForChild("ClientSubtitles", math.huge))::RemoteEvent
+local ClientSubtitles:BindableEvent = (ReplicatedStorage:FindFirstChild("ClientSubtitles") or ReplicatedStorage:WaitForChild("ClientSubtitles", math.huge))::BindableEvent
 
 --[=[
     Description:
@@ -128,11 +134,11 @@ local ClientSubtitles:RemoteEvent = (ReplicatedStorage:FindFirstChild("ClientSub
 
     Example Usage:
     ```lua
-    local text = GenerateText("[1] won against [2]!", 
+    local Text = GenerateText("[1] won against [2]!", 
         {Text = "Player1", Color = Color3.new(1, 1, 0)}, 
         {Text = "Boss", Color = "#FF0000"}
     )
-    TextLabel.Text = text
+    TextLabel.Text = Text
     ```
 
     Edge Cases:
@@ -231,13 +237,16 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
 
 		if not UseTimeOut then
 			repeat
-				task.wait()
-
 				if not Parent or not Parent.Parent then
 					EndedEarly = true
 					break
 				end
+                InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
+                if InstanceToReturn then
+                    return InstanceToReturn
+                end
 
+                task.wait()
 				InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
 			until ((typeof(InstanceToReturn) == "Instance") or EndedEarly or not Parent or not Parent.Parent)
 		else
@@ -245,8 +254,6 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
 			local StartTime:number = os.clock()
 
 			repeat
-				task.wait()
-
 				if ((os.clock() - StartTime) >= AbsTimeOut) then
 					TimeOutWasReached = true
 					EndedEarly = true
@@ -256,7 +263,12 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
 					EndedEarly = true
 					break
 				end
+                InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
+                if InstanceToReturn then
+                    return InstanceToReturn
+                end
 
+                task.wait()
 				InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
 			until ((typeof(InstanceToReturn) == "Instance") or EndedEarly or (os.clock() - StartTime) >= AbsTimeOut)
 		end
@@ -308,7 +320,7 @@ local Remotes:Folder = (ReplicatedStorage:FindFirstChild("Remotes") or Replicate
 local AFKSignal:RemoteEvent = (Remotes:FindFirstChild("OnAFKSignalReceived") or Remotes:WaitForChild("OnAFKSignalReceived", math.huge))::RemoteEvent
 
 local ZombiesFolder:Folder = (Workspace:FindFirstChild("Zombies") or Workspace:WaitForChild("Zombies", math.huge))::Folder
-local BotsFolder:Folder = (Workspace:FindFirstChild("Bots") or Workspace:WaitForChild("Bots", 2))::Folder
+local BotsFolder:Folder = (Workspace:FindFirstChild("Bots"))::Folder
 local BuildingsFolder:Folder = (Workspace:FindFirstChild("Buildings") or Workspace:WaitForChild("Buildings", math.huge))::Folder
 local Camera:Camera = (Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera"))::Camera
 
@@ -335,7 +347,7 @@ local MurderRange:number = 11 --// Used as a backup if can't find weapon range.
 local HeadSizeToUse:Vector3 = (UseVectorLibrary and vector.create(6, 9, 4.5)) or Vector3.new(6, 9, 4.5)
 local HeadTransparency:number = 0.6
 
-local PreferredWeapon:string = "Pike"
+local PreferredWeapon:{string} = {"Pike";"Lance"}
 --// true = Ignore Agent
 --// false = Include Agent
 local AgentTypeList = {
@@ -683,17 +695,21 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 	local List:{any} = {}
 
 	if not ListTools then
-		if Character:FindFirstChild(PreferredWeapon) then 
-			local Tool = (Character:FindFirstChild(PreferredWeapon))::Tool
+        for _, ToolName in pairs(PreferredWeapon) do 
+            if Character:FindFirstChild(PreferredWeapon) then 
+                local Tool = (Character:FindFirstChild(PreferredWeapon))::Tool
 
-			return {{Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")}}
-		end
+                return {{Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")}}
+            end
+        end
 	elseif ListTools then
-		if Character:FindFirstChild(PreferredWeapon) then 
-			local Tool = (Character:FindFirstChild(PreferredWeapon))::Tool
+        for _, ToolName in pairs(PreferredWeapon) do 
+            if Character:FindFirstChild(PreferredWeapon) then 
+                local Tool = (Character:FindFirstChild(PreferredWeapon))::Tool
 
-			table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
-		end
+                table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
+            end
+        end
 	end
 
 	if Character:FindFirstChildWhichIsA("Tool") then
@@ -787,16 +803,16 @@ end
     Example Usage:
     ```lua
     --// Find all agents within 10 studs of the player
-    local nearbyAgents = GetAgentsInRange(false, 10)
+    local NearbyAgents = GetAgentsInRange(false, 10)
 
     --// Find all agents near a specific world position
-    local origin = Vector3.new(50, 0, -25)
-    local agentsNearPoint = GetAgentsInRange(origin, 12)
+    local Origin = Vector3.new(50, 0, -25)
+    local AgentsNearPoint = GetAgentsInRange(origin, 12)
 
     --// Iterate and do something with each agent
-    for _, agent in ipairs(nearbyAgents) do
-        if agent and agent:IsA("Model") then
-            print(`Found nearby agent: {agent.Name}`)
+    for _, Agent in ipairs(NearbyAgents) do
+        if Agent and Agent:IsA("Model") then
+            print(`Found nearby agent: {Agent.Name}`)
         end
     end
     ```
@@ -815,13 +831,13 @@ local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[
 	if (Range == 0) or (Range ~= Range) then 
 		Range = 4
 	elseif (Range < 0) then 
-		Range = math.abs(Range)
+		Range = -Range
 	end
 
 	local UsePosition:boolean = (typeof(Position) == "Vector3")
 	local CharHRP:any
 	if not UsePosition then
-		local Character:Model = LocalPlayer.Character
+		local Character = LocalPlayer.Character
 		if not Character or not Character.Parent then
             ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetAgentsInRange] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetAgentsInRange]: You do not have a character?  ||| Current script line: {debug.info(1, "l")}`)
@@ -1177,7 +1193,7 @@ local function GetClosestBuilding():any
 		if (typeof(Bounds[1]) == "Instance") and (typeof(Bounds[1].Parent) == "Instance") then 
 			local BuildingHealth:NumberValue = (((Bounds[1].Parent)::Part):WaitForChild("BuildingHealth")::NumberValue)
 
-			if (BuildingHealth.Value >= (BuildingHealth:GetAttribute("MaxHealth") or BuildingHealth.Value))  then 
+			if (BuildingHealth.Value >= ((BuildingHealth:GetAttribute("MaxHealth")::number) or BuildingHealth.Value))  then 
 				return false
 			end
 
@@ -1283,9 +1299,9 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Ins
 			return
 		end
 
-		local Head:BasePart?
+		local Head:BasePart
 		if not IsIgniter then
-			Head = (Character:FindFirstChild("Head") or Character:WaitForChild("Head", 3))::BasePart or (nil)
+			Head = (Character:FindFirstChild("Head") or Character:WaitForChild("Head", 3))::BasePart
 		else
 			for _, Part:any in pairs(Character:GetChildren()) do 
 				if Part and Part:IsA("Part") and (Part.Name == "Head") then
@@ -1317,7 +1333,7 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Ins
 			Weld.Part1 = FakePart
 			Weld.Parent = AgentPrimaryPart
 
-			Agent.ChildAdded:Connect(function(Hitbox: Model)
+			Agent.ChildAdded:Connect(function(Hitbox:Instance)
 				if Hitbox:IsA("Model") and string.find(Hitbox.Name, "_Reb_") then
 					repeat 
 						task.wait() 
@@ -1339,7 +1355,6 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Ins
 			IsHeadless,
 			IsCuirassier
 		)
-        Head = nil
 	end
 end)
 
@@ -1371,7 +1386,7 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 			if Remote then 
 				local BuildingFound:NumberValue = (BuildingFetchType == "LeastHealth" and GetBuildingWithLeastHealth()) or GetClosestBuilding()
 
-				if (type(BuildingFound) == "boolean") or not CanRepair or (BuildingFound.Value >= (BuildingFound:GetAttribute("MaxHealth") or BuildingFound.Value)) then 
+				if (type(BuildingFound) == "boolean") or not CanRepair or (BuildingFound.Value >= ((BuildingFound:GetAttribute("MaxHealth")::number) or BuildingFound.Value)) then 
 					if not CanRepair then 
 						return
 					end
@@ -1836,7 +1851,7 @@ if Debug then
     end)]]
 end
 
-if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMethod then 
+if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMethod and CanUseGetCheckCaller then 
 	_G["AlreadyActive"] = true
 
 	OldNameCall = hookmetamethod(game, "__namecall", function(Remote, ...)
