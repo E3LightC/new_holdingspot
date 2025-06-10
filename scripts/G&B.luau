@@ -1,6 +1,6 @@
 --//// Discord: @_x4yz \\\\--
 --// https://www.roblox.com/games/12334109280/Guts-Blackpowder
---//    Made with Wave. https://getwave.gg | This script should work with most executors, as most of it is standard Roblox Luau.
+--//    Made with Wave and Swift. [https://getwave.gg] [https://getswift.gg] | This script should work with most executors, as most of it is standard Roblox Luau.
 --//    Each function has a description if whoever is reading this is curious about what they do.
 --//    * This script is entirely made from boredom and my passion for exploiting/pen-testing! *
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
@@ -247,7 +247,7 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
                 end
 
                 task.wait()
-				InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
+				InstanceToReturn = Parent and Parent:FindFirstChildWhichIsA(ClassName)
 			until ((typeof(InstanceToReturn) == "Instance") or EndedEarly or not Parent or not Parent.Parent)
 		else
 			local AbsTimeOut:number = math.abs(TimeOut or 1)
@@ -269,7 +269,7 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
                 end
 
                 task.wait()
-				InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
+				InstanceToReturn = Parent and Parent:FindFirstChildWhichIsA(ClassName)
 			until ((typeof(InstanceToReturn) == "Instance") or EndedEarly or (os.clock() - StartTime) >= AbsTimeOut)
 		end
 
@@ -818,7 +818,7 @@ end
     ```
 
 ]=]
-local function GetAgentsInRange(Position:Vector3?|boolean?|nil, Range:number):{[number]:any}
+local function GetAgentsInRange(Position:(Vector3|nil?), Range:number):{[number]:any}
 	local AgentsInRange:{[number]:any} = {}
 
 	if (type(Range) ~= "number") then 
