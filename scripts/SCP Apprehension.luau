@@ -90,7 +90,7 @@ local KeyCodeItems = {
 }
 local Adornments = {}
 
-local function GetSlots():{string?|nil?}
+local function GetSlots():{(string|nil?)}
 	local LocalPlayer_Inventory = Backpack:FindFirstChild("Inventory")
 	if not LocalPlayer_Inventory then
 		return {}
