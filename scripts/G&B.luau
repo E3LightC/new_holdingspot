@@ -1002,7 +1002,7 @@ local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(
 			for Index:any, Key:any in pairs(Table) do
 				task.spawn(Function, Index, Key)
 			end
-		elseif not Instant then
+		else
 			for Index:any, Key:any in pairs(Table) do
 				Function(Index, Key)
 			end
@@ -1095,7 +1095,7 @@ local function GetBuildingWithLeastHealth():(any)
 
 		if (typeof(Healths[1]) == "Instance") then 
 			return Healths[1]
-		elseif not Healths[1] then 
+		else
             ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetBuildingWithLeastHealth] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetBuildingWithLeastHealth]: Failed to get a "BuildingHealth" NumberValue.  ||| Current script line: {debug.info(1, "l")}`)
 			
@@ -1198,7 +1198,7 @@ local function GetClosestBuilding():any
 			end
 
 			return ((Bounds[1].Parent)::Part):WaitForChild("BuildingHealth")
-		elseif not Bounds[1] then 
+		else
             ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetClosestBuilding] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetClosestBuilding]: Failed to find the closest building.  ||| Current script line: {debug.info(1, "l")}`)
 			
@@ -1358,19 +1358,6 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Ins
 	end
 end)
 
-_G["BuildingBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
-	if not Process then 
-		if (Key.KeyCode == Enum.KeyCode.KeypadTwo) then 
-			BuildingBindEnabled	= not BuildingBindEnabled
-			print(`[INFO # BuildingBind]: "BuildingBindEnabled" is now equal to: {BuildingBindEnabled}`)
-
-			if not BuildingBindEnabled then 
-				_G["BuildHighlight"].Adornee = nil
-			end
-		end
-	end
-end)
-
 _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 	if BuildingBindEnabled and LocalPlayer.Character then 
 		local Character = LocalPlayer.Character
@@ -1403,7 +1390,7 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 					task.wait(WaitTimeUntilRepair or 0.175)
 					CanRepair = true
 				end)
-			elseif not Remote then 
+			else
 				warn(`[FAIL # BuildingBindFunc]: Failed to find the hammer's remote event.  ||| Current script line: {debug.info(1, "l")}`)
 				return
 			end
@@ -1421,18 +1408,6 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 	end
 
 	task.wait()
-end)
-
-_G["BuildingFetchTypeBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
-	if not Process and Key.KeyCode == (Enum.KeyCode.KeypadThree) then 
-		if (BuildingFetchType == "Closest") then 
-			BuildingFetchType = "LeastHealth"
-		else
-			BuildingFetchType = "Closest"
-		end
-
-		print(`[INFO # BuildingFetchTypeBind]: "BuildingFetchType" is now equal to: {BuildingFetchType}`)
-	end
 end)
 
 _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
@@ -1488,7 +1463,7 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 							Connection:Disconnect()
 						end
 					end)
-				elseif not Remote then 
+				else
                     ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# MusicBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 					warn(`[FAIL # MusicBind]: Failed to find instrument remote event for the "{FoundInstrument.Name}".  ||| Current script line: {debug.info(1, "l")}`)
 					return
@@ -1496,26 +1471,6 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 			else
 				return
 			end
-		end
-	end
-end)
-
-_G["BlockBarrelBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
-	if not Process then 
-		if (Key.KeyCode == Enum.KeyCode.KeypadFour) then 
-			if not ReplicatedStorage:FindFirstChild("BlockBarrel") then
-                if not _G["_BlockBarrel"] then
-                    _G["_BlockBarrel"] = Instance.new("BoolValue")
-                    _G["_BlockBarrel"].Name = "BlockBarrel"
-                end
-
-                _G["_BlockBarrel"].Parent = ReplicatedStorage
-            elseif ReplicatedStorage:FindFirstChild("BlockBarrel") then 
-                _G["_BlockBarrel"].Parent = ReplicatedFirst
-            end
-
-            local Enabled = (_G["_BlockBarrel"].Parent == ReplicatedStorage) and "enabled" or "disabled"
-			print(`[INFO # BlockBarrelBind]: Barrel blocking is now {Enabled}.`)
 		end
 	end
 end)
@@ -1596,7 +1551,7 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 									Remote:FireServer("StopBraceBlock")
 								end
 							end)
-						elseif (Weapon.Name == "Carbine") or (Weapon.Name == "Navy Pistol" )then
+						elseif (Weapon.Name == "Carbine") or (Weapon.Name == "Navy Pistol") then
 							Remote:FireServer("Shove")
 						end
 
@@ -1618,7 +1573,7 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                             Weapon.Parent = Backpack
                         end
 						table.clear(AgentsInRange)
-					elseif not Remote then 
+					else
                         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# ShoveBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 						warn(`[FAIL # ShoveBind]: "Remote" if statement failed.  ||| Current script line: {debug.info(1, "l")}`)
 
@@ -1778,7 +1733,7 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 									continue
 								end
 							end
-						elseif not Holdout:FindFirstChild("Log") then 
+						else
 							warn("[FAIL # GrabLogBind]: There are no logs to interact with.")
 
 							return
@@ -1791,11 +1746,56 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
                 ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GrabLogBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 				warn(`[FAIL # GrabLogBind]: "Modes" or "Holdout" if statements failed?  ||| Current script line: {debug.info(1, "l")}`)
 				return
-			elseif not Berezina then 
+			else
 				warn(`[FAIL # GrabLogBind]: The current map is not Berezina?  ||| Current script line: {debug.info(1, "l")}`)
 
 				return
 			end
+		end
+	end
+end)
+
+_G["BuildingBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
+	if not Process then 
+		if (Key.KeyCode == Enum.KeyCode.KeypadTwo) then 
+			BuildingBindEnabled	= not BuildingBindEnabled
+			print(`[INFO # BuildingBind]: "BuildingBindEnabled" is now equal to: {BuildingBindEnabled}`)
+
+			if not BuildingBindEnabled then 
+				_G["BuildHighlight"].Adornee = nil
+			end
+		end
+	end
+end)
+
+_G["BuildingFetchTypeBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
+	if not Process and Key.KeyCode == (Enum.KeyCode.KeypadThree) then 
+		if (BuildingFetchType == "Closest") then 
+			BuildingFetchType = "LeastHealth"
+		else
+			BuildingFetchType = "Closest"
+		end
+
+		print(`[INFO # BuildingFetchTypeBind]: "BuildingFetchType" is now equal to: {BuildingFetchType}`)
+	end
+end)
+
+_G["BlockBarrelBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
+	if not Process then 
+		if (Key.KeyCode == Enum.KeyCode.KeypadFour) then 
+			if not ReplicatedStorage:FindFirstChild("BlockBarrel") then
+                if not _G["_BlockBarrel"] then
+                    _G["_BlockBarrel"] = Instance.new("BoolValue")
+                    _G["_BlockBarrel"].Name = "BlockBarrel"
+                end
+
+                _G["_BlockBarrel"].Parent = ReplicatedStorage
+            elseif ReplicatedStorage:FindFirstChild("BlockBarrel") then 
+                _G["_BlockBarrel"].Parent = ReplicatedFirst
+            end
+
+            local Enabled = (_G["_BlockBarrel"].Parent == ReplicatedStorage) and "enabled" or "disabled"
+			print(`[INFO # BlockBarrelBind]: Barrel blocking is now {Enabled}.`)
 		end
 	end
 end)
