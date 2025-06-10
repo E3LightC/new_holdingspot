@@ -375,6 +375,18 @@ local MusicSelections = {
 	["Y"] = "Kolonni Idushej Ataku";
 	["T"] = "Marsh Preobrazhenskogo polka";
 }
+local Binds = {
+	["ShoveEquipper_Bind"] = Enum.KeyCode.G;
+	["ShoveBind_Bind"] = Enum.KeyCode.Q;
+	
+	["MurderBind_BindOne"] = Enum.KeyCode.Z;
+	["MurderBind_BindTwo"] = Enum.KeyCode.X;
+	
+	["GrabLogBind_Bind"] = Enum.KeyCode.KeypadOne;
+	["BuildingBind_Bind"] = Enum.KeyCode.KeypadTwo;
+	["BuildingFetchTypeBind_Bind"] = Enum.KeyCode.KeypadThree;
+	["BlockBarrelBind_Bind"] = Enum.KeyCode.KeypadFour;
+}
 local ESPColors = {
 	["Igniter"] = Color3.fromRGB(255, 255, 0);
 	["Runner"] = Color3.fromRGB(0, 255, 255);
@@ -1477,7 +1489,7 @@ end)
 
 _G["ShoveEquipper"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then
-		if (Key.KeyCode == Enum.KeyCode.G) and LocalPlayer.Character then
+		if (Key.KeyCode == Binds["ShoveEquipper_Bind"]) and LocalPlayer.Character then
 			local Character:Model = LocalPlayer.Character
 			Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
 
@@ -1495,7 +1507,7 @@ end)
 
 _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
-		if (Key.KeyCode == Enum.KeyCode.Q) then 
+		if (Key.KeyCode == Binds["ShoveBind_Bind"]) then 
 			if LocalPlayer.Character and LocalPlayer.Character.Parent then
 				local Character = LocalPlayer.Character
 				local HRP = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
@@ -1557,13 +1569,10 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 						IterateWithFunction(AgentsInRange, function(Key, Agent)
 							if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
-								local StunParameters:{[number]:any} = {
-									[1] = "FeedbackStun";
-									[2] = Agent;
-									[3] = Agent.PrimaryPart and Agent.PrimaryPart.Position or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
-								}
-
-								Remote:FireServer(unpack(StunParameters))
+								Remote:FireServer("FeedbackStun", 
+									Agent,
+									(Agent.PrimaryPart and Agent.PrimaryPart.Position or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position)
+								)
 							end
 
 							task.wait()
@@ -1593,7 +1602,7 @@ end)
 
 _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
-		if (Key.KeyCode == Enum.KeyCode.Z) or (Key.KeyCode == Enum.KeyCode.X) then 
+		if (Key.KeyCode == Binds["MurderBind_BindOne"]) or (Key.KeyCode == Binds["MurderBind_BindTwo"]) then 
 			if LocalPlayer.Character and LocalPlayer.Character.Parent then
 				local List:{{}} = GetMeleeWeapon(false)
 
@@ -1628,17 +1637,14 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 								IterateWithFunction(AgentsInRange, function(Key:any, Agent:Model) 
 									if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
-										local HitParameters:{[number]:any} = {
-											[1] = "HitZombie";
-											[2] = Agent;
-											[3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
-											[4] = true;
-											[5] = (UseVectorLibrary and vector.create(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096))) or Vector3.new(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096));
-											[6] = (Agent:FindFirstChild("Head") and "Head") or "HumanoidRootPart";
-											[7] = (Agent.PrimaryPart and Agent.PrimaryPart.CFrame.LookVector * 5) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).CFrame.LookVector * 5;
-										}
-
-										WeaponRemote:FireServer(unpack(HitParameters))
+										WeaponRemote:FireServer("HitZombie",
+											Agent,
+											((Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position),
+											true,
+											(UseVectorLibrary and vector.create(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096))) or Vector3.new(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096)),
+											((Agent:FindFirstChild("Head") and "Head") or "HumanoidRootPart"),
+											((Agent.PrimaryPart and Agent.PrimaryPart.CFrame.LookVector * 5) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).CFrame.LookVector * 5)
+										)
 									end
 								end)
 							elseif (Weapon.Name == "Musket") or (Weapon.Name == "Rifle") then
@@ -1646,14 +1652,14 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 
 								for _, Agent in pairs(AgentsInRange) do 
 									if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
-										local HitParameters:{[number]:any} = {
-											[1] = "Bayonet_HitZombie";
-											[2] = Agent;
-											[3] = (Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position;
-											[4] = true;
-										}
-
-										WeaponRemote:FireServer(unpack(HitParameters))
+										WeaponRemote:FireServer("Bayonet_HitZombie",
+											Agent,
+											((Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position),
+											true,
+											(UseVectorLibrary and vector.create(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096))) or Vector3.new(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096)),
+											((Agent:FindFirstChild("Head") and "Head") or "HumanoidRootPart"),
+											((Agent.PrimaryPart and Agent.PrimaryPart.CFrame.LookVector * 5) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).CFrame.LookVector * 5)
+										)
 										break
 									end
 								end
@@ -1682,7 +1688,7 @@ end)
 
 _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
-		if (Key.KeyCode == Enum.KeyCode.KeypadOne) and LocalPlayer.Character then
+		if (Key.KeyCode == Binds["GrabLogBind_Bind"]) and LocalPlayer.Character then
 			local Character:Model = LocalPlayer.Character
 			local Berezina = Workspace:FindFirstChild("Berezina")
 
@@ -1757,7 +1763,7 @@ end)
 
 _G["BuildingBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
-		if (Key.KeyCode == Enum.KeyCode.KeypadTwo) then 
+		if (Key.KeyCode == Binds["BuildingBind_Bind"]) then 
 			BuildingBindEnabled	= not BuildingBindEnabled
 			print(`[INFO # BuildingBind]: "BuildingBindEnabled" is now equal to: {BuildingBindEnabled}`)
 
@@ -1769,7 +1775,7 @@ _G["BuildingBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 end)
 
 _G["BuildingFetchTypeBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
-	if not Process and Key.KeyCode == (Enum.KeyCode.KeypadThree) then 
+	if not Process and (Key.KeyCode == Binds["BuildingFetchTypeBind_Bind"]) then 
 		if (BuildingFetchType == "Closest") then 
 			BuildingFetchType = "LeastHealth"
 		else
@@ -1782,7 +1788,7 @@ end)
 
 _G["BlockBarrelBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
-		if (Key.KeyCode == Enum.KeyCode.KeypadFour) then 
+		if (Key.KeyCode == Binds["BlockBarrelBind_Bind"]) then 
 			if not ReplicatedStorage:FindFirstChild("BlockBarrel") then
                 if not _G["_BlockBarrel"] then
                     _G["_BlockBarrel"] = Instance.new("BoolValue")
@@ -1877,8 +1883,7 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 				else
 					if (Parameters[1] ~= nil) then 
 						if (Parameters[1] == "UpdateAccuracy") then 
-							Parameters[2] = 100
-							Remote["FireServer"](Remote, unpack(Parameters))
+							Remote["FireServer"](Remote, "UpdateAccuracy", 100)
 
 							return nil
 						elseif (Parameters[1] == "HitZombie") or (Parameters[1] == "Bayonet_HitZombie") then 
@@ -1941,7 +1946,7 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 									else
 										Parameters[2] = "Over"
 									end
-									Remote["FireServer"](Remote, unpack(Parameters))
+									Remote["FireServer"](Remote, Parameters[1], Parameters[2])
 
 									return nil
 								end
