@@ -492,6 +492,39 @@ getgenv()["BuildHighlight"].Parent = ReplicatedFirst
 getgenv()["BuildHighlight"].FillTransparency = 0.5
 getgenv()["BuildHighlight"].Enabled = true
 
+--[=[
+    Description:
+    Retrieves a `Highlight` instance from the reuse pool, or creates a new one if allowed.
+    Enforces a maximum limit (`MAX_HIGHLIGHTS`) to prevent excessive instance creation.
+    If the limit is reached and no pooled highlights are available, the oldest active highlight is recycled.
+
+    Returns:
+    - `Highlight`: A `Highlight` instance, either reused, newly created, or recycled.
+
+    Features:
+    - **Object Pooling**:
+        - Prioritizes reuse from `HighlightPool` to minimize instance creation overhead.
+    - **Instance Cap**:
+        - Respects `MAX_HIGHLIGHTS` to avoid unbounded memory usage.
+    - **Automatic Recycling**:
+        - When the cap is reached, it recycles the oldest active highlight by clearing its `Adornee`.
+
+    Notes:
+    - Recycled highlights have their `Adornee` property cleared to prepare for reuse.
+    - The function does not parent or configure the returned `Highlight`—that must be handled externally.
+
+    Example Usage:
+    ```lua
+    local Highlight = GetHighlight()
+    Highlight.Adornee = SomePart
+    Highlight.FillColor = Color3.new(1, 0, 0)
+    Highlight.Parent = SomePart
+    ```
+
+    Edge Cases:
+    - If the pool is empty and the active list is at capacity, the first (oldest) highlight is always reused.
+    - `HighlightPool` and `ActiveHighlights` must be properly initialized externally for this function to work correctly.
+]=]
 local function GetHighlight()
     if (#HighlightPool > 0) then
         return table.remove(HighlightPool)
