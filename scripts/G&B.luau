@@ -524,6 +524,7 @@ getgenv()["BuildHighlight"].Enabled = true
     Edge Cases:
     - If the pool is empty and the active list is at capacity, the first (oldest) highlight is always reused.
     - `HighlightPool` and `ActiveHighlights` must be properly initialized externally for this function to work correctly.
+
 ]=]
 local function GetHighlight()
     if (#HighlightPool > 0) then
@@ -543,48 +544,55 @@ end
 
 --[=[
     Description:
-    Applies an ESP (Extra Sensory Perception) highlight effect to a given character model, allowing enemy types to be visually identified 
-    through colored overlays and optional head recoloring.
+    Applies a visual ESP (Extra Sensory Perception) highlight effect to a zombie `Character` model based on its type (e.g., Igniter, Runner, etc.). 
+    Uses a pooled `Highlight` system for performance, avoids re-highlighting already tagged characters, and supports cleanup when the character is removed.
 
     Parameters:
-    - `Character: Model`: The character model to highlight. Must be a valid `Model` instance.
-    - `Head: BasePart?`: (Optional) The character's head part. If valid, its color is updated to match the assigned type.
-    - `IsIgniter: boolean?`: If true, classifies the character as an "Igniter."
-    - `IsRunner: boolean?`: If true, classifies the character as a "Runner."
-    - `IsSapper: boolean?`: If true, classifies the character as a "Sapper."
-    - `IsBomber: boolean?`: If true, classifies the character as a "Bomber."
-    - `IsHeadless: boolean?`: If true, classifies the character as "Headless."
-    - `IsCuirassier: boolean?`: If true, classifies the character as a "Cuirassier."
+    - `Character: Model`: The zombie model to which the highlight effect should be applied.
+    - `Head: BasePart?` (optional): The character's head part; if provided, it is recolored to match the ESP highlight.
+    - `IsIgniter: boolean?` (optional): Whether the character is of type "Igniter".
+    - `IsRunner: boolean?` (optional): Whether the character is of type "Runner".
+    - `IsSapper: boolean?` (optional): Whether the character is of type "Sapper".
+    - `IsBomber: boolean?` (optional): Whether the character is of type "Bomber".
+    - `IsHeadless: boolean?` (optional): Whether the character is of type "Headless".
+    - `IsCuirassier: boolean?` (optional): Whether the character is of type "Cuirassier".
 
     Returns:
-    - None (modifies the `Character` in-place).
+    - `nil`: This function does not return a value. It handles all behavior internally.
 
-    Behavior:
-    - Validates that `Character` is a `Model` and not already highlighted (tagged `"Highlighted_"`).
-    - Determines the character’s type based on the first truthy flag in this priority order:
-        `Igniter > Runner > Sapper > Bomber > Headless > Cuirassier`.
-    - If a valid type is resolved, applies a `Highlight` instance using the corresponding color from `ESPColors`.
-    - Sets the highlight to always render on top, with 50% fill transparency.
-    - Optionally changes the `Head` part's color if it exists and is valid.
+    Features:
+    - **Zombie Type Recognition**:
+        - Determines zombie type based on provided boolean flags, defaulting to `"None"` if no type is matched.
+    - **Highlight Pooling**:
+        - Reuses highlights from a pool to optimize performance and prevent exceeding Roblox's instance limits.
+    - **Safe Highlight Application**:
+        - Applies `Highlight` only if the model is valid and not already tagged.
+        - Uses `DepthMode = AlwaysOnTop` for better visibility.
+    - **Auto Cleanup**:
+        - Listens for the character's removal (`AncestryChanged`) to recycle the highlight instance back into the pool.
+    - **Optional Head Color Sync**:
+        - If a valid `Head` is given, it is recolored to match the ESP type.
+
+    Notes:
+    - Requires `HighlightPool`, `ESPColors`, and `ReplicatedFirst` to be defined externally.
+    - Tag `"Highlighted_"` is used to prevent reapplying highlights to the same character.
+    - If no available highlight exists, the function waits and retries after a delay using `task.delay`.
 
     Example Usage:
     ```lua
-    local characterModel = workspace.EnemyNPC
-    local headPart = characterModel:FindFirstChild("Head")
-
-    AddEsp(characterModel, headPart, nil, true)
-    --// Applies "Runner" highlight and recolors the head (if provided)
+    for _, Zombie in ipairs(Zombies:GetChildren()) do
+        if Zombie:IsA("Model") then
+            local Head = Zombie:FindFirstChild("Head")
+            AddEsp(Zombie, Head, true) --// Treat as an Igniter
+        end
+    end
     ```
 
-    Notes:
-    - Based on the first matching flag, only one type will be assigned.
-    - The `"Highlighted_"` tag prevents reapplying the effect multiple times.
-    - `ESPColors` must define a color mapping for each supported type.
-
     Edge Cases:
-    - The function exits immediately if `Character` is not a valid `Model`.
-    - If no type flags are truthy, no highlight is applied.
-    - If `Head` is not a valid `BasePart`, its color remains unchanged.
+    - Logs an error and aborts if `Character` is not a valid `Model`.
+    - Skips re-highlighting if the character already has the `Highlighted_` tag.
+    - Retries automatically if no highlights are currently available from the pool.
+
 ]=]
 local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean?, IsRunner:boolean?, IsSapper:boolean?, IsBomber:boolean?, IsHeadless:boolean?, IsCuirassier:boolean?)
 	if (typeof(Character) ~= "Instance") or not Character:IsA("Model") then
@@ -642,49 +650,42 @@ end
 
 --[=[
     Description:
-    Creates and starts a coroutine that continuously fires a specified `RemoteEvent` to simulate an "accuracy beat."
-    This function is typically used to send periodic accuracy updates to the server.
+    Starts a coroutine that repeatedly fires a RemoteEvent to simulate an "accuracy beat" mechanic, likely used to maintain perfect accuracy or trick server-side systems. 
+    This loop operates at a regular interval defined by `BeatWaitTime`, defaulting to a preset if the value is invalid or omitted.
 
     Parameters:
-    - `RemoteEventToUse: RemoteEvent`: The remote event instance that will be fired.
-    - `BeatWaitTime: number?` (optional): The delay (in seconds) between each accuracy update. 
-      - If `BeatWaitTime` is invalid, the function assigns a default value.
-      - If `BeatWaitTime` is not provided, it falls back to `DefaultBeatWaitTime`.
-      - If `BeatWaitTime` is less than or equal to `0` or greater than `5`, it defaults to `0.15` seconds.
+    - `RemoteEventToUse: RemoteEvent`: The `RemoteEvent` that will be fired to the server with the "UpdateAccuracy" signal.
+    - `BeatWaitTime: number?` (optional): Time (in seconds) between each accuracy update. If omitted or invalid, defaults to `0.15`.
 
     Returns:
-    - `thread`: The coroutine responsible for continuously firing the remote event.
+    - `thread`: The coroutine object representing the running loop. If input is invalid, returns an inert coroutine.
 
     Features:
-    - Validates that `RemoteEventToUse` is a proper `RemoteEvent` instance before proceeding.
-    - Ensures `BeatWaitTime` is within an acceptable range to prevent unreasonable wait times.
-    - Uses coroutines to maintain efficiency and avoid blocking the main thread.
-    - Implements debug logging to track time since the last beat when debugging is enabled.
-    - Fires the remote event with `"UpdateAccuracy"` and a fixed value of `100` at each interval.
+    - **Validation and Fallbacks**:
+        - Verifies that `RemoteEventToUse` is a valid `RemoteEvent` instance.
+        - Uses a fallback `BeatWaitTime` (default 0.15s) if not provided or invalid.
+    - **Accuracy Looping**:
+        - Continuously sends an `"UpdateAccuracy"` signal with a value of `100` to the server.
+        - Interval controlled via `BeatWaitTime`.
+    - **Debug Mode**:
+        - If `Debug` is enabled, logs the time between beats (`TimeSinceLastBeat`) using `os.clock()`.
+        - Uses `LastBeatTick` and `DebugPrints` for internal debug output tracking.
+    - **Safe Thread Creation**:
+        - Gracefully handles invalid input by returning a do-nothing coroutine.
+        - Coroutine is started immediately after creation with `coroutine.resume`.
 
     Notes:
-    - If `RemoteEventToUse` is invalid, the function returns an empty coroutine.
-    - The coroutine runs indefinitely unless manually stopped.
-    - Debug mode tracks the time since the last accuracy update and logs it if `DebugPrints` is enabled.
+    - Intended to be used in client-side scripts where regular accuracy updates are expected or required.
+    - Will silently fail if `RemoteEventToUse` is invalid, but still return a coroutine to avoid runtime errors.
 
     Example Usage:
     ```lua
-	local AccuracyEvent = game.ReplicatedStorage:WaitForChild("AccuracyEvent")
-	local FakeAccuracyThread = SetupFakeAccuracyBeat(AccuracyEvent, 0.2)
-	
-	--// Stop the coroutine after a 5-second delay
-	task.delay(5, function()
-	    if (coroutine.status(FakeAccuracyThread) == "suspended") then
-	        coroutine.close(FakeAccuracyThread)
-	        print("Fake accuracy beat coroutine stopped after 5 seconds.")
-	    end
-	end)
+    local AccuracyBeatThread = SetupFakeAccuracyBeat(RemoteEvent, 0.2)
     ```
 
     Edge Cases:
-    - If `RemoteEventToUse` is not a valid `RemoteEvent`, the function warns and returns an empty coroutine.
-    - If `BeatWaitTime` is out of range, it defaults to `0.15` to ensure smooth operation.
-    - Ensures that if `LastBeatTick` is `0`, it initializes before calculating the time since the last beat.
+    - If `RemoteEventToUse` is not a `RemoteEvent`, logs an error and returns an empty coroutine.
+    - If `BeatWaitTime` is not a number, NaN, ≤ 0, or ≥ 5, the default of `0.15` is used.
 
 ]=]
 local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:number?):(thread)
@@ -728,51 +729,71 @@ end
 
 --[=[
     Description:
-    Retrieves a melee weapon from the player's character or backpack, returning the weapon tool and its associated RemoteEvent and limit range configuration attribute.
-    Supports an optional mode to list all available melee weapons instead of returning only the first found.
+    Attempts to find and return melee weapon tools associated with the local player’s character or backpack. 
+    It prioritizes a predefined list of preferred weapons (`PreferredWeapon`), then scans the character and backpack for tools classified as melee weapons or certain ranged tools by name.
+    Can return either the first found melee weapon’s details or a list of all melee weapons based on the `ListTools` flag.
 
     Parameters:
-    - `ListTools: boolean?` (optional): If `true`, returns a list of all melee weapons found instead of a single tool. Defaults to `false`.
+    - `ListTools: boolean?` (optional): 
+        - If `true`, the function returns a list of all melee weapons found.
+        - If `false` or omitted, returns only the first suitable melee weapon found.
 
     Returns:
-    - If `ListTools` is `false` or `nil`:
-        - `Tool: Tool?` - The first melee weapon found.
-        - `RemoteEvent: RemoteEvent?` - The weapon's RemoteEvent (if available).
-        - `LimitRange: any?` - The weapon's limit range attribute (if available).
+    - If `ListTools` is `false` or omitted:
+        - `table?`: A single-element array containing `{Tool, RemoteEvent, LimitRange}` for the first matching melee weapon found, or `nil` if none found.
     - If `ListTools` is `true`:
-        - `List: table` - A list of melee weapons, each containing `{Tool, RemoteEvent, LimitRange}`.
+        - `table`: A list of tables, each containing `{Tool, RemoteEvent, LimitRange}` for every matching melee weapon found.
+    - Returns `nil` if the player’s character or required instances are missing.
 
     Features:
-    - Searches for the `PreferredWeapon` in the player's character first.
-    - Looks for melee weapons by checking for the `"MeleeBase"` child.
-    - Also considers `"Musket"` and `"Shovel"` as valid melee weapons.
-    - Prioritizes equipped tools (in the character) before searching in the backpack.
-    - Ensures that the player's character exists before attempting to retrieve a weapon.
-    - Prevents errors by verifying that tools have valid parents before accessing their attributes.
+    - **Prioritized Weapon Selection**: Checks a preferred weapon list first before scanning character and backpack.
+    - **Flexible Output**: Supports returning either a single weapon or a comprehensive list.
+    - **Robust Validation**: Validates existence and parenting of the player’s character before proceeding.
+    - **Attribute Extraction**: Retrieves important weapon attributes like `LimitRange` from tool configuration.
+    - **Supports Melee and Select Ranged Tools**: Identifies melee weapons by internal markers and includes specific ranged tools by name.
+    - **Graceful Failure Handling**: Provides client subtitle warnings and debug logging if character is invalid.
+
+    Details:
+    - Checks if the local player’s character exists and is properly parented.
+    - Searches weapons in the following order:
+        1. Preferred weapons by name in the character.
+        2. Any melee tool (identified by presence of "MeleeBase" scro[t]) in the character.
+        3. Certain named weapons ("Musket", "Shovel", "Rifle") in the character.
+        4. Same as (2) and (3), but in the player’s Backpack.
+    - For each found tool, returns:
+        - The `Tool` instance.
+        - The first `RemoteEvent` child of the tool.
+        - The "LimitRange" attribute from the tool’s "Configuration" child, if it exists.
+    - If no weapons are found, returns `nil` or an empty list based on `ListTools`.
+    - Fires client subtitles and warns if the character is missing or invalid.
 
     Notes:
-    - If no melee weapon is found, returns `nil` (or an empty list if `ListTools` is `true`).
-    - If multiple melee weapons exist and `ListTools` is `false`, the function returns only the first match.
-    - If the function fails to find the player's character, a warning is logged, and execution stops.
+    - Designed for use in Roblox where melee weapons are `Tool` instances with specific internal structure.
+    - `PreferredWeapon` is expected to be a list of tool names (strings) prioritized for selection.
+    - Uses `WaitForChildWhichIsA` to safely get the backpack if it’s not immediately available.
+    - Returns early when not listing all tools for efficiency.
 
     Example Usage:
     ```lua
-    local Weapon, Remote, LimitRange = GetMeleeWeapon()
-    if Weapon then
-        print(`Equipped Melee Weapon: {Weapon.Name}`)
+    -- Get first melee weapon
+    local WeaponData = GetMeleeWeapon()
+    if WeaponData then
+        local Tool, RemoteEvent, LimitRange = unpack(WeaponData[1])
+        print("Found weapon:", Tool.Name)
     end
 
-    local AvailableWeapons = GetMeleeWeapon(true)
-    for _, Data in pairs(AvailableWeapons) do
-        print(`Available Melee Weapon: {Data[1].Name}`)
+    -- Get list of all melee weapons
+    local AllWeapons = GetMeleeWeapon(true)
+    for _, WeaponInfo in ipairs(AllWeapons) do
+        local Tool = WeaponInfo[1]
+        print("Weapon:", Tool.Name)
     end
     ```
 
     Edge Cases:
-    - If `Character` is `nil`, the function logs a warning and exits early.
-    - If `Character.Parent` is `nil`, a warning is logged, and execution stops.
-    - If `ListTools` is `true`, but no melee weapons are found, an empty table is returned instead of `nil`.
-
+    - If the local player’s character is `nil` or unparented, warns and returns `nil`.
+    - If no melee weapons are found and `ListTools` is `false`, returns `nil`.
+    - If `ListTools` is `true` but no weapons found, returns an empty list.
 ]=]
 local function GetMeleeWeapon(ListTools:boolean?):(...any)
 	local Character = LocalPlayer.Character
@@ -857,57 +878,62 @@ end
 
 --[=[
     Description:
-    Retrieves nearby agents from the "Zombies" and "Bots" folders that fall within a specified 2D range of a target position 
-    or the player’s character. Agents with a "Type" attribute marked as `true` in the `AgentTypeList` are excluded from the results. 
-    The distance is calculated on a horizontal plane (the Y-axis is ignored).
+    Retrieves a list of agent models (Zombies and Bots) within a specified horizontal range from a given position or the local player's character position.
+    Agents are filtered based on their "Type" attribute using an ignore list (`AgentTypeList`), and only agents without active ForceFields are considered.
+    The function handles validation of input parameters and the local player’s character, and gracefully returns an empty list with warnings on errors.
 
     Parameters:
-    - `Position` (Vector3 | boolean | nil): If a Vector3 is provided, it will be used as the center of the range check. 
-      If false or nil is passed, the function will attempt to use the LocalPlayer’s character position instead.
-    - `Range` (number): The detection radius in studs. Negative values are made positive. Values of 0 or invalid types default to 4.
+    - `Position: Vector3?` (optional):
+        - The world position to check range from.
+        - If `nil` or invalid, defaults to the local player's HumanoidRootPart or PrimaryPart position.
+    - `Range: number`:
+        - The radius within which agents are considered "in range".
+        - If invalid or zero, defaults to 4.
+        - Negative values are converted to positive.
 
     Returns:
-    - `{[number]: any}`: A table containing valid agent models that were found within the specified range. Returns an empty table 
-      if none are found or if validation fails.
+    - `{[number]: Model}`: A list of agent models (instances of type "Model") found within the given range.
+      - If no agents found or errors occur, returns an empty list.
+      - May include `false` entries where invalid agents are encountered (possibly for debugging).
 
-    Behavior:
-    - Validates the `Range` input and applies a fallback value of 4 for edge cases (e.g., 0, NaN, non-number).
-    - Determines whether to use a given position or fall back to the player’s character.
-    - Warns in the output console if the player character or its root part is unavailable.
-    - Iterates through the "Zombies" and "Bots" folders to find matching agents:
-        - Agents must be valid models, have a parent, and must not have a `ForceField` instance.
-        - The agent’s type must either not exist in `AgentTypeList` or be explicitly marked as `false`.
-        - Agents with unknown or unlisted "Type" attributes are included by default.
-    - Calculates agent distance in a 2D plane (XZ only) and includes them if within range.
-    - Adds `false` into the results table in case of failed agent validation, as a fallback behavior.
+    Features:
+    - **Flexible Positioning**: Accepts an explicit position or uses the local player’s character position if none given.
+    - **Horizontal Distance Calculation**: Computes distance ignoring vertical differences (Y-axis), focusing on XZ-plane.
+    - **Agent Type Filtering**: Uses `AgentTypeList` to optionally ignore certain agent types.
+    - **ForceField Check**: Excludes agents currently protected by a ForceField.
+    - **Supports Multiple Agent Sources**: Scans both `ZombiesFolder` and `BotsFolder` in the Workspace.
+    - **Vector Library Optimization**: Uses a custom vector library for distance calculations if enabled, falling back to `Vector3` otherwise.
+    - **Robust Error Handling**: Provides client subtitles and debug warnings for invalid parameters or missing character data.
 
-    Notes:
-    - Uses either Lua's global `vector` library or the standard `Vector3` class, depending on the `UseVectorLibrary` flag.
-    - Useful for enemy detection, NPC proximity checks, or environmental interaction logic based on spatial queries.
-    - Logs formatted failure messages to the Developer Console to assist with debugging.
+    Details:
+    - Validates `Range` parameter; defaults and sanitizes as needed.
+    - Determines search position from provided `Position` or player's HumanoidRootPart/PrimaryPart.
+    - Iterates through children of `ZombiesFolder` and `BotsFolder`:
+        - Checks instance type, parenting, and ForceField presence.
+        - Retrieves agent's primary part or HumanoidRootPart.
+        - Checks agent's "Type" attribute against `AgentTypeList` to decide inclusion.
+        - Calculates horizontal distance ignoring Y-axis.
+        - Adds agent to result list if within range or type unknown.
+    - Returns a table containing all qualifying agent models.
 
-    Use Cases:
-    - Identifying enemies or bots near the player or a specific point in the game world.
-    - Filtering entities based on customizable type exclusions via `AgentTypeList`.
-    - Supporting dynamic proximity-based interactions in PvE or PvP systems.
-
-    Example Usage:
+    Usage Example:
     ```lua
-    --// Find all agents within 10 studs of the player
-    local NearbyAgents = GetAgentsInRange(false, 10)
-
-    --// Find all agents near a specific world position
-    local Origin = Vector3.new(50, 0, -25)
-    local AgentsNearPoint = GetAgentsInRange(origin, 12)
-
-    --// Iterate and do something with each agent
-    for _, Agent in ipairs(NearbyAgents) do
-        if Agent and Agent:IsA("Model") then
-            print(`Found nearby agent: {Agent.Name}`)
-        end
+    local AgentsNearPlayer = GetAgentsInRange(nil, 10)
+    for _, Agent in ipairs(AgentsNearPlayer) do
+        print("Agent nearby:", agent.Name)
     end
+
+    local SpecificPosition = Vector3.new(100, 0, 50)
+    local AgentsNearPoint = GetAgentsInRange(SpecificPosition, 5)
+    print(#AgentsNearPoint, "agents found near point.")
     ```
 
+    Notes:
+    - `ZombiesFolder` and `BotsFolder` are assumed to be folders in the Workspace containing agent models.
+    - `AgentTypeList` is a table mapping agent types (string) to booleans indicating whether to ignore them (`true` to ignore).
+    - `ClientSubtitles` and `GenerateText` are used for user feedback on errors.
+    - The function can return `false` in the results list where invalid or filtered agents are found; this may be intentional for debugging or could be filtered out as needed.
+	
 ]=]
 local function GetAgentsInRange(Position:(Vector3|nil?), Range:number):{[number]:any}
 	local AgentsInRange:{[number]:any} = {}
@@ -1023,51 +1049,51 @@ end
 
 --[=[
     Description:
-    This function iterates over a table, applying a specified function to each key-value pair. It supports both 
-    synchronous and asynchronous execution, determined by the `Instant` parameter. The function ensures proper 
-    validation of inputs and provides warnings for invalid parameters.
+    Iterates over all key-value pairs in a given table and applies a provided function to each pair.
+    The iteration can be performed either instantly by spawning new tasks for each call (asynchronous),
+    or sequentially (synchronously), based on the optional `Instant` parameter.
 
     Parameters:
-    - `Table` (table): A table containing key-value pairs to be iterated over.
-    - `Function` (function): A callback function executed for each key-value pair. It receives two arguments: 
-      the key and the value.
-    - `Instant` (boolean?): Optional. If `true` (default) or not provided, the function executes asynchronously 
-      using `task.spawn`. If `false`, the function executes synchronously.
-
-    Returns:
-    - void: This function does not return a value.
-
-    Example Usage:
-    ```lua
-    IterateWithFunction(
-        {
-            [1] = "Bob";
-            [2] = "Cheese";
-            ["StringIndex"] = 1;
-        },
-        function(Index, Value)
-            print("Index: " .. tostring(Index) .. " | Value: " .. tostring(Value))
-        end;
-        true
-    )
-    ```
-    - Asynchronous execution with `Instant` set to `true` or default.
-    - Synchronous execution with `Instant` explicitly set to `false`.
+    - `Table: {[any]: any}`:
+        - The table to iterate over.
+        - Must be a valid Lua table, otherwise the function warns and returns early.
+    - `Function: function`:
+        - The function to call for each key-value pair.
+        - The function is invoked with two arguments: the key and the value.
+        - Must be a valid function, otherwise the function warns and returns early.
+    - `Instant: boolean?` (optional):
+        - Defaults to `true`.
+        - If `true`, each call to `Function` is spawned as a separate task asynchronously using `task.spawn`.
+        - If `false`, the function is called synchronously for each pair, blocking until each call completes.
 
     Behavior:
-    - Validates the `Table` and `Function` parameters:
-        - Logs a warning and terminates if `Table` is not a table or is `nil`.
-        - Logs a warning and terminates if `Function` is not a function or is `nil`.
-    - Determines execution mode based on the `Instant` parameter:
-        - If `Instant` is `true`, this function applies the sent function asynchronously using `task.spawn`.
-        - If `Instant` is `false`, this function applies the function synchronously.
-    - Iterates over all key-value pairs in the table, calling the specified function for each pair.
-    - Provides default asynchronous behavior if `Instant` is not specified.
+    - Validates inputs and reports issues with client subtitles and console warnings.
+    - If `Instant` is `true`, uses `task.spawn` to run each function call concurrently, which can improve performance for independent operations.
+    - If `Instant` is `false`, runs the function calls one-by-one in the main thread.
+
+    Returns:
+    - None (returns `nil` explicitly).
+
+    Usage Example:
+    ```lua
+    local SampleTable = {a = 1, b = 2, c = 3}
+    
+    -- Synchronous iteration
+    IterateWithFunction(SampleTable, function(key, value)
+        print(key, value)
+    end, false)
+    
+    -- Asynchronous iteration
+    IterateWithFunction(SampleTable, function(key, value)
+        print(key, value)
+    end) --// Instant defaults to true
+    ```
 
     Notes:
-    - This function is useful for scenarios requiring flexible execution modes (e.g., UI updates vs. heavy computations).
-    - Asynchronous mode can improve performance for computationally intensive or delayed tasks.
- 
+    - This function can be useful for running operations on many items concurrently to improve responsiveness.
+    - Be cautious with side-effects or shared state when using asynchronous iteration.
+    - Input validation helps prevent silent failures and aids debugging.
+
 ]=]
 local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(...) end), Instant:boolean?)
 	if (type(Instant) ~= "boolean") then
@@ -1117,45 +1143,41 @@ end
 
 --[=[
     Description:
-    This function identifies the building belonging to the local player that has the lowest relative health. It calculates 
-    the ratio of `CurrentHealth` to `MaxHealth` for each building and returns the "BuildingHealth" `NumberValue` instance 
-    corresponding to the building with the lowest ratio. If no buildings are found, it returns `false`.
+    Retrieves the building with the lowest health percentage owned by the local player.
+
+    How it works:
+    - Finds the folder corresponding to the local player's buildings inside the global `BuildingsFolder`.
+    - Collects all descendant `NumberValue` instances named "BuildingHealth" within that folder.
+    - Sorts these health values based on their current health percentage relative to their maximum health.
+      - Maximum health is read from the attribute `"MaxHealth"` on each `NumberValue`. If absent, uses the current value as max health.
+    - Returns the `NumberValue` instance representing the building with the least health percentage.
+    - If no buildings are found, or no valid health values exist, returns `false`.
 
     Parameters:
-    - None
+    - None (relies on global/local variables such as `LocalPlayer` and `BuildingsFolder`).
 
     Returns:
-    - `Instance: NumberValue`: The "BuildingHealth" instance with the lowest relative health.
-    - `false`: If no valid buildings are found.
+    - The `NumberValue` instance of the building health with the lowest health ratio, or
+    - `false` if no valid building health is found or an error occurs.
 
-    Notes:
-    - Health is calculated as `CurrentHealth / MaxHealth`, where `MaxHealth` is an attribute of the "BuildingHealth" instance.
-    - The function logs warnings for missing or invalid data during execution.
+    Error Handling:
+    - Warns and fires a client subtitle message if the buildings folder for the player is missing.
+    - Warns and fires a client subtitle if no valid "BuildingHealth" NumberValue is found after sorting.
+    - Warns if no buildings are found under the player's folder.
 
-    Behavior:
-    - Locates the folder containing the local player's buildings within the `BuildingsFolder`.
-    - Iterates through all descendants of the folder, identifying instances named "BuildingHealth" that is of type `NumberValue`.
-    - Compiles all valid "BuildingHealth" instances into a table.
-    - Sorts the table in ascending order based on the relative health (`CurrentHealth / MaxHealth`) of each building.
-    - Returns the first instance (lowest relative health) from the sorted table.
-    - Logs warnings if:
-        - No buildings are found for the player.
-        - "BuildingHealth" instances are missing or invalid.
-
-    Example Usage:
+    Usage:
     ```lua
-    local WeakestBuilding = GetBuildingWithLeastHealth()
-    if WeakestBuilding then
-        print("The building with the lowest relative health is: ", WeakestBuilding)
+    local LowestHealthBuilding = GetBuildingWithLeastHealth()
+    if LowestHealthBuilding then
+        print("Lowest health building found:", LowestHealthBuilding:GetFullName())
     else
-        print("No valid buildings were found.")
+        print("No building found or error occurred.")
     end
     ```
 
-    Use Cases:
-    - Real-time monitoring and repair systems for player-owned buildings.
-    - Identifying weak points in a player's structure during gameplay.
-    - Strategically prioritizing building maintenance or defense based on health status.
+    Notes:
+    - Assumes `BuildingsFolder` is a global or previously defined folder containing player buildings grouped by UserId.
+    - Assumes `ClientSubtitles` and `GenerateText` are available for client-side notifications.
 
 ]=]
 local function GetBuildingWithLeastHealth():(any)
@@ -1200,47 +1222,48 @@ local function GetBuildingWithLeastHealth():(any)
 end
 
 --[=[
-    Description: 
-    Identifies the closest player-made building to the local player's character by calculating the distance between the character and each building's "Bound" part. Returns the "BuildingHealth" instance of the closest building unless it is already at maximum health. If no valid building is found, or all are at maximum health, returns `false`. Returns `nil` if the local player has no buildings.
+    Description:
+    Finds and returns the `BuildingHealth` NumberValue of the closest building to the local player's character,
+    but only if that building is not already at full health.
 
-    Parameters: 
-    - None
+    How it works:
+    - Checks if the local player's character exists and is properly parented.
+    - Retrieves all descendant parts named "Bound" from the local player's buildings folder inside `BuildingsFolder`.
+    - Sorts these parts based on their distance from the player using `DistanceFromCharacter()`.
+      - Supports optional optimization via the `UseVectorLibrary` flag.
+    - Checks the `BuildingHealth` NumberValue under the closest building:
+      - If the building's current health is **below** its `MaxHealth` (or the current health if the attribute is missing), it returns the `BuildingHealth` value.
+      - If the building is at full health, returns `false`.
 
-    Returns: 
-    - `Instance: NumberValue`: The "BuildingHealth" instance of the closest building.
-    - `false`: If the closest building is at maximum health or no valid building is found.
-    - `nil`: If the local player has no buildings.
+    Parameters:
+    - None (relies on global variables: `LocalPlayer`, `BuildingsFolder`, `UseVectorLibrary`, `ClientSubtitles`, `GenerateText`).
 
-    Notes:
-    - The function checks that the local player's character exists and is properly parented.
-    - Each building is represented by a Bound part, which is a BasePart instance located inside the player’s building folder within the BuildingsFolder.
-    - The closest building is determined using the `DistanceFromCharacter` method, ensuring accurate distance measurements relative to the local player.
-    - The "BuildingHealth" instance is checked against its `MaxHealth` attribute to exclude buildings already at full health.
+    Returns:
+    - The `NumberValue` instance named `BuildingHealth` of the nearest building that is not at full health.
+    - `false` if:
+        - No valid buildings exist,
+        - All buildings are at full health,
+        - Any error occurs during the lookup or health evaluation.
 
-    Behavior:
-    - Locates the folder containing the local player's buildings in the `BuildingsFolder`.
-    - Iterates through the folder to find all "Bound" parts associated with buildings.
-    - Sorts the buildings by distance from the local player's character.
-    - Retrieves the "BuildingHealth" instance of the closest building and checks its health.
-    - Returns the "BuildingHealth" instance if the building's health is less than its maximum value.
-    - Logs warnings if no valid buildings are found or the closest building has invalid data.
+    Error Handling:
+    - Early return if the local player does not have a valid character.
+    - Warns and fires a subtitle if the closest building can't be determined or is missing.
+    - Warns if no building "Bound" parts were found for the local player.
 
-    Example Usage:
+    Usage:
     ```lua
-    local ClosestBuilding = GetClosestBuilding()
-    if ClosestBuilding then
-        print("The closest building is: ", ClosestBuilding)
-    elseif not ClosestBuilding then
-        print("The closest building is already at maximum health or invalid.")
+    local NearestBuildingHealth = GetClosestBuilding()
+    if NearestBuildingHealth then
+        print("Closest damaged building health:", NearestBuildingHealth.Value)
     else
-        print("No buildings found for the player.")
+        print("No nearby damaged buildings found.")
     end
     ```
 
-    Use Cases:
-    - Identifying the nearest building for repair or defense during gameplay.
-    - Monitoring player-owned structures based on proximity for strategic purposes.
-    - Facilitating dynamic interactions with player-made structures in multiplayer games.
+    Notes:
+    - A "Bound" part is assumed to be a unique marker under each building model used for proximity checks.
+    - The `BuildingHealth` NumberValue must be a direct child of the building model for this function to succeed.
+    - Health check uses `(Value >= MaxHealth)` logic to determine if a building should be ignored.
 
 ]=]
 local function GetClosestBuilding():any
@@ -1304,37 +1327,38 @@ end
 
 --[=[
     Description:
-    Counts the total number of valid indices in a specified table, including array-like and dictionary-like indices. 
-    If the input is invalid or `nil`, logs appropriate warnings and returns `0`.
+    Counts and returns the number of key-value pairs in the provided table, regardless of whether the keys are sequential indices.
+    This effectively returns the number of elements (entries) in the table.
+
+    How it works:
+    - Verifies that the input is a table.
+    - Iterates through all key-value pairs using `pairs()`.
+    - Increments a counter for each valid key found.
+    - Returns the final count.
 
     Parameters:
-    - `Table: {[any]: any}`: The table whose indexes are to be counted.
+    - `Table: {[any]: any}` — The table to evaluate.
 
     Returns:
-    - `number`: The total count of valid indexes with the `Table` parameter.
-    - `0`: If the input is `nil` or not of type `table`.
+    - `number`: Total number of entries in the table.
+      - Returns `0` if the input is `nil` or not a table.
 
-    Notes:
-    - Differentiates between valid and invalid inputs, ensuring reliable results.
-    - Treats all table indexes (numeric and non-numeric) as valid for counting.
-    - Provides helpful warnings for debugging when the input is `nil` or not a table.
+    Error Handling:
+    - If the input is `nil` or not a table:
+        - Fires a subtitle message using `ClientSubtitles` and `GenerateText`.
+        - Logs a warning with debug line info.
+        - Returns `0`.
 
-    Example Usage:
+    Usage Example:
     ```lua
-    local SampleTable = {1, 2, 3, ["Key"] = workspace}
-    local MaxIndex = GetMaxIndexOfTable(SampleTable)
-    print(`Total indexes: {MaxIndex}`)  --// Output: 4
+    local Data = { a = 1; b = 2; c = 3 }
+    local Count = GetMaxIndexOfTable(Data)
+    print("Total entries:", Count) --> Output: 3
     ```
 
-    Use Cases:
-    - Counting entries in a table regardless of its structure (sequential or non-sequential).
-    - Debugging scenarios involving `nil` or improperly formatted tables.
-    - Validating and inspecting table content in dynamic Lua scripts.
-
-    Edge Cases:
-    - If the `Table` parameter is `nil`, the function logs a warning and returns `0`.
-    - If the `Table` is not a table, logs a warning and returns `0`.
-    - Empty tables return a count of `0`.
+    Notes:
+    - This function is not limited to arrays or numerical indices; it supports any Lua table.
+    - The function name may imply array indexing (`#` operator), but it uses a custom count, making it more reliable for dictionaries.
 
 ]=]
 local function GetMaxIndexOfTable(Table:{[any]: any})
