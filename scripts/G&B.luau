@@ -187,7 +187,7 @@ end
     Description:
     Waits for a child of a specific class type (`ClassName`) under the given `Parent` instance.
     Optionally accepts a `Name` to match and a `TimeOut` duration to limit how long to wait.
-    Returns the found instance if successful, or `nil` if inputs are invalid or if the wait fails.
+    Returns the found instance if successful, or `nil` if the inputs are invalid or if the wait fails.
 
     Parameters:
     - `Parent: Instance`: The instance to search within.
@@ -893,12 +893,12 @@ end
 
     Returns:
     - `{[number]: Model}`: A list of agent models (instances of type "Model") found within the given range.
-      - If no agents found or errors occur, returns an empty list.
+      - If no agents are found or errors occur, it returns an empty list.
       - May include `false` entries where invalid agents are encountered (possibly for debugging).
 
     Features:
-    - **Flexible Positioning**: Accepts an explicit position or uses the local player’s character position if none given.
-    - **Horizontal Distance Calculation**: Computes distance ignoring vertical differences (Y-axis), focusing on XZ-plane.
+    - **Flexible Positioning**: Accepts an explicit position or uses the local player’s character position if none is given.
+    - **Horizontal Distance Calculation**: Computes distance ignoring vertical differences (Y-axis), focusing on the XZ-plane.
     - **Agent Type Filtering**: Uses `AgentTypeList` to optionally ignore certain agent types.
     - **ForceField Check**: Excludes agents currently protected by a ForceField.
     - **Supports Multiple Agent Sources**: Scans both `ZombiesFolder` and `BotsFolder` in the Workspace.
@@ -908,12 +908,12 @@ end
     Details:
     - Validates `Range` parameter; defaults and sanitizes as needed.
     - Determines search position from provided `Position` or player's HumanoidRootPart/PrimaryPart.
-    - Iterates through children of `ZombiesFolder` and `BotsFolder`:
+    - Iterates through the children of `ZombiesFolder` and `BotsFolder`:
         - Checks instance type, parenting, and ForceField presence.
-        - Retrieves agent's primary part or HumanoidRootPart.
+        - Retrieves the agent's primary part or HumanoidRootPart.
         - Checks agent's "Type" attribute against `AgentTypeList` to decide inclusion.
-        - Calculates horizontal distance ignoring Y-axis.
-        - Adds agent to result list if within range or type unknown.
+        - Calculates horizontal distance ignoring the Y-axis.
+        - Adds an agent to the result list if within range or is an unknown type.
     - Returns a table containing all qualifying agent models.
 
     Usage Example:
@@ -1056,11 +1056,11 @@ end
     Parameters:
     - `Table: {[any]: any}`:
         - The table to iterate over.
-        - Must be a valid Lua table, otherwise the function warns and returns early.
+        - Must be a valid Lua table; otherwise, the function warns and returns early.
     - `Function: function`:
         - The function to call for each key-value pair.
         - The function is invoked with two arguments: the key and the value.
-        - Must be a valid function, otherwise the function warns and returns early.
+        - The function must be valid; otherwise, it warns and returns early.
     - `Instant: boolean?` (optional):
         - Defaults to `true`.
         - If `true`, each call to `Function` is spawned as a separate task asynchronously using `task.spawn`.
@@ -1145,7 +1145,7 @@ end
     Description:
     Retrieves the building with the lowest health percentage owned by the local player.
 
-    How it works:
+    Behavior:
     - Finds the folder corresponding to the local player's buildings inside the global `BuildingsFolder`.
     - Collects all descendant `NumberValue` instances named "BuildingHealth" within that folder.
     - Sorts these health values based on their current health percentage relative to their maximum health.
@@ -1226,7 +1226,7 @@ end
     Finds and returns the `BuildingHealth` NumberValue of the closest building to the local player's character,
     but only if that building is not already at full health.
 
-    How it works:
+    Behavior:
     - Checks if the local player's character exists and is properly parented.
     - Retrieves all descendant parts named "Bound" from the local player's buildings folder inside `BuildingsFolder`.
     - Sorts these parts based on their distance from the player using `DistanceFromCharacter()`.
@@ -1330,7 +1330,7 @@ end
     Counts and returns the number of key-value pairs in the provided table, regardless of whether the keys are sequential indices.
     This effectively returns the number of elements (entries) in the table.
 
-    How it works:
+    Behavior:
     - Verifies that the input is a table.
     - Iterates through all key-value pairs using `pairs()`.
     - Increments a counter for each valid key found.
