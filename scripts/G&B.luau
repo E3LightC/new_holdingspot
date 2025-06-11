@@ -55,7 +55,7 @@
 --[/////////////////////////////////////////// CODE BELOW ////////////////////////////////////////////]--
 --[///////////////////////////////////////////////////////////////////////////////////////////////////]--
 
-local OldTick = tick()
+local OldTick = os.clock()
 
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
@@ -67,6 +67,9 @@ local UserInputService = game:GetService("UserInputService")
 local hookmetamethod = getfenv().hookmetamethod
 local getnamecallmethod = getfenv().getnamecallmethod
 local checkcaller = getfenv().checkcaller
+local getgenv = getfenv().getgenv or (function()
+	return _G
+end)
 
 local CanUseHookMetamethod:boolean = (type(hookmetamethod) == "function")
 local CanUseGetNameCallMethod:boolean = (type(getnamecallmethod) == "function")
@@ -78,6 +81,8 @@ elseif not CanUseGetNameCallMethod then
 elseif not CanUseGetCheckCaller then
     warn("[WARNING]: Your executor does not support 'checkcaller'. The script will still run, but the hooking functionality will not execute.")
 end
+local OldNameCall = nil
+local OldIndex = nil
 
 --// Types for silencing warnings.
 type VectorLibrary = { 
@@ -180,54 +185,64 @@ end
 
 --[=[
     Description:
-    Waits for a child of a specific class type (`ClassName`) to appear under the given parent (`Parent`) instance. The function continuously checks for the child and optionally accepts a timeout value to limit the wait duration. If no valid child is found, it returns `nil`. Provides detailed logging for invalid input and early termination scenarios.
+    Waits for a child of a specific class type (`ClassName`) under the given `Parent` instance.
+    Optionally accepts a `Name` to match and a `TimeOut` duration to limit how long to wait.
+    Returns the found instance if successful, or `nil` if inputs are invalid or if the wait fails.
 
     Parameters:
-    - `Parent: Instance`: The parent instance under which the child is expected to exist.
-    - `ClassName: string`: The class type of the child instance to wait for.
-    - `TimeOut: number?` (optional): The maximum number of seconds to wait for the child to appear. Defaults to indefinite waiting if not provided.
+    - `Parent: Instance`: The instance to search within.
+    - `ClassName: string`: The class name to search for (e.g., `"Model"`, `"RemoteEvent"`).
+    - `Name: string?` (optional): If provided, the instance must also match this name.
+    - `TimeOut: number?` (optional): If provided, the wait will be limited to this many seconds. If omitted, waits indefinitely.
 
     Returns:
-    - `Instance | nil`: The first child instance of the specified class type, or `nil` if not found within the timeout period or if inputs are invalid.
+    - `Instance | nil`: The first matching child instance found, or `nil` if not found or if parameters are invalid.
 
     Features:
-    - **Flexible Timeout**: Allows indefinite or constrained waiting based on the provided `TimeOut`.
-    - **Dynamic Validation**:
-      - Ensures that `Parent` is a valid instance and `ClassName` is a string.
-      - Handles cases where the parent instance is destroyed or invalid during the wait.
-    - **Logging and Debugging**:
-      - Logs errors for invalid parameters.
-      - Provides informational messages if the wait is terminated early (e.g., parent instance invalidated or timeout reached).
+    - **Flexible Class Filtering**: Uses `FindFirstChildWhichIsA` for type-specific child searches.
+    - **Optional Name Match**: Supports exact name filtering for more precise results.
+    - **Timeout Support**: Waits indefinitely or for a specified duration based on `TimeOut`.
+    - **Safe Exit Conditions**:
+        - Terminates if the parent is destroyed or becomes invalid.
+        - Respects the timeout limit if provided.
+    - **Informative Logging**:
+        - Warnings for invalid `Parent` or `ClassName` types.
+        - Info prints when early termination occurs due to timeout or hierarchy invalidation.
 
     Notes:
-    - Uses `FindFirstChildWhichIsA` for efficient child type detection.
-    - Can operate without a timeout for cases requiring indefinite waiting.
-    - Ensures compatibility with dynamically changing instance hierarchies.
+    - The function checks twice per cycle: once before `task.wait()` and once after.
+    - If `Name` is provided, both class and name must match to return early.
+    - Re-checks `Parent` validity in every loop iteration to avoid runtime errors.
 
     Example Usage:
     ```lua
-    local Parent = workspace
-    local ClassName = "Model"
-    local TimeOut = 5
-
-    local FoundChild = WaitForChildWhichIsA(Parent, ClassName, TimeOut)
-    if FoundChild then
-        print("Found child of type", ClassName)
+    local Event = WaitForChildWhichIsA(ReplicatedStorage, "RemoteEvent", "GameRemote", 3)
+    if Event then
+        Event:FireServer("Fire", Vector3.new())
     else
-        print("No child of type", ClassName, "found within the timeout.")
+        warn("RemoteEvent not found in time.")
+    end
+
+	local Name = nil
+	local TimeOut = 3
+	local RemoteEvent = WaitForChildWhichIsA(ReplicatedStorage, "RemoteEvent", Name, TimeOut)
+    if RemoteEvent then
+        print("Found an Instance which is a remote event without using the `Name` parameter!")
+    else
+        warn("RemoteEvent not found in time.")
     end
     ```
 
     Edge Cases:
-    - Logs a warning and returns `nil` if `Parent` is not an `Instance`, or `ClassName` is not a string.
-    - Terminates early and logs information if the parent is invalidated during the wait.
-    - Honors the timeout if provided, even if the parent instance remains valid.
+    - Logs and returns `nil` if `Parent` is not an `Instance`.
+    - Logs and returns `nil` if `ClassName` is not a `string`.
+    - Returns `nil` if the timeout is reached or if `Parent` is destroyed mid-wait.
 
 ]=]
-local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:number?):(Instance | nil | any)
+local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, Name:string?, TimeOut:number?):(Instance | nil | any)
 	if (typeof(Parent) == "Instance") and (type(ClassName) == "string") then
 		local InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
-		if InstanceToReturn then
+		if (type(Name) == "string") and InstanceToReturn and (InstanceToReturn.Name == Name) or InstanceToReturn then
 			return InstanceToReturn
 		end
 
@@ -242,12 +257,15 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
 					break
 				end
                 InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
-                if InstanceToReturn then
-                    return InstanceToReturn
-                end
+				if (type(Name) == "string") and InstanceToReturn and (InstanceToReturn.Name == Name) or InstanceToReturn then
+					return InstanceToReturn
+				end
 
                 task.wait()
 				InstanceToReturn = Parent and Parent:FindFirstChildWhichIsA(ClassName)
+				if (type(Name) == "string") and InstanceToReturn and (InstanceToReturn.Name == Name) or InstanceToReturn then
+					return InstanceToReturn
+				end
 			until ((typeof(InstanceToReturn) == "Instance") or EndedEarly or not Parent or not Parent.Parent)
 		else
 			local AbsTimeOut:number = math.abs(TimeOut or 1)
@@ -264,12 +282,15 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
 					break
 				end
                 InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
-                if InstanceToReturn then
-                    return InstanceToReturn
-                end
+				if (type(Name) == "string") and InstanceToReturn and (InstanceToReturn.Name == Name) or InstanceToReturn then
+					return InstanceToReturn
+				end
 
                 task.wait()
 				InstanceToReturn = Parent and Parent:FindFirstChildWhichIsA(ClassName)
+				if (type(Name) == "string") and InstanceToReturn and (InstanceToReturn.Name == Name) or InstanceToReturn then
+					return InstanceToReturn
+				end
 			until ((typeof(InstanceToReturn) == "Instance") or EndedEarly or (os.clock() - StartTime) >= AbsTimeOut)
 		end
 
@@ -305,9 +326,6 @@ local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, TimeOut:n
 	return nil
 end
 
-local OldNameCall = nil
-local OldIndex = nil
-
 if not Players.LocalPlayer then
 	repeat
 		task.wait()
@@ -339,10 +357,10 @@ local DefaultBeatWaitTime:number = 0.15
 local ZombieESPWait:number = 0.25
 
 local LastBeatTick:number = 0
-local _TimeSinceLastBeat:number = 0
+local TimeSinceLastBeat:number = 0
 
 local ShoveRange:number = 15 --// default range variable used for shoving.
-local MurderRange:number = 11 --// Used as a backup if can't find weapon range.
+local MurderRange:number = 11 --// used as a backup if can't find weapon range.
 
 local HeadSizeToUse:Vector3 = (UseVectorLibrary and vector.create(6, 9, 4.5)) or Vector3.new(6, 9, 4.5)
 local HeadTransparency:number = 0.6
@@ -404,71 +422,71 @@ setmetatable(ESPColors, {
 })
 
 --// Disconnection/Removing previous script connections if executed more than once.
-if _G["FlameTouchRemover"] ~= nil then 
-	_G["FlameTouchRemover"]:Disconnect()
-	_G["FlameTouchRemover"] = nil
+if getgenv()["FlameTouchRemover"] ~= nil then 
+	getgenv()["FlameTouchRemover"]:Disconnect()
+	getgenv()["FlameTouchRemover"] = nil
 end
-if _G["ShoveBind"] ~= nil then 
-	_G["ShoveBind"]:Disconnect()
-	_G["ShoveBind"] = nil
+if getgenv()["ShoveBind"] ~= nil then 
+	getgenv()["ShoveBind"]:Disconnect()
+	getgenv()["ShoveBind"] = nil
 end
-if _G["ShoveEquipper"] ~= nil then
-	_G["ShoveEquipper"]:Disconnect()
-	_G["ShoveEquipper"] = nil
+if getgenv()["ShoveEquipper"] ~= nil then
+	getgenv()["ShoveEquipper"]:Disconnect()
+	getgenv()["ShoveEquipper"] = nil
 end
-if _G["MurderBind"] ~= nil then 
-	_G["MurderBind"]:Disconnect()
-	_G["MurderBind"] = nil
+if getgenv()["MurderBind"] ~= nil then 
+	getgenv()["MurderBind"]:Disconnect()
+	getgenv()["MurderBind"] = nil
 end
-if _G["MusicBind"] ~= nil then
-	_G["MusicBind"]:Disconnect()
-	_G["MusicBind"] = nil
+if getgenv()["MusicBind"] ~= nil then
+	getgenv()["MusicBind"]:Disconnect()
+	getgenv()["MusicBind"] = nil
 end
-if _G["FakeAccuracyBeat"] ~= nil then
-	coroutine.close(_G["FakeAccuracyBeat"])
-	_G["FakeAccuracyBeat"] = nil
+if getgenv()["FakeAccuracyBeat"] ~= nil then
+	coroutine.close(getgenv()["FakeAccuracyBeat"])
+	getgenv()["FakeAccuracyBeat"] = nil
 end
-if _G["OnCameraDescendantAdded"] ~= nil then 
-	_G["OnCameraDescendantAdded"]:Disconnect()
-	_G["OnCameraDescendantAdded"]= nil
+if getgenv()["OnCameraDescendantAdded"] ~= nil then 
+	getgenv()["OnCameraDescendantAdded"]:Disconnect()
+	getgenv()["OnCameraDescendantAdded"]= nil
 end
-if _G["BuildingBind"] ~= nil then
-	_G["BuildingBind"]:Disconnect()
-	_G["BuildingBind"] = nil
+if getgenv()["BuildingBind"] ~= nil then
+	getgenv()["BuildingBind"]:Disconnect()
+	getgenv()["BuildingBind"] = nil
 end
-if _G["BuildingBindFunc"] ~= nil then
-	_G["BuildingBindFunc"]:Disconnect()
-	_G["BuildingBindFunc"] = nil
+if getgenv()["BuildingBindFunc"] ~= nil then
+	getgenv()["BuildingBindFunc"]:Disconnect()
+	getgenv()["BuildingBindFunc"] = nil
 end
-if _G["BuildHighlight"] ~= nil then
-	_G["BuildHighlight"].Enabled = false
-	_G["BuildHighlight"]:Destroy()
-	_G["BuildHighlight"] = nil
+if getgenv()["BuildHighlight"] ~= nil then
+	getgenv()["BuildHighlight"].Enabled = false
+	getgenv()["BuildHighlight"]:Destroy()
+	getgenv()["BuildHighlight"] = nil
 end
-if _G["BuildingFetchTypeBind"] ~= nil then 
-	_G["BuildingFetchTypeBind"]:Disconnect()
-	_G["BuildingFetchTypeBind"] = nil
+if getgenv()["BuildingFetchTypeBind"] ~= nil then 
+	getgenv()["BuildingFetchTypeBind"]:Disconnect()
+	getgenv()["BuildingFetchTypeBind"] = nil
 end
-if _G["GrabLogBind"] ~= nil then 
-	_G["GrabLogBind"]:Disconnect()
-	_G["GrabLogBind"] = nil
+if getgenv()["GrabLogBind"] ~= nil then 
+	getgenv()["GrabLogBind"]:Disconnect()
+	getgenv()["GrabLogBind"] = nil
 end
-if _G["BlockBarrelBind"] ~= nil then 
-	_G["BlockBarrelBind"]:Disconnect()
-	_G["BlockBarrelBind"] = nil
+if getgenv()["BlockBarrelBind"] ~= nil then 
+	getgenv()["BlockBarrelBind"]:Disconnect()
+	getgenv()["BlockBarrelBind"] = nil
 end
-if _G["OnCharacterAdded"] then
-	_G["OnCharacterAdded"]:Disconnect()
-	_G["OnCharacterAdded"] = nil
+if getgenv()["OnCharacterAdded"] then
+	getgenv()["OnCharacterAdded"]:Disconnect()
+	getgenv()["OnCharacterAdded"] = nil
 end
 
-_G["BuildHighlight"] = Instance.new("Highlight")
-_G["BuildHighlight"].DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-_G["BuildHighlight"].OutlineColor = Color3.fromRGB(255, 204, 0)
-_G["BuildHighlight"].FillColor = Color3.fromRGB(255, 204, 102)
-_G["BuildHighlight"].Parent = ReplicatedFirst
-_G["BuildHighlight"].FillTransparency = 0.5
-_G["BuildHighlight"].Enabled = true
+getgenv()["BuildHighlight"] = Instance.new("Highlight")
+getgenv()["BuildHighlight"].DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+getgenv()["BuildHighlight"].OutlineColor = Color3.fromRGB(255, 204, 0)
+getgenv()["BuildHighlight"].FillColor = Color3.fromRGB(255, 204, 102)
+getgenv()["BuildHighlight"].Parent = ReplicatedFirst
+getgenv()["BuildHighlight"].FillTransparency = 0.5
+getgenv()["BuildHighlight"].Enabled = true
 
 --[=[
     Description:
@@ -583,13 +601,13 @@ end
 
     Example Usage:
     ```lua
-	local accuracyEvent = game.ReplicatedStorage:WaitForChild("AccuracyEvent")
-	local fakeAccuracyThread = SetupFakeAccuracyBeat(accuracyEvent, 0.2)
+	local AccuracyEvent = game.ReplicatedStorage:WaitForChild("AccuracyEvent")
+	local FakeAccuracyThread = SetupFakeAccuracyBeat(AccuracyEvent, 0.2)
 	
 	--// Stop the coroutine after a 5-second delay
 	task.delay(5, function()
-	    if coroutine.status(fakeAccuracyThread) == "suspended" then
-	        coroutine.close(fakeAccuracyThread)
+	    if (coroutine.status(FakeAccuracyThread) == "suspended") then
+	        coroutine.close(FakeAccuracyThread)
 	        print("Fake accuracy beat coroutine stopped after 5 seconds.")
 	    end
 	end)
@@ -599,6 +617,7 @@ end
     - If `RemoteEventToUse` is not a valid `RemoteEvent`, the function warns and returns an empty coroutine.
     - If `BeatWaitTime` is out of range, it defaults to `0.15` to ensure smooth operation.
     - Ensures that if `LastBeatTick` is `0`, it initializes before calculating the time since the last beat.
+
 ]=]
 local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:number?):(thread)
 	if (typeof(RemoteEventToUse) ~= "Instance") or not RemoteEventToUse:IsA("RemoteEvent") then 
@@ -610,7 +629,7 @@ local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:
 
 	if (type(BeatWaitTime) ~= "number") then
 		BeatWaitTime = DefaultBeatWaitTime
-	elseif (type(BeatWaitTime) == "number") then
+	else
 		if (BeatWaitTime <= 0) or (BeatWaitTime >= 5) or (BeatWaitTime ~= BeatWaitTime) then
 			BeatWaitTime = 0.15
 		end
@@ -620,13 +639,13 @@ local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:
 		while true do
 			if Debug then
 				if (LastBeatTick ~= 0) then 
-					_TimeSinceLastBeat = (tick() - LastBeatTick)
+					TimeSinceLastBeat = (os.clock() - LastBeatTick)
 					if DebugPrints then
-						print(`[DEBUG # Fake Accuracy Beat Thread]: _TimeSinceLastBeat = {_TimeSinceLastBeat}.`)
+						print(`[DEBUG # Fake Accuracy Beat Thread]: TimeSinceLastBeat = {TimeSinceLastBeat}.`)
 					end
-					LastBeatTick = tick()
+					LastBeatTick = os.clock()
 				elseif (LastBeatTick == 0) then 
-					LastBeatTick = tick()
+					LastBeatTick = os.clock()
 				end
 			end
 
@@ -670,14 +689,14 @@ end
 
     Example Usage:
     ```lua
-    local weapon, remote, limitRange = GetMeleeWeapon()
-    if weapon then
-        print("Equipped Melee Weapon:", weapon.Name)
+    local Weapon, Remote, LimitRange = GetMeleeWeapon()
+    if Weapon then
+        print(`Equipped Melee Weapon: {Weapon.Name}`)
     end
 
-    local availableWeapons = GetMeleeWeapon(true)
-    for _, data in pairs(availableWeapons) do
-        print("Available Melee Weapon:", data[1].Name)
+    local AvailableWeapons = GetMeleeWeapon(true)
+    for _, Data in pairs(AvailableWeapons) do
+        print(`Available Melee Weapon: {Data[1].Name}`)
     end
     ```
 
@@ -699,30 +718,22 @@ local function GetMeleeWeapon(ListTools:boolean?):(...any)
 
 	if (Character.Parent == nil) then
         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetMeleeWeapon] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
-		warn(`[FAIL # GetMeleeWeapon]: Your character's parent is equal to nil.  ||| Current script line: {debug.info(1, "l")}`)
+		warn(`[FAIL # GetMeleeWeapon]: Your character's parent is equal to \`nil\`.  ||| Current script line: {debug.info(1, "l")}`)
 
 		return
 	end
 
 	local List:{any} = {}
+    for _, ToolName in pairs(PreferredWeapon) do 
+	    if Character:FindFirstChild(ToolName) then 
+            local Tool = (Character:FindFirstChild(ToolName))::Tool
 
-	if not ListTools then
-        for _, ToolName in pairs(PreferredWeapon) do 
-            if Character:FindFirstChild(PreferredWeapon) then 
-                local Tool = (Character:FindFirstChild(PreferredWeapon))::Tool
-
-                return {{Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")}}
-            end
-        end
-	elseif ListTools then
-        for _, ToolName in pairs(PreferredWeapon) do 
-            if Character:FindFirstChild(PreferredWeapon) then 
-                local Tool = (Character:FindFirstChild(PreferredWeapon))::Tool
-
-                table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
-            end
-        end
-	end
+			if not ListTools then
+				return {{Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")}}
+			end
+			table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
+		end
+    end
 
 	if Character:FindFirstChildWhichIsA("Tool") then
 		for _, Tool in ipairs(Character:GetChildren()) do 
@@ -962,13 +973,13 @@ end
     ```lua
     IterateWithFunction(
         {
-            [1] = "Bob",
-            [2] = "Cheese",
-            ["StringIndex"] = 1
+            [1] = "Bob";
+            [2] = "Cheese";
+            ["StringIndex"] = 1;
         },
-        function(index, value)
-            print("Index: " .. tostring(index) .. " | Value: " .. tostring(value))
-        end,
+        function(Index, Value)
+            print("Index: " .. tostring(Index) .. " | Value: " .. tostring(Value))
+        end;
         true
     )
     ```
@@ -1022,12 +1033,12 @@ local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(
 	else
         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# IterateWithFunction] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
 		if (Table == nil) then 
-			warn(`[FAIL # IterateWithFunction]: "Table" is equal to nil.  ||| Current script line: {debug.info(1, "l")}`)
+			warn(`[FAIL # IterateWithFunction]: "Table" is equal to \`nil\`.  ||| Current script line: {debug.info(1, "l")}`)
 
 			return
 		end
 		if (Function == nil) then 
-			warn(`[FAIL # IterateWithFunction]: "Function" is equal to nil.  ||| Current script line: {debug.info(1, "l")}`)
+			warn(`[FAIL # IterateWithFunction]: "Function" is equal to \`nil\`.  ||| Current script line: {debug.info(1, "l")}`)
 
 			return
 		end
@@ -1202,7 +1213,7 @@ local function GetClosestBuilding():any
 			)
 		end)
 
-		if (typeof(Bounds[1]) == "Instance") and (typeof(Bounds[1].Parent) == "Instance") then 
+		if (typeof(Bounds[1]) == "Instance") and Bounds[1].Parent then 
 			local BuildingHealth:NumberValue = (((Bounds[1].Parent)::Part):WaitForChild("BuildingHealth")::NumberValue)
 
 			if (BuildingHealth.Value >= ((BuildingHealth:GetAttribute("MaxHealth")::number) or BuildingHealth.Value))  then 
@@ -1280,7 +1291,7 @@ local function GetMaxIndexOfTable(Table:{[any]: any})
 	else
         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetMaxIndexOfTable] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
 		if (Table == nil) then 
-			warn(`[FAIL # GetMaxIndexOfTable]: "Table" is equal to nil. Returning 0.  ||| Current script line: {debug.info(1, "l")}`)
+			warn(`[FAIL # GetMaxIndexOfTable]: "Table" is equal to \`nil\`. Returning 0.  ||| Current script line: {debug.info(1, "l")}`)
 
 			return 0
 		end
@@ -1289,7 +1300,7 @@ local function GetMaxIndexOfTable(Table:{[any]: any})
 	return 0
 end
 
-_G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Instance)
+getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Instance)
 	if Orig and not Orig:IsA("Highlight") and Orig:IsA("ObjectValue") and (Orig.Name == "Orig") then 
 		repeat
 			task.wait()
@@ -1370,7 +1381,7 @@ _G["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Ins
 	end
 end)
 
-_G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
+getgenv()["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 	if BuildingBindEnabled and LocalPlayer.Character then 
 		local Character = LocalPlayer.Character
 		Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
@@ -1390,13 +1401,13 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 						return
 					end
 
-					_G["BuildHighlight"].Adornee = nil
+					getgenv()["BuildHighlight"].Adornee = nil
 					return
 				end
 				CanRepair = false
 
 				Remote:FireServer("Repair", BuildingFound)
-				_G["BuildHighlight"].Adornee = BuildingFound.Parent
+				getgenv()["BuildHighlight"].Adornee = BuildingFound.Parent
 
 				task.spawn(function()
 					task.wait(WaitTimeUntilRepair or 0.175)
@@ -1418,11 +1429,9 @@ _G["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 			return
 		end
 	end
-
-	task.wait()
 end)
 
-_G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
+getgenv()["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process and LocalPlayer.Character then 
 		local Character = LocalPlayer.Character
 		local KeyCodeName = tostring(Key.KeyCode.Name)
@@ -1446,30 +1455,30 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 				local Remote = (FoundInstrument:FindFirstChild("RemoteEvent"))::RemoteEvent
 
 				if Remote then 
-					if (_G["FakeAccuracyBeat"] ~= nil) then 
-						coroutine.close(_G["FakeAccuracyBeat"])
-						_G["FakeAccuracyBeat"] = nil
+					if (getgenv()["FakeAccuracyBeat"] ~= nil) then 
+						coroutine.close(getgenv()["FakeAccuracyBeat"])
+						getgenv()["FakeAccuracyBeat"] = nil
 					end
 
 					print(`[INFO # MusicBind]: Attempted to play "{SongName}" with {FoundInstrument.Name}.`)
 
 					Remote:FireServer("Stop")
 					Remote:FireServer("Play", SongName)
-					_G["FakeAccuracyBeat"] = SetupFakeAccuracyBeat(Remote)
+					getgenv()["FakeAccuracyBeat"] = SetupFakeAccuracyBeat(Remote)
 
 					local Connection
 					Connection = FoundInstrument:GetPropertyChangedSignal("Parent"):Connect(function()
 						if FoundInstrument.Parent and ((FoundInstrument.Parent).Name == "Backpack") then 
-							if (_G["FakeAccuracyBeat"] ~= nil) then 
-								coroutine.close(_G["FakeAccuracyBeat"])
-								_G["FakeAccuracyBeat"] = nil
+							if (getgenv()["FakeAccuracyBeat"] ~= nil) then 
+								coroutine.close(getgenv()["FakeAccuracyBeat"])
+								getgenv()["FakeAccuracyBeat"] = nil
 							end
 
 							Connection:Disconnect()
 						elseif not FoundInstrument.Parent then 
-							if (_G["FakeAccuracyBeat"] ~= nil) then 
-								coroutine.close(_G["FakeAccuracyBeat"])
-								_G["FakeAccuracyBeat"] = nil
+							if (getgenv()["FakeAccuracyBeat"] ~= nil) then 
+								coroutine.close(getgenv()["FakeAccuracyBeat"])
+								getgenv()["FakeAccuracyBeat"] = nil
 							end
 
 							Connection:Disconnect()
@@ -1487,7 +1496,7 @@ _G["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	end
 end)
 
-_G["ShoveEquipper"] = UserInputService.InputBegan:Connect(function(Key, Process)
+getgenv()["ShoveEquipper"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then
 		if (Key.KeyCode == Binds["ShoveEquipper_Bind"]) and LocalPlayer.Character then
 			local Character:Model = LocalPlayer.Character
@@ -1505,7 +1514,7 @@ _G["ShoveEquipper"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	end
 end)
 
-_G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
+getgenv()["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if (Key.KeyCode == Binds["ShoveBind_Bind"]) then 
 			if LocalPlayer.Character and LocalPlayer.Character.Parent then
@@ -1600,7 +1609,7 @@ _G["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	end
 end)
 
-_G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
+getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if (Key.KeyCode == Binds["MurderBind_BindOne"]) or (Key.KeyCode == Binds["MurderBind_BindTwo"]) then 
 			if LocalPlayer.Character and LocalPlayer.Character.Parent then
@@ -1686,7 +1695,7 @@ _G["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	end
 end)
 
-_G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
+getgenv()["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if (Key.KeyCode == Binds["GrabLogBind_Bind"]) and LocalPlayer.Character then
 			local Character:Model = LocalPlayer.Character
@@ -1761,20 +1770,20 @@ _G["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	end
 end)
 
-_G["BuildingBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
+getgenv()["BuildingBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if (Key.KeyCode == Binds["BuildingBind_Bind"]) then 
 			BuildingBindEnabled	= not BuildingBindEnabled
 			print(`[INFO # BuildingBind]: "BuildingBindEnabled" is now equal to: {BuildingBindEnabled}`)
 
 			if not BuildingBindEnabled then 
-				_G["BuildHighlight"].Adornee = nil
+				getgenv()["BuildHighlight"].Adornee = nil
 			end
 		end
 	end
 end)
 
-_G["BuildingFetchTypeBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
+getgenv()["BuildingFetchTypeBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process and (Key.KeyCode == Binds["BuildingFetchTypeBind_Bind"]) then 
 		if (BuildingFetchType == "Closest") then 
 			BuildingFetchType = "LeastHealth"
@@ -1786,21 +1795,21 @@ _G["BuildingFetchTypeBind"] = UserInputService.InputBegan:Connect(function(Key, 
 	end
 end)
 
-_G["BlockBarrelBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
+getgenv()["BlockBarrelBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if (Key.KeyCode == Binds["BlockBarrelBind_Bind"]) then 
 			if not ReplicatedStorage:FindFirstChild("BlockBarrel") then
-                if not _G["_BlockBarrel"] then
-                    _G["_BlockBarrel"] = Instance.new("BoolValue")
-                    _G["_BlockBarrel"].Name = "BlockBarrel"
+                if not getgenv()["_BlockBarrel"] then
+                    getgenv()["_BlockBarrel"] = Instance.new("BoolValue")
+                    getgenv()["_BlockBarrel"].Name = "BlockBarrel"
                 end
 
-                _G["_BlockBarrel"].Parent = ReplicatedStorage
+                getgenv()["_BlockBarrel"].Parent = ReplicatedStorage
             elseif ReplicatedStorage:FindFirstChild("BlockBarrel") then 
-                _G["_BlockBarrel"].Parent = ReplicatedFirst
+                getgenv()["_BlockBarrel"].Parent = ReplicatedFirst
             end
 
-            local Enabled = (_G["_BlockBarrel"].Parent == ReplicatedStorage) and "enabled" or "disabled"
+            local Enabled = (getgenv()["_BlockBarrel"].Parent == ReplicatedStorage) and "enabled" or "disabled"
 			print(`[INFO # BlockBarrelBind]: Barrel blocking is now {Enabled}.`)
 		end
 	end
@@ -1810,7 +1819,7 @@ if Debug then
 	if DebugPrints then
 		print(`[DEBUG # INFO]: Connecting "Workspace.DescendantAdded" script signal for global "FlameTouchRemover".`)
 	end
-	_G["FlameTouchRemover"] = Workspace.DescendantAdded:Connect(function(NewWorkspaceChild)
+	getgenv()["FlameTouchRemover"] = Workspace.DescendantAdded:Connect(function(NewWorkspaceChild)
 		if NewWorkspaceChild then
 			if (NewWorkspaceChild.Name == "IgniterFire") and NewWorkspaceChild:IsA("BasePart") then
 				local TouchInterest = NewWorkspaceChild:WaitForChild("TouchInterest", 3)
@@ -1823,7 +1832,7 @@ if Debug then
 		end
 	end)
 
---[[    _G["OnCharacterAdded"] = LocalPlayer.CharacterAdded:Connect(function(NewCharacter)
+--[[    getgenv()["OnCharacterAdded"] = LocalPlayer.CharacterAdded:Connect(function(NewCharacter)
         if NewCharacter then 
             local GrabRemote:RemoteEvent
             local Attempts:number = 0
@@ -1857,8 +1866,8 @@ if Debug then
     end)]]
 end
 
-if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMethod and CanUseGetCheckCaller then 
-	_G["AlreadyActive"] = true
+if (getgenv()["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMethod and CanUseGetCheckCaller then 
+	getgenv()["AlreadyActive"] = true
 
 	OldNameCall = hookmetamethod(game, "__namecall", function(Remote, ...)
 		local Parameters = {...}
@@ -1964,13 +1973,13 @@ if (_G["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMe
 
 	OldIndex = hookmetamethod(game, "__index", function(Self, Method)
 		if (Self == LocalPlayer) and (Method:lower() == "kick") then
-			if not _G["__PlaceholderFunction"] then
-				_G["__PlaceholderFunction"] = (function()
+			if not getgenv()["__PlaceholderFunction"] then
+				getgenv()["__PlaceholderFunction"] = (function()
 					print("[INFO # AntiKick]: An attempt to kick the LocalPlayer was just prevented.")
 				end)
 			end
 
-			return _G["__PlaceholderFunction"]
+			return getgenv()["__PlaceholderFunction"]
 		end
 
 		return OldIndex(Self, Method)
@@ -1990,7 +1999,7 @@ warn(
             [INFO # MUSIC INFO]: {%s}
         
     ]]):format(
-		tostring(tick() - OldTick),
+		tostring(os.clock() - OldTick),
 		(UseVectorLibrary and "enabled" or "disabled"),
 		(Debug and "enabled" or "disabled"),
 		(DebugPrints and "enabled" or "disabled"),
