@@ -365,6 +365,8 @@ local MurderRange:number = 11 --// used as a backup if can't find weapon range.
 local HeadSizeToUse:Vector3 = (UseVectorLibrary and vector.create(6, 9, 4.5)) or Vector3.new(6, 9, 4.5)
 local HeadTransparency:number = 0.6
 
+local MAX_HIGHLIGHTS:number = 30
+
 local PreferredWeapon:{string} = {"Pike";"Lance"}
 --// true = Ignore Agent
 --// false = Include Agent
@@ -405,6 +407,8 @@ local Binds = {
 	["BuildingFetchTypeBind_Bind"] = Enum.KeyCode.KeypadThree;
 	["BlockBarrelBind_Bind"] = Enum.KeyCode.KeypadFour;
 }
+local HighlightPool = {} -- Stores unused highlights
+local ActiveHighlights = {} -- Tracks highlights currently in use
 local ESPColors = {
 	["Igniter"] = Color3.fromRGB(255, 255, 0);
 	["Runner"] = Color3.fromRGB(0, 255, 255);
@@ -488,6 +492,22 @@ getgenv()["BuildHighlight"].Parent = ReplicatedFirst
 getgenv()["BuildHighlight"].FillTransparency = 0.5
 getgenv()["BuildHighlight"].Enabled = true
 
+local function GetHighlight()
+    if (#HighlightPool > 0) then
+        return table.remove(HighlightPool)
+    elseif (#ActiveHighlights < MAX_HIGHLIGHTS) then
+        local NewHighlight = Instance.new("Highlight")
+        table.insert(ActiveHighlights, NewHighlight)
+        return NewHighlight
+    else
+        --//warn("[WARNING]: Highlight limit reached. Reusing the oldest highlight.")
+        local OldestHighlight = ActiveHighlights[1]
+        table.remove(ActiveHighlights, 1)
+        OldestHighlight.Adornee = nil
+        return OldestHighlight
+    end
+end
+GetHighlight()
 --[=[
     Description:
     Applies an ESP (Extra Sensory Perception) highlight effect to a given character model, allowing enemy types to be visually identified 
@@ -544,7 +564,6 @@ local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean?, IsRun
 		return
 	end
 
-	local HeadParameterExist:boolean = (typeof(Head) == "Instance" and Head:IsA("BasePart"))
 	local Type:string = (IsIgniter and "Igniter") 
 		or (IsRunner and "Runner")
 		or (IsSapper and "Sapper")
@@ -555,21 +574,37 @@ local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean?, IsRun
 	local NewHighlight:any
 
 	if (type(Type) == "string") and (Type ~= "None") then
-		NewHighlight = Instance.new("Highlight")
+		local NewHighlight = GetHighlight()
+		if not NewHighlight then
+			task.delay(ZombieESPWait, AddEsp, Head, IsIgniter, IsRunner, IsSapper, IsBomber, IsHeadless, IsCuirassier)
+			return 
+		end
+
 		Character:AddTag("Highlighted_")
 		NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 		NewHighlight.OutlineColor = ESPColors[Type]
 		NewHighlight.FillColor = ESPColors[Type]
-		NewHighlight.Parent = Character
 		NewHighlight.FillTransparency = 0.5
 		NewHighlight.Enabled = true
 		NewHighlight.Adornee = Character
+		NewHighlight.Parent = ReplicatedFirst
+		
+		local Connection
+        Connection = Character.AncestryChanged:Connect(function()
+            if not Character.Parent then
+                NewHighlight.Adornee = nil
+                NewHighlight.Enabled = false
+                NewHighlight.Parent = nil
+                table.insert(HighlightPool, NewHighlight) -- Return to pool
+                Connection:Disconnect()
+				Connection = nil
+            end
+        end)
 
-		if HeadParameterExist and Head then
+		if Head and (typeof(Head) == "Instance" and Head:IsA("BasePart")) then
 			Head.Color = ESPColors[Type]
 		end
 	end
-	NewHighlight = nil
 end
 
 --[=[
@@ -1304,7 +1339,10 @@ getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(O
 	if Orig and not Orig:IsA("Highlight") and Orig:IsA("ObjectValue") and (Orig.Name == "Orig") then 
 		repeat
 			task.wait()
-		until Orig.Value and Orig.Parent
+		until not Orig or Orig.Value and Orig.Parent
+		if not Orig then
+			return
+		end
 		task.wait(ZombieESPWait)
 
 		local Character:Model = (Orig.Parent::Model)
