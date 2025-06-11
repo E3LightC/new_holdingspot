@@ -365,7 +365,7 @@ local MurderRange:number = 11 --// used as a backup if can't find weapon range.
 local HeadSizeToUse:Vector3 = (UseVectorLibrary and vector.create(6, 9, 4.5)) or Vector3.new(6, 9, 4.5)
 local HeadTransparency:number = 0.6
 
-local MAX_HIGHLIGHTS:number = 30
+local MAX_HIGHLIGHTS:number = 29
 
 local PreferredWeapon:{string} = {"Pike";"Lance"}
 --// true = Ignore Agent
@@ -507,7 +507,7 @@ local function GetHighlight()
         return OldestHighlight
     end
 end
-GetHighlight()
+
 --[=[
     Description:
     Applies an ESP (Extra Sensory Perception) highlight effect to a given character model, allowing enemy types to be visually identified 
