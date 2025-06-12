@@ -55,7 +55,7 @@
 --[/////////////////////////////////////////// CODE BELOW ////////////////////////////////////////////]--
 --[///////////////////////////////////////////////////////////////////////////////////////////////////]--
 
-local OldTick = os.clock()
+local OldClock = os.clock()
 
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
@@ -2093,7 +2093,7 @@ warn(
             [INFO # MUSIC INFO]: {%s}
         
     ]]):format(
-		tostring(os.clock() - OldTick),
+		tostring(os.clock() - OldClock),
 		(UseVectorLibrary and "enabled" or "disabled"),
 		(Debug and "enabled" or "disabled"),
 		(DebugPrints and "enabled" or "disabled"),
