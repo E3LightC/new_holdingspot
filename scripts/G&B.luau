@@ -612,12 +612,11 @@ local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean?, IsRun
 		or (IsHeadless and "Headless")
 		or (IsCuirassier and "Cuirassier")
         or "None"
-	local NewHighlight:any
 
 	if (type(Type) == "string") and (Type ~= "None") then
 		local NewHighlight = GetHighlight()
 		if not NewHighlight then
-			task.delay(ZombieESPWait, AddEsp, Head, IsIgniter, IsRunner, IsSapper, IsBomber, IsHeadless, IsCuirassier)
+			task.delay(ZombieESPWait, AddEsp, Character, Head, IsIgniter, IsRunner, IsSapper, IsBomber, IsHeadless, IsCuirassier)
 			return 
 		end
 
@@ -1615,7 +1614,7 @@ getgenv()["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Proce
 			if LocalPlayer.Character and LocalPlayer.Character.Parent then
 				local Character = LocalPlayer.Character
 				local HRP = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
-				local AgentsInRange = GetAgentsInRange(false, ShoveRange)
+				local AgentsInRange = GetAgentsInRange(nil, ShoveRange)
 
 				if (type(AgentsInRange) ~= "table") then
                     ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# ShoveBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4) 
@@ -1716,7 +1715,7 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 					local LimitRange = Table[3]
 
 					if Weapon and (typeof(Weapon) == "Instance") then 
-						local AgentsInRange:{[number]:Model} = GetAgentsInRange(false, (LimitRange and (LimitRange * 1.8)) or MurderRange)
+						local AgentsInRange:{[number]:Model} = GetAgentsInRange(nil, (LimitRange and (LimitRange * 1.8)) or MurderRange)
 
 						if (type(AgentsInRange) ~= "table") then 
                             ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# MurderBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
@@ -1810,7 +1809,7 @@ getgenv()["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Pro
 									if Log and Log:IsA("Model") and (Log.Name == "Model") and Log:FindFirstChild("Handle") and (Log:FindFirstChild("Handle")::MeshPart):FindFirstChild("Interact") then 
 										((Log:FindFirstChild("Handle")::MeshPart):FindFirstChild("Interact")::RemoteEvent):FireServer()
 
-										local LogTool = (Character:FindFirstChild("Log") or WaitForChildWhichIsA(Character, "Tool", 1))
+										local LogTool = (Character:FindFirstChild("Log") or WaitForChildWhichIsA(Character, "Tool", nil, 1))
 										if LogTool and (typeof(LogTool) == "Instance") then
 											task.wait()
 											--LogTool.Parent = Backpack
@@ -1831,7 +1830,7 @@ getgenv()["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Pro
 								if Log and Log:IsA("Model") and (Log.Name == "Log") and Log:FindFirstChild("Log") and (Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact") then 
 									((Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact")::RemoteEvent):FireServer()
 
-									local LogTool = (Character:FindFirstChild("Log") or WaitForChildWhichIsA(Character, "Tool"))
+									local LogTool = (Character:FindFirstChild("Log") or WaitForChildWhichIsA(Character, "Tool", nil, 1))
 									if LogTool and (typeof(LogTool) == "Instance") then
 										task.wait()
 										--LogTool.Parent = Backpack
