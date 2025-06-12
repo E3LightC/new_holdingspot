@@ -920,7 +920,7 @@ end
     ```lua
     local AgentsNearPlayer = GetAgentsInRange(nil, 10)
     for _, Agent in ipairs(AgentsNearPlayer) do
-        print("Agent nearby:", agent.Name)
+        print("Agent nearby:", Agent.Name)
     end
 
     local SpecificPosition = Vector3.new(100, 0, 50)
