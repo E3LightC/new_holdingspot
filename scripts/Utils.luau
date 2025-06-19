@@ -240,8 +240,24 @@ function ClientUtils:GetPredictedPosition(BasePart:BasePart)
 	end
 
 	local Ping = LocalPlayer:GetNetworkPing()
-	local PredictedPosition = BasePart.Position + (BasePart.AssemblyLinearVelocity * (Ping / 2))
-	
+	local Displacement = (BasePart.AssemblyLinearVelocity * (Ping * 1.85))
+
+	local PredictedPosition = (BasePart.Position + Displacement)
+	return PredictedPosition
+end
+
+function ClientUtils:GetPredictedPositionWithPositionAndVelocity(Position:Vector3, Velocity:Vector3)
+	if (typeof(Position) ~= "Vector3") then
+		return Vector3.zero
+	end
+	if (typeof(Velocity) ~= "Vector3") then
+		return Vector3.zero
+	end
+
+	local Ping = LocalPlayer:GetNetworkPing()
+	local Displacement = (Velocity * (Ping * 1.85))
+
+	local PredictedPosition = (Position + Displacement)
 	return PredictedPosition
 end
 
