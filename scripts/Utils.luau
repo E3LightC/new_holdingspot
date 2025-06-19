@@ -230,4 +230,19 @@ function ClientUtils:GetClosestPlayerToMouseOnScreen(
 	return ClosestPlayer, ClosestPart, ClosestDistance
 end
 
+function ClientUtils:GetPredictedPosition(BasePart:BasePart)
+	if (typeof(BasePart) ~= "Instance") or not BasePart:IsA("BasePart") then
+		return Vector3.zero
+	end
+
+	if BasePart.Anchored then
+		return BasePart.Position
+	end
+
+	local Ping = LocalPlayer:GetNetworkPing()
+	local PredictedPosition = BasePart.Position + (BasePart.AssemblyLinearVelocity * (Ping / 2))
+	
+	return PredictedPosition
+end
+
 return ClientUtils
