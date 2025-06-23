@@ -4,7 +4,7 @@ local Workspace = game:GetService("Workspace")
 
 local Camera = Workspace.CurrentCamera
 
-local LocalPlayer = Players.LocalPlayer
+local LocalPlayer:Player = Players.LocalPlayer
 if not LocalPlayer then
 	repeat
 		LocalPlayer = Players.LocalPlayer
@@ -12,7 +12,7 @@ if not LocalPlayer then
 	until LocalPlayer
 end
 
-local Mouse = LocalPlayer:GetMouse()
+local Mouse:Mouse = LocalPlayer:GetMouse()
 
 local ClientUtils = {}
 ClientUtils.Services = {}
@@ -116,7 +116,7 @@ function ClientUtils.GetMouseHitPosition(
 
 	local Camera = Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera")
 	if not Camera then
-		return Vector3.zero
+		return
 	end
 
 	local MouseScreenPosition:Vector2 = UserInputService:GetMouseLocation()
@@ -153,12 +153,12 @@ function ClientUtils.GetMouseTarget(
 		UseCustomRaycast = true
 	end
 	if not UseCustomRaycast then
-		return Mouse.Hit.Position
+		return Mouse.Target
 	end
 
 	local Camera = Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera")
 	if not Camera then
-		return Vector3.zero
+		return
 	end
 
 	local MouseScreenPosition:Vector2 = UserInputService:GetMouseLocation()
@@ -205,7 +205,7 @@ function ClientUtils.GetClosestPlayerToCharacter(
 		return
 	end
 
-	IgnoreDead = ((type(IgnoreDead) == "boolean") and IgnoreDead) or true
+	IgnoreDead = ((type(IgnoreDead) == "boolean") and IgnoreDead)
 
 	for _, Player in pairs(Players:GetPlayers()) do
 		local PlayerCharacter = Player.Character
@@ -239,9 +239,9 @@ function ClientUtils.GetClosestPlayerToMouseOnScreen(
 	IgnoreDead:boolean?, 
 	RequireOnScreen:boolean?
 ):(Player, BasePart, number)
-	local Camera = Workspace.CurrentCamera
+	local Camera = Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera")
 	if not Camera then
-		return nil
+		return
 	end
 
 	local MousePosition:Vector2 = UserInputService:GetMouseLocation()
@@ -251,10 +251,8 @@ function ClientUtils.GetClosestPlayerToMouseOnScreen(
 
 	MaxScreenDistance = (((type(MaxScreenDistance) == "number") and MaxScreenDistance > 0) and MaxScreenDistance) 
 		or math.huge
-	IgnoreDead = ((type(IgnoreDead) == "boolean") and IgnoreDead) 
-		or true
+	IgnoreDead = ((type(IgnoreDead) == "boolean") and IgnoreDead)
 	RequireOnScreen = ((type(RequireOnScreen) == "boolean") and RequireOnScreen) 
-		or false
 
 	for _, Player in pairs(Players:GetPlayers()) do
 		if (Player ~= LocalPlayer) then
@@ -394,6 +392,34 @@ function ClientUtils.CreateInstance(
 	
 	return NewInstance
 end
+function ClientUtils.SetInstanceProperties(
+	Object:Instance, 
+	Properties:{[string]:any}
+):(boolean)
+	if (typeof(Object) ~= "Instance") then
+		return false
+	end
+	if (typeof(Properties) ~= "table") then
+		return false
+	end
+	
+	local ParentPropertyToSet:Instance
+	for Property:string, Value:any? in pairs(Properties) do 
+		if (Property ~= "Parent") then
+			task.spawn(pcall, function()
+				NewInstance[Property] = Value
+			end)
+		elseif (Property == "Parent") and (typeof(Value) == "Instance") then
+			ParentPropertyToSet = Value
+		end
+	end
+
+	if ParentPropertyToSet then
+		NewInstance.Parent = ParentPropertyToSet
+	end
+
+	return true
+end
 
 function ClientUtils.GetRandomPlayer():(Player)
 	local PlayerList = Players:GetPlayers()
@@ -511,6 +537,60 @@ function ClientUtils.FireRaycast(
 	else
 		return workspace:Raycast(Origin, Direction, RaycastParameters)
 	end
+end
+
+function ClientUtils.GetCharacterPart(
+	Player:Player, 
+	Prefer:string?
+):(BasePart?)
+	local Character = (typeof(Player) == "Instance") and Player:IsA("Player") and Player.Character
+	if not Character then
+		return false
+	end
+
+	if (type(Prefer) == "string") and Character:FindFirstChild(Prefer) then
+		local Part = Character:FindFirstChild(Prefer)
+		if Part and Part:IsA("BasePart") then
+			return Part
+		end
+	end
+
+	return Character:FindFirstChild("HumanoidRootPart") 
+		or Character:FindFirstChild("Head") 
+		or Character:FindFirstChildWhichIsA("BasePart")
+end
+
+function ClientUtils.IsPointOnScreen(
+	Position:Vector3
+):(boolean)
+	if (typeof(Position) ~= "Vector3") then
+		return false
+	end
+	local Camera = Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera")
+	if not Camera then
+		return false
+	end
+	
+	local _, OnScreen = Camera:WorldToViewportPoint(Position)
+	return OnScreen
+end
+
+function ClientUtils.QuickRunFunction(
+	Function:((...any) -> any), 
+	ReportError:boolean?,
+	...
+):()
+	if (type(Function) ~= "function") then
+		return
+	end
+	ReportError = ((type(ReportError) == "boolean") and ReportError)
+
+	task.spawn(function(...)
+		local Success, Error = pcall(Function, ...)
+		if not Success and ReportError then
+			warn("[ClientUtils]: RunFunctionOffThread error:", Error)
+		end
+	end, ...)
 end
 
 return ClientUtils
