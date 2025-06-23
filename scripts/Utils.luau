@@ -577,6 +577,27 @@ function ClientUtils.IsPointOnScreen(
 	return OnScreen
 end
 
+function ClientUtils.SafeCall(
+	Function:((...any) -> any),
+	...
+):(boolean, any)
+	if (type(Function) ~= "function") then
+		return false, "Not a function"
+	end
+	
+	return pcall(Function, ...)
+end
+function ClientUtils.QuickSafeCall(
+	Function:((...any) -> any),
+	...
+):(boolean, any)
+	if (type(Function) ~= "function") then
+		return false, "Not a function"
+	end
+
+	task.spawn(pcall, Function, ...)
+	return true
+end
 function ClientUtils.QuickRunFunction(
 	Function:((...any) -> any), 
 	ReportError:boolean?,
