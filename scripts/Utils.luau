@@ -294,11 +294,11 @@ function ClientUtils.GetPredictedPosition(
 
 	local Ping = LocalPlayer:GetNetworkPing()
 	local Velocity = BasePart.AssemblyLinearVelocity
-	
+
 	if (Velocity == Vector3.zero) then
 		return Position
 	end
-	
+
 	local Displacement = (Velocity * (Ping * 1.85))
 	local PredictedPosition = (BasePart.Position + Displacement)
 	return PredictedPosition
@@ -313,7 +313,7 @@ function ClientUtils.GetPredictedPositionUsingVelocity(
 	if (typeof(Velocity) ~= "Vector3") then
 		return false
 	end
-	
+
 	if (Velocity == Vector3.zero) then
 		return Position
 	end
@@ -321,7 +321,7 @@ function ClientUtils.GetPredictedPositionUsingVelocity(
 	local Ping = LocalPlayer:GetNetworkPing()
 	local Displacement = (Velocity * (Ping * 1.85))
 	local PredictedPosition = (Position + Displacement)
-	
+
 	return PredictedPosition
 end
 function ClientUtils.GetPredictedPositionUsingGravityAndVelocity(
@@ -334,26 +334,26 @@ function ClientUtils.GetPredictedPositionUsingGravityAndVelocity(
 	if (type(TimeDelta) ~= "number") then
 		TimeDelta = LocalPlayer:GetNetworkPing()
 	end
-	
+
 	if BasePart.Anchored then
 		return BasePart.Position
 	end
-	
+
 	local Ping = LocalPlayer:GetNetworkPing()
 	local EffectiveTime = (TimeDelta + Ping)
 
 	local CurrentPosition = BasePart.Position
 	local Velocity = BasePart.AssemblyLinearVelocity
-	
+
 	if (Velocity == Vector3.zero) then
 		return CurrentPosition
 	end
-	
+
 	local Gravity = Vector3.new(0, workspace.Gravity, 0)
-	
+
 	local Displacement = (Velocity * EffectiveTime) + (0.5 * Gravity * (EffectiveTime ^ 2))
 	local PredictedPosition = (CurrentPosition + Displacement)
-	
+
 	return PredictedPosition
 end
 
@@ -365,14 +365,14 @@ function ClientUtils.CreateInstance(
 		return false
 	end
 	local UseProperties = (type(Properties) == "table")
-	
+
 	local Success, NewInstance = pcall(function()
 		return Instance.new(Class)
 	end)
 	if not Success or not NewInstance then
 		return false
 	end
-	
+
 	if UseProperties then
 		local ParentPropertyToSet:Instance
 		for Property:string, Value:any? in pairs(Properties) do 
@@ -384,12 +384,12 @@ function ClientUtils.CreateInstance(
 				ParentPropertyToSet = Value
 			end
 		end
-		
+
 		if ParentPropertyToSet then
 			NewInstance.Parent = ParentPropertyToSet
 		end
 	end
-	
+
 	return NewInstance
 end
 function ClientUtils.SetInstanceProperties(
@@ -402,12 +402,12 @@ function ClientUtils.SetInstanceProperties(
 	if (typeof(Properties) ~= "table") then
 		return false
 	end
-	
+
 	local ParentPropertyToSet:Instance
 	for Property:string, Value:any? in pairs(Properties) do 
 		if (Property ~= "Parent") then
 			task.spawn(pcall, function()
-				NewInstance[Property] = Value
+				Object[Property] = Value
 			end)
 		elseif (Property == "Parent") and (typeof(Value) == "Instance") then
 			ParentPropertyToSet = Value
@@ -415,7 +415,9 @@ function ClientUtils.SetInstanceProperties(
 	end
 
 	if ParentPropertyToSet then
-		NewInstance.Parent = ParentPropertyToSet
+		task.spawn(pcall, function()
+			Object.Parent = ParentPropertyToSet
+		end)
 	end
 
 	return true
@@ -427,7 +429,7 @@ function ClientUtils.GetRandomPlayer():(Player)
 	if (AmountOfPlayers == 1) then
 		return PlayerList[1]
 	end
-	
+
 	return PlayerList[math.random(1, AmountOfPlayers)]
 end
 function ClientUtils.GetPlayerByName(
@@ -439,15 +441,15 @@ function ClientUtils.GetPlayerByName(
 	if (PlayerName == "") or (PlayerName == " ") then
 		return false
 	end
-	
+
 	local FoundPlayer
 	for _, Player:Player in pairs(Players:GetPlayers()) do
 		if Player then
 			local LoweredName = string.lower(Player.Name)
 			local LoweredDisplayName = string.lower(Player.DisplayName)
-			
+
 			local LoweredPlayerName = string.lower(PlayerName)
-			
+
 			if (LoweredName == LoweredPlayerName) 
 				or (LoweredDisplayName == LoweredPlayerName) 
 				or LoweredName:match(LoweredPlayerName)
@@ -458,7 +460,7 @@ function ClientUtils.GetPlayerByName(
 			end
 		end
 	end
-	
+
 	return FoundPlayer or false
 end
 
@@ -499,7 +501,7 @@ function ClientUtils.IsKeyDown(
 	if (Key.EnumType ~= Enum.KeyCode) then
 		return false
 	end
-	
+
 	return UserInputService:IsKeyDown(Key)
 end
 function ClientUtils.IsOnMobile():(boolean)
@@ -516,7 +518,7 @@ function ClientUtils.GetAngleBetween(
 	if (typeof(V2) ~= "Vector3") then
 		return 0
 	end
-	
+
 	return math.deg(math.acos(math.clamp(V1.Unit:Dot(V2.Unit), -1, 1)))
 end
 
@@ -531,7 +533,7 @@ function ClientUtils.FireRaycast(
 	if (typeof(Direction) ~= "Vector3") then
 		return false
 	end
-	
+
 	if (typeof(RaycastParameters) ~= "RaycastParams") then
 		return workspace:Raycast(Origin, Direction)
 	else
@@ -570,7 +572,7 @@ function ClientUtils.IsPointOnScreen(
 	if not Camera then
 		return false
 	end
-	
+
 	local _, OnScreen = Camera:WorldToViewportPoint(Position)
 	return OnScreen
 end
