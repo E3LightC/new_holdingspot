@@ -117,9 +117,13 @@ ContextActionService:BindAction("_SelectTarget__", function(_, InputState)
     if (InputState == Enum.UserInputState.Begin) then 
         SelectTarget()
     end
+
+    return Enum.ContextActionResult.Pass
 end, false, Keybinds.SelectTarget)
 ContextActionService:BindAction("_ToggleStatus__", function(_, InputState)
     if (InputState == Enum.UserInputState.Begin) then 
         ToggleStatus()
     end
+
+    return Enum.ContextActionResult.Pass
 end, false, Keybinds.ToggleStatus)
