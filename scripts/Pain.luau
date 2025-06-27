@@ -81,8 +81,8 @@ local function MainLoopFunction(TimeDelta:number)
     if not TargetPlayer or (typeof(TargetPlayer) ~= "Instance") or not TargetPlayer:IsA("Player") then 
         return
     end
-    local PrimaryPart:BasePart? = GetCharacterPart(TargetPlayer, "Torso")
-    if not PrimaryPart then 
+    local BasePart:BasePart? = GetCharacterPart(TargetPlayer, "Torso")
+    if not BasePart then 
         return
     end
     local WeaponModel:(Model|boolean)? = GetWeaponModel()
@@ -94,7 +94,7 @@ local function MainLoopFunction(TimeDelta:number)
         return
     end
 
-    local PredictedPosition:(Vector3|boolean)? = GetPredictedPositionUsingGravityAndVelocity(PrimaryPart, TimeDelta)
+    local PredictedPosition:(Vector3|boolean)? = GetPredictedPositionUsingGravityAndVelocity(BasePart, TimeDelta)
     if not PredictedPosition or (typeof(PredictedPosition) ~= "Vector3") then 
         return
     end
