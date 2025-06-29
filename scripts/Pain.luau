@@ -2,7 +2,8 @@
 
 local Utils = loadstring(
     game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/Utils.luau")
-)
+)()
+
 local Services = Utils.Services
 
 local Players:Players = Services.Players
@@ -33,18 +34,22 @@ local GetCharacterPart:(
     Prefer:string?
 ) -> (BasePart?) = Utils.GetCharacterPart
 
-local function SelectTarget():(boolean)
+local function SelectTargetFunction():(boolean)
     local Player:Player?, Part:BasePart, Distance:number = GetClosestPlayerToMouseOnScreen(math.huge, true, false)
     if not Player or not Part or not Distance then
-        shared.TargetedPlayer = ""
+        _G.TargetedPlayer = ""
         return false
     end
 
-    shared.TargetedPlayer = Player.Name
+    _G.TargetedPlayer = Player.Name
     return true
 end
-local function ToggleStatus():(boolean)
-    shared.ToggledStatus = not shared.ToggleStatus
+local function ToggleStatusFunction():(boolean)
+    if (_G.ToggledStatus) then
+		_G.ToggledStatus = false
+	else
+		_G.ToggledStatus = true
+	end
     return true
 end
 local function GetWeaponModel():(Model|boolean?)
@@ -69,11 +74,11 @@ local function CoroutinedFireFunction(PredictedPosition:Vector3, RemoteFunction:
 end
 
 local function MainLoopFunction(TimeDelta:number)
-    if not shared.ToggledStatus then 
+    if not _G.ToggledStatus then 
         return
     end
 
-    local TargetPlayerName:string = shared.TargetedPlayer
+    local TargetPlayerName:string = _G.TargetedPlayer
     if not TargetPlayerName then 
         return
     end
@@ -102,27 +107,27 @@ local function MainLoopFunction(TimeDelta:number)
     coroutine.wrap(CoroutinedFireFunction)(PredictedPosition, RemoteFunction)
 end
 
-shared.ToggledStatus = false
-if shared.MainRunServiceLoop then 
-    shared.MainRunServiceLoop:Disconnect()
-    shared.MainRunServiceLoop = nil
+_G.ToggledStatus = false
+if _G.MainRunServiceLoop then 
+    _G.MainRunServiceLoop:Disconnect()
+    _G.MainRunServiceLoop = nil
 end
 
-shared.MainRunServiceLoop = RunService.Heartbeat:Connect(MainLoopFunction)
+_G.MainRunServiceLoop = RunService.Heartbeat:Connect(MainLoopFunction)
 
 ContextActionService:UnbindAction("_SelectTarget__")
 ContextActionService:UnbindAction("_ToggleStatus__")
 
 ContextActionService:BindAction("_SelectTarget__", function(_, InputState)
     if (InputState == Enum.UserInputState.Begin) then 
-        SelectTarget()
+		task.spawn(SelectTargetFunction)
     end
 
     return Enum.ContextActionResult.Pass
 end, false, Keybinds.SelectTarget)
 ContextActionService:BindAction("_ToggleStatus__", function(_, InputState)
     if (InputState == Enum.UserInputState.Begin) then 
-        ToggleStatus()
+        task.spawn(ToggleStatusFunction)
     end
 
     return Enum.ContextActionResult.Pass
