@@ -64,9 +64,17 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local UserInputService = game:GetService("UserInputService")
 
-local hookmetamethod = getfenv().hookmetamethod
-local getnamecallmethod = getfenv().getnamecallmethod
-local checkcaller = getfenv().checkcaller
+local hookmetamethod:(
+        Object:any,
+        Metamethod:string,
+        Hook:((...any) -> (...any))
+) -> ((...any) -> (...any)) = getfenv().hookmetamethod
+local getnamecallmethod:(
+    nil
+) -> (string) = getfenv().getnamecallmethod
+local checkcaller:(
+    nil
+) -> (boolean) = getfenv().checkcaller
 local getgenv = getfenv().getgenv or (function()
 	return _G
 end)
@@ -86,25 +94,25 @@ local OldIndex = nil
 
 --// Types for silencing warnings.
 type VectorLibrary = { 
-	create: (x:number, y:number, z:number) -> Vector3;
-	magnitude: (vec:Vector3) -> number;
-	normalize: (vec:Vector3) -> Vector3;
-	cross: (vec1:Vector3, vec2:Vector3) -> Vector3;
+	create: (x:number, y:number, z:number) -> (Vector3);
+	magnitude: (vec:Vector3) -> (number);
+	normalize: (vec:Vector3) -> (Vector3);
+	cross: (vec1:Vector3, vec2:Vector3) -> (Vector3);
 	dot: (vec1:Vector3, vec2:Vector3) -> number;
-	angle: (vec1:Vector3, vec2:Vector3, axis:Vector3) -> number;
-	floor: (vec:Vector3) -> Vector3;
-	ceil: (vec:Vector3) -> Vector3;
-	abs: (vec:Vector3) -> Vector3;
-	sign: (vec:Vector3) -> Vector3;
-	clamp: (vec:Vector3, min:Vector3, max:Vector3) -> Vector3;
-	max: (any:Vector3) -> Vector3;
-	min: (any:Vector3) -> Vector3;
+	angle: (vec1:Vector3, vec2:Vector3, axis:Vector3) -> (number);
+	floor: (vec:Vector3) -> (Vector3);
+	ceil: (vec:Vector3) -> (Vector3);
+	abs: (vec:Vector3) -> (Vector3);
+	sign: (vec:Vector3) -> (Vector3);
+	clamp: (vec:Vector3, min:Vector3, max:Vector3) -> (Vector3);
+	max: (any:Vector3) -> (Vector3);
+	min: (any:Vector3) -> (Vector3);
 
 	zero: (Vector3);
 	one: (Vector3);
 }
 type DebugLibrary = {
-	info: (level:number, options:string) -> any
+	info: (level:number, options:string) -> (any)
 }
 --//
 
@@ -152,7 +160,10 @@ local ClientSubtitles:BindableEvent = (ReplicatedStorage:FindFirstChild("ClientS
     - If `Text` inside the replacement table is not a string, "[INVALID_TEXT]" is inserted.
 
 ]=]
-local function GenerateText(TemplateString:string, ...)
+local function GenerateText(
+    TemplateString:string, 
+    ...
+):(string)
     if (type(TemplateString) ~= "string") then 
         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GenerateText] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
         warn(`[FAIL # GenerateText]: "TemplateString" parameter is not a string.  ||| Current script line: {debug.info(1, "l")}`)
@@ -239,7 +250,12 @@ end
     - Returns `nil` if the timeout is reached or if `Parent` is destroyed mid-wait.
 
 ]=]
-local function WaitForChildWhichIsA(Parent:Instance, ClassName:string, Name:string?, TimeOut:number?):(Instance | nil | any)
+local function WaitForChildWhichIsA(
+    Parent:Instance, 
+    ClassName:string, 
+    Name:string?, 
+    TimeOut:number?
+):(Instance|nil)
 	if (typeof(Parent) == "Instance") and (type(ClassName) == "string") then
 		local InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
 		if (type(Name) == "string") and InstanceToReturn and (InstanceToReturn.Name == Name) or InstanceToReturn then
@@ -594,7 +610,16 @@ end
     - Retries automatically if no highlights are currently available from the pool.
 
 ]=]
-local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean?, IsRunner:boolean?, IsSapper:boolean?, IsBomber:boolean?, IsHeadless:boolean?, IsCuirassier:boolean?)
+local function AddEsp(
+    Character:Model, 
+    Head:BasePart?, 
+    IsIgniter:boolean?, 
+    IsRunner:boolean?, 
+    IsSapper:boolean?, 
+    IsBomber:boolean?, 
+    IsHeadless:boolean?, 
+    IsCuirassier:boolean?
+):(nil)
 	if (typeof(Character) ~= "Instance") or not Character:IsA("Model") then
         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# AddEsp] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
         warn(`[FAIL # AddEsp]: "Character" parameter is not an Instance, nor a Model.  ||| Current script line: {debug.info(1, "l")}`)
@@ -645,6 +670,8 @@ local function AddEsp(Character:Model, Head:BasePart?, IsIgniter:boolean?, IsRun
 			Head.Color = ESPColors[Type]
 		end
 	end
+
+    return
 end
 
 --[=[
@@ -687,7 +714,10 @@ end
     - If `BeatWaitTime` is not a number, NaN, ≤ 0, or ≥ 5, the default of `0.15` is used.
 
 ]=]
-local function SetupFakeAccuracyBeat(RemoteEventToUse:RemoteEvent, BeatWaitTime:number?):(thread)
+local function SetupFakeAccuracyBeat(
+    RemoteEventToUse:RemoteEvent, 
+    BeatWaitTime:number?
+):(thread)
 	if (typeof(RemoteEventToUse) ~= "Instance") or not RemoteEventToUse:IsA("RemoteEvent") then 
         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# SetupFakeAccuracyBeat] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
 		warn(`[FAIL # SetupFakeAccuracyBeat]: "RemoteEventToUse" is not an Instance, nor a RemoteEvent.  ||| Current script line: {debug.info(1, "l")}`)
@@ -794,7 +824,9 @@ end
     - If no melee weapons are found and `ListTools` is `false`, returns `nil`.
     - If `ListTools` is `true` but no weapons found, returns an empty list.
 ]=]
-local function GetMeleeWeapon(ListTools:boolean?):(...any)
+local function GetMeleeWeapon(
+    ListTools:boolean?
+):(...any)
 	local Character = LocalPlayer.Character
 
 	if not Character then 
@@ -934,7 +966,10 @@ end
     - The function can return `false` in the results list where invalid or filtered agents are found; this may be intentional for debugging or could be filtered out as needed.
 	
 ]=]
-local function GetAgentsInRange(Position:(Vector3|nil?), Range:number):{[number]:any}
+local function GetAgentsInRange(
+    Position:(Vector3|nil?), 
+    Range:number
+):{[number]:any}
 	local AgentsInRange:{[number]:any} = {}
 
 	if (type(Range) ~= "number") then 
@@ -1078,13 +1113,13 @@ end
     local SampleTable = {a = 1, b = 2, c = 3}
     
     -- Synchronous iteration
-    IterateWithFunction(SampleTable, function(key, value)
-        print(key, value)
+    IterateWithFunction(SampleTable, function(Key, Value)
+        print(Key, Value)
     end, false)
     
     -- Asynchronous iteration
-    IterateWithFunction(SampleTable, function(key, value)
-        print(key, value)
+    IterateWithFunction(SampleTable, function(Key, Value)
+        print(Key, Value)
     end) --// Instant defaults to true
     ```
 
@@ -1094,46 +1129,36 @@ end
     - Input validation helps prevent silent failures and aids debugging.
 
 ]=]
-local function IterateWithFunction(Table:{[any]: any}, Function:typeof(function(...) end), Instant:boolean?)
+local function IterateWithFunction(
+    Table:{[any]:any}, 
+    Function:((any, any) -> (any)), 
+    Instant:boolean?
+):(nil)
 	if (type(Instant) ~= "boolean") then
 		Instant = true
 	end
 
-	if (Table ~= nil) and (Function ~= nil) then 
-		if (type(Table) ~= "table") then 
-            ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# IterateWithFunction] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
-			warn(`[FAIL # IterateWithFunction]: "Table" is not a table.  ||| Current script line: {debug.info(1, "l")}`)
+	if (type(Table) ~= "table") then 
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# IterateWithFunction] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
+		warn(`[FAIL # IterateWithFunction]: "Table" is not a table.  ||| Current script line: {debug.info(1, "l")}`)
 
-			return
-		end
+		return
+	end
 
-		if (type(Function) ~= "function") then 
-            ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# IterateWithFunction] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
-			warn(`[FAIL # IterateWithFunction]: "Function" is not a function.  ||| Current script line: {debug.info(1, "l")}`)
+	if (type(Function) ~= "function") then 
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# IterateWithFunction] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
+		warn(`[FAIL # IterateWithFunction]: "Function" is not a function.  ||| Current script line: {debug.info(1, "l")}`)
 
-			return
-		end
+		return
+	end
 
-		if Instant then 
-			for Index:any, Key:any in pairs(Table) do
-				task.spawn(Function, Index, Key)
-			end
-		else
-			for Index:any, Key:any in pairs(Table) do
-				Function(Index, Key)
-			end
+	if Instant then 
+		for Index:any, Key:any in pairs(Table) do
+			task.spawn(Function, Index, Key)
 		end
 	else
-        ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# IterateWithFunction] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
-		if (Table == nil) then 
-			warn(`[FAIL # IterateWithFunction]: "Table" is equal to \`nil\`.  ||| Current script line: {debug.info(1, "l")}`)
-
-			return
-		end
-		if (Function == nil) then 
-			warn(`[FAIL # IterateWithFunction]: "Function" is equal to \`nil\`.  ||| Current script line: {debug.info(1, "l")}`)
-
-			return
+		for Index:any, Key:any in pairs(Table) do
+			Function(Index, Key)
 		end
 	end
 
@@ -1265,7 +1290,7 @@ end
     - Health check uses `(Value >= MaxHealth)` logic to determine if a building should be ignored.
 
 ]=]
-local function GetClosestBuilding():any
+local function GetClosestBuilding():(any)
 	if not LocalPlayer.Character or not LocalPlayer.Character.Parent then
 		return
 	end
@@ -1297,9 +1322,9 @@ local function GetClosestBuilding():any
 			end
 
 			return (
-				(Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or Vector3.new()) 
+				(Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or vector.zero) 
 					< 
-					(Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or Vector3.new())
+					(Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or vector.zero)
 			)
 		end)
 
@@ -1360,7 +1385,9 @@ end
     - The function name may imply array indexing (`#` operator), but it uses a custom count, making it more reliable for dictionaries.
 
 ]=]
-local function GetMaxIndexOfTable(Table:{[any]: any})
+local function GetMaxIndexOfTable(
+    Table:{[any]: any}
+):(number)
 	if (Table ~= nil) then 
 		if (type(Table) ~= "table") then
             ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetMaxIndexOfTable] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
@@ -1391,7 +1418,9 @@ local function GetMaxIndexOfTable(Table:{[any]: any})
 	return 0
 end
 
-getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(Orig:Instance)
+getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(
+    Orig:Instance
+):(nil)
 	if Orig and not Orig:IsA("Highlight") and Orig:IsA("ObjectValue") and (Orig.Name == "Orig") then 
 		repeat
 			task.wait()
@@ -1455,6 +1484,7 @@ getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(O
 					repeat 
 						task.wait() 
 					until not Hitbox or Hitbox.PrimaryPart
+                    
 					local PrimaryPart = Hitbox and Hitbox:IsDescendantOf(Workspace) and Hitbox.PrimaryPart
 
 					if PrimaryPart then
@@ -1473,6 +1503,8 @@ getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(O
 			IsCuirassier
 		)
 	end
+
+    return
 end)
 
 getgenv()["BuildingBindFunc"] = RunService.Stepped:Connect(function()
@@ -2037,10 +2069,11 @@ if (getgenv()["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNam
 							if Character then 
 								local ToolFound = (
 									Character:FindFirstChild("Spade") 
+									    or Character:FindFirstChild("Axe")
+                                        or Character:FindFirstChild("Pickaxe")
 										or Character:FindFirstChild("Sabre") 
 										or Character:FindFirstChild("Officer's Sabre") 
 										or Character:FindFirstChild("Heavy Sabre")
-										or Character:FindFirstChild("Axe")
 								)::Tool
 
 								if ToolFound then 
@@ -2097,7 +2130,7 @@ warn(
 		(UseVectorLibrary and "enabled" or "disabled"),
 		(Debug and "enabled" or "disabled"),
 		(DebugPrints and "enabled" or "disabled"),
-		(function()
+		(function():(string)
 			local ReturnString:string = "\n                "
 
 			local MaxIndexes:number = GetMaxIndexOfTable(MusicSelections)
