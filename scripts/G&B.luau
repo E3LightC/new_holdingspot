@@ -6,11 +6,7 @@
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Recent Changes \\\\--
---//        Updated ESP System to also add highlights to the new "Cuirassier" zombie type, which was recently seen in action in G&B's new playtest, 
---//   and has multiple variants sitting inside the G&B Dev Zone.
---//        Changed "Feature Overview" and "Key Bindings Overview" to be more technical.
---//        More debugging/logging features, also utilizing G&B's "ClientSubtitles" BindableEvent.
---//        Removed Rubik's cube bind [Keypad 4], and replaced with a key bind to enable or disable if "Barrel" zombies can be attacked.
+--//        Converted all user input connections to use a table full of keycodes for easier ability to change binds.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
