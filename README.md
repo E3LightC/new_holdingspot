@@ -63,5 +63,6 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdings
  * 3008 Script 
 ```lua
 --// 3008 Script
+--// godmode, infinite stamina, infinite hunger, item teleporting, teleporting to an item, grabbing an item from far, far away, blah blah blah
 loadstring(game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/3008.luau", true))()
 ```
