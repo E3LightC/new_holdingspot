@@ -48,7 +48,8 @@ local function SelectTargetFunction():(boolean)
     end
 
     _G.TargetedPlayer = Player.Name
-    print(Player.Name)
+    print(`Target selected: {Player.DisplayName}(@{Player.Name})`)
+
     return true
 end
 local function ToggleStatusFunction():(boolean)
@@ -58,7 +59,7 @@ local function ToggleStatusFunction():(boolean)
 		_G.ToggledStatus = true
 	end
 
-    print(_G.ToggledStatus and "On" or "Off")
+    print(`Current status: {(_G.ToggledStatus and "On") or "Off"}`)
     return true
 end
 local function GetWeaponModel():(Model|boolean?)
