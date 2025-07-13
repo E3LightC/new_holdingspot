@@ -17,6 +17,12 @@ local Keybinds = {
     ToggleStatus = Enum.KeyCode.Z;
 }
 
+local GunNames = {
+    "Hitman";
+    "Minigun";
+    "Rocket Launcher";
+}
+
 local GetPredictedPositionUsingGravityAndVelocity:(
     BasePart:BasePart, 
     TimeDelta:number
@@ -42,6 +48,7 @@ local function SelectTargetFunction():(boolean)
     end
 
     _G.TargetedPlayer = Player.Name
+    print(Player.Name)
     return true
 end
 local function ToggleStatusFunction():(boolean)
@@ -50,6 +57,8 @@ local function ToggleStatusFunction():(boolean)
 	else
 		_G.ToggledStatus = true
 	end
+
+    print(_G.ToggledStatus and "On" or "Off")
     return true
 end
 local function GetWeaponModel():(Model|boolean?)
@@ -58,11 +67,26 @@ local function GetWeaponModel():(Model|boolean?)
         return false
     end
 
-    local WeaponModel = Character:FindFirstChild("Minigun")
+    local WeaponModel = 
+        --// Guns ↓↓↓
+        Character:FindFirstChild("Minigun")
         or Character:FindFirstChild("Hitman")
+        or Character:FindFirstChild("Rocket Launcher")
+
+        --// Melee ↓↓↓
+        or Character:FindFirstChild("Queens Rapier")
+        or Character:FindFirstChild("Crimson Scythe")
+        or Character:FindFirstChild("Crimson Katana")
+        or Character:FindFirstChild("Dagger")
+        or Character:FindFirstChild("Chainsaw")
+        or Character:FindFirstChild("Pan")
+        or Character:FindFirstChild("Spear")
     return WeaponModel or false
 end
-local function CoroutinedFireFunction(PredictedPosition:Vector3, RemoteFunction:RemoteFunction)
+local function CoroutinedFireFunction(
+    PredictedPosition:Vector3, 
+    RemoteFunction:RemoteFunction
+)
     if (typeof(RemoteFunction) ~= "Instance") or not RemoteFunction:IsA("RemoteFunction") then 
         return
     end
@@ -73,7 +97,9 @@ local function CoroutinedFireFunction(PredictedPosition:Vector3, RemoteFunction:
     RemoteFunction:InvokeServer(PredictedPosition)
 end
 
-local function MainLoopFunction(TimeDelta:number)
+local function MainLoopFunction(
+    TimeDelta:number
+)
     if not _G.ToggledStatus then 
         return
     end
@@ -94,17 +120,39 @@ local function MainLoopFunction(TimeDelta:number)
     if not WeaponModel or (typeof(WeaponModel) ~= "Instance") or not WeaponModel:IsA("Model") then 
         return
     end
+    local IsGun = false
+    if table.find(GunNames, WeaponModel.Name) then
+        IsGun = true
+    end
     local RemoteFunction:RemoteFunction? = WeaponModel:FindFirstChildWhichIsA("RemoteFunction")
     if not RemoteFunction then 
         return
+    end
+
+    local Vis = _G["__Vis"]
+    if not Vis then 
+        Vis = Instance.new("Part")
+        _G["__Vis"] = Vis
+        Vis.Anchored = true
+        Vis.Color = Color3.new(1, 0, 0)
+        Vis.Transparency = 0.7
+        Vis.Size = Vector3.new(3, 3, 3)
+        Vis.CanCollide = false
+        Vis.Parent = workspace
     end
 
     local PredictedPosition:(Vector3|boolean)? = GetPredictedPositionUsingGravityAndVelocity(BasePart, TimeDelta)
     if not PredictedPosition or (typeof(PredictedPosition) ~= "Vector3") then 
         return
     end
+    Vis.Position = PredictedPosition
     
-    coroutine.wrap(CoroutinedFireFunction)(PredictedPosition, RemoteFunction)
+    if IsGun then
+        coroutine.wrap(CoroutinedFireFunction)(
+            PredictedPosition, 
+            RemoteFunction
+        )
+    end
 end
 
 _G.ToggledStatus = false
