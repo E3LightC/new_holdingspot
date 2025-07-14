@@ -7,6 +7,7 @@
 
 --//// Recent Changes \\\\--
 --//        Converted all user input connections to use a table full of keycodes for easier ability to change binds.
+--//        Grab log keybind removed, fixed in dev zone.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
@@ -17,10 +18,9 @@
 --//        [Q] — Shove nearby agents (if tool allows) (ignores "Barrel" agents).
 --//        [Z] / [X] — AoE melee attack with current weapon.
 --//        [G] — Auto-equip shove-capable tool from Backpack.
---//        [Numpad 1] — Retrieve logs (Berezina map only).
---//        [Numpad 2] — Toggle auto-repair system.
---//        [Numpad 3] — Switch auto-repair targeting mode.
---//        [Numpad 4] — Allow/disallow "Barrel" agents targeting.
+--//        [Numpad 1] — Toggle auto-repair system.
+--//        [Numpad 2] — Switch auto-repair targeting mode.
+--//        [Numpad 3] — Allow/disallow "Barrel" agents targeting.
 --//        [U], [F], [G], [H], [J], [Y], [T]: Triggers playback of a predefined fife or drum song. Song mappings are configurable via the `MusicSelections` table.
 --// [Combat Behavior]
 --//        All melee attacks are forcibly registered as headshots, in which the base melee module that controls said weapon on the server side will apply either the weapon’s specific headshot multiplier 
@@ -39,10 +39,9 @@
 --//        [Z] / [X] — AoE melee attack.
 --//        [G] — Auto-equip shove-capable tool from Backpack.
 --// [Utility]
---//        [Numpad 1] — Retrieve logs (Berezina map only).
---//        [Numpad 2] — Toggle auto-repair system.
---//        [Numpad 3] — Switch auto-repair targeting mode.
---//        [Numpad 4] — Allow/disallow "Barrel" zombie targeting.
+--//        [Numpad 1] — Toggle auto-repair system.
+--//        [Numpad 2] — Switch auto-repair targeting mode.
+--//        [Numpad 3] — Allow/disallow "Barrel" zombie targeting.
 --// [Music]
 --//        [U, F, G, H, J, Y, T] — Play fife/drum songs; mapped via `MusicSelections`.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
@@ -414,10 +413,9 @@ local Binds = {
 	["MurderBind_BindOne"] = Enum.KeyCode.Z;
 	["MurderBind_BindTwo"] = Enum.KeyCode.X;
 	
-	["GrabLogBind_Bind"] = Enum.KeyCode.KeypadOne;
-	["BuildingBind_Bind"] = Enum.KeyCode.KeypadTwo;
-	["BuildingFetchTypeBind_Bind"] = Enum.KeyCode.KeypadThree;
-	["BlockBarrelBind_Bind"] = Enum.KeyCode.KeypadFour;
+	["BuildingBind_Bind"] = Enum.KeyCode.KeypadOne;
+	["BuildingFetchTypeBind_Bind"] = Enum.KeyCode.KeypadTwo;
+	["BlockBarrelBind_Bind"] = Enum.KeyCode.KeypadThree;
 }
 local HighlightPool = {} -- Stores unused highlights
 local ActiveHighlights = {} -- Tracks highlights currently in use
@@ -437,7 +435,7 @@ setmetatable(ESPColors, {
 	end
 })
 
---// Disconnection/Removing previous script connections if executed more than once.
+--// disconnection of previous script connections if executed more than once.
 if getgenv()["FlameTouchRemover"] ~= nil then 
 	getgenv()["FlameTouchRemover"]:Disconnect()
 	getgenv()["FlameTouchRemover"] = nil
@@ -482,10 +480,6 @@ end
 if getgenv()["BuildingFetchTypeBind"] ~= nil then 
 	getgenv()["BuildingFetchTypeBind"]:Disconnect()
 	getgenv()["BuildingFetchTypeBind"] = nil
-end
-if getgenv()["GrabLogBind"] ~= nil then 
-	getgenv()["GrabLogBind"]:Disconnect()
-	getgenv()["GrabLogBind"] = nil
 end
 if getgenv()["BlockBarrelBind"] ~= nil then 
 	getgenv()["BlockBarrelBind"]:Disconnect()
@@ -1812,81 +1806,6 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 
 					task.wait()
 				end
-			end
-		end
-	end
-end)
-
-getgenv()["GrabLogBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
-	if not Process then 
-		if (Key.KeyCode == Binds["GrabLogBind_Bind"]) and LocalPlayer.Character then
-			local Character:Model = LocalPlayer.Character
-			local Berezina = Workspace:FindFirstChild("Berezina")
-
-			if Berezina then 
-				local Modes = Berezina:FindFirstChild("Modes") or Berezina:WaitForChild("Modes", 1)
-				if Modes then 
-					local Holdout = Modes:FindFirstChild("Holdout") or Modes:WaitForChild("Holdout", 1)
-					if Holdout then 
-						local EscapeRoute = Holdout:FindFirstChild("EscapeRoute") or Holdout:WaitForChild("EscapeRoute")
-						if EscapeRoute then
-							local Logs = (EscapeRoute:FindFirstChild("SupplyWagon") and (EscapeRoute:FindFirstChild("SupplyWagon")::Instance):FindFirstChild("Logs") or false)
-
-							if (type(Logs) ~= "boolean") and (typeof(Logs) == "Instance") and (#Logs:GetChildren() > 0) then
-								for _, Log in pairs(Logs:GetChildren()) do 
-									if Log and Log:IsA("Model") and (Log.Name == "Model") and Log:FindFirstChild("Handle") and (Log:FindFirstChild("Handle")::MeshPart):FindFirstChild("Interact") then 
-										((Log:FindFirstChild("Handle")::MeshPart):FindFirstChild("Interact")::RemoteEvent):FireServer()
-
-										local LogTool = (Character:FindFirstChild("Log") or WaitForChildWhichIsA(Character, "Tool", nil, 1))
-										if LogTool and (typeof(LogTool) == "Instance") then
-											task.wait()
-											--LogTool.Parent = Backpack
-										else
-											continue
-										end
-
-										--task.wait()
-										return
-									else
-										continue
-									end
-								end
-							end
-						end
-						if Holdout:FindFirstChild("Log") then
-							for _, Log in pairs(Holdout:GetChildren()) do 
-								if Log and Log:IsA("Model") and (Log.Name == "Log") and Log:FindFirstChild("Log") and (Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact") then 
-									((Log:FindFirstChild("Log")::MeshPart):FindFirstChild("Interact")::RemoteEvent):FireServer()
-
-									local LogTool = (Character:FindFirstChild("Log") or WaitForChildWhichIsA(Character, "Tool", nil, 1))
-									if LogTool and (typeof(LogTool) == "Instance") then
-										task.wait()
-										--LogTool.Parent = Backpack
-									end
-
-									--task.wait()
-									return
-								else
-									continue
-								end
-							end
-						else
-							warn("[FAIL # GrabLogBind]: There are no logs to interact with.")
-
-							return
-						end
-
-						return
-					end
-				end
-
-                ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GrabLogBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
-				warn(`[FAIL # GrabLogBind]: "Modes" or "Holdout" if statements failed?  ||| Current script line: {debug.info(1, "l")}`)
-				return
-			else
-				warn(`[FAIL # GrabLogBind]: The current map is not Berezina?  ||| Current script line: {debug.info(1, "l")}`)
-
-				return
 			end
 		end
 	end
