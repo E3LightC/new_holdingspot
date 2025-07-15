@@ -49,13 +49,16 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdings
 
 --//// Key Bindings Overview \\\\--
 --// [Combat]
---//        [Keypad 1] — Toggle loop-kill on random zombies.
---//        [Z] — Hold to farm points on a zombie named "Zombie".
---//        [E] — Deal direct damage to the zombie under your mouse.
---//        [T] — Trigger Absolute Zero weapon effect at mouse position.
+--//        [Q] — Shove nearby agents (if tool allows).
+--//        [Z] / [X] — Gets nearby agents and attempts to hit them.
+--//        [G] — Auto-equip shove-capable tool from Backpack.
 --// [Utility]
---//        [Keypad 2] — Enable infinite ammo, no recoil, and rapid fire.
---||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+--//        [Numpad 1] — Toggle auto-repair system.
+--//        [Numpad 2] — Switch auto-repair targeting mode.
+--//        [Numpad 3] — Allow/disallow "Barrel" zombie targeting.
+--// [Music]
+--//        [U, F, G, H, J, Y, T] — Play fife/drum songs; mapped via `MusicSelections`.
+--||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 getgenv()["DamageMulti"] = 1 --// damage multiplier, can be changed without re-executing the script.
 loadstring(game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/Project%20Lazarus.luau", true))()
