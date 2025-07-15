@@ -16,7 +16,7 @@
 --//   (e.g., "[FAIL # EXAMPLE_CONTEXT]: ...", "[INFO # EXAMPLE_CONTEXT]: ...", "[DEBUG # EXAMPLE_CONTEXT]: ...").
 --// [Input Bindings]
 --//        [Q] — Shove nearby agents (if tool allows) (ignores "Barrel" agents).
---//        [Z] / [X] — AoE melee attack with current weapon.
+--//        [Z] / [X] — Gets nearby agents and attempts to hit them.
 --//        [G] — Auto-equip shove-capable tool from Backpack.
 --//        [Numpad 1] — Toggle auto-repair system.
 --//        [Numpad 2] — Switch auto-repair targeting mode.
@@ -36,7 +36,7 @@
 --//// Key Bindings Overview \\\\--
 --// [Combat]
 --//        [Q] — Shove nearby agents (if tool allows).
---//        [Z] / [X] — AoE melee attack.
+--//        [Z] / [X] — Gets nearby agents and attempts to hit them.
 --//        [G] — Auto-equip shove-capable tool from Backpack.
 --// [Utility]
 --//        [Numpad 1] — Toggle auto-repair system.
