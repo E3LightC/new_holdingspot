@@ -1410,7 +1410,7 @@ getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(
 
 		if Head then
 			Head.Massless = true
-			Head.Size = HeadSizeToUse or (UseVectorLibrary and vector.create(3, 3, 3)) or Vector3.new(3, 3, 3)
+			--Head.Size = HeadSizeToUse or (UseVectorLibrary and vector.create(3, 3, 3)) or Vector3.new(3, 3, 3)
 			Head.Transparency = HeadTransparency
 		end
 
@@ -1689,6 +1689,12 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 	if not Process then 
 		if (Key.KeyCode == Binds["MurderBind_BindOne"]) or (Key.KeyCode == Binds["MurderBind_BindTwo"]) then 
 			if LocalPlayer.Character and LocalPlayer.Character.Parent then
+                local Character = LocalPlayer.Character
+                local PrimaryPart = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
+                if not PrimaryPart then 
+                    return
+                end
+
 				local List:{{}} = GetMeleeWeapon(false)
 
 				for _, Table in pairs(List) do 
@@ -1724,11 +1730,11 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 									if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
 										WeaponRemote:FireServer("HitZombie",
 											Agent,
-											((Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position),
+											(PrimaryPart.CFrame * CFrame.new(0, 0, -5)).Position,
 											true,
 											(UseVectorLibrary and vector.create(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096))) or Vector3.new(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096)),
 											((Agent:FindFirstChild("Head") and "Head") or "HumanoidRootPart"),
-											((Agent.PrimaryPart and Agent.PrimaryPart.CFrame.LookVector * 5) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).CFrame.LookVector * 5)
+											(UseVectorLibrary and vector.create(0, 1, 0)) or Vector3.new(0, 1, 0)
 										)
 									end
 								end)
@@ -1739,7 +1745,7 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 									if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
 										WeaponRemote:FireServer("Bayonet_HitZombie",
 											Agent,
-											((Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position),
+											(PrimaryPart.CFrame * CFrame.new(0, 0, -5)).Position,
 											true,
                                             ((Agent:FindFirstChild("Head") and "Head") or "HumanoidRootPart")
 										)
