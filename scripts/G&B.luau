@@ -6,8 +6,9 @@
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Recent Changes \\\\--
---//        Converted all user input connections to use a table full of keycodes for easier ability to change binds.
 --//        Grab log keybind removed, fixed in dev zone.
+--//        Switched ESP system to use BoxHandleAdornments instead of Highlights due to Highlights having a max of 31.
+--//        Fixed bayonet weapons not working with the kill bind due to changes with how the events work.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
@@ -376,8 +377,6 @@ local MurderRange:number = 11 --// used as a backup if can't find weapon range.
 local HeadSizeToUse:Vector3 = (UseVectorLibrary and vector.create(6, 9, 4.5)) or Vector3.new(6, 9, 4.5)
 local HeadTransparency:number = 0.6
 
-local MAX_HIGHLIGHTS:number = 29
-
 local PreferredWeapon:{string} = {"Pike";"Lance"}
 --// true = Ignore Agent
 --// false = Include Agent
@@ -417,8 +416,6 @@ local Binds = {
 	["BuildingFetchTypeBind_Bind"] = Enum.KeyCode.KeypadTwo;
 	["BlockBarrelBind_Bind"] = Enum.KeyCode.KeypadThree;
 }
-local HighlightPool = {} -- Stores unused highlights
-local ActiveHighlights = {} -- Tracks highlights currently in use
 local ESPColors = {
 	["Igniter"] = Color3.fromRGB(255, 255, 0);
 	["Runner"] = Color3.fromRGB(0, 255, 255);
@@ -429,6 +426,7 @@ local ESPColors = {
 
 	["Backup"] = Color3.fromRGB(14, 16, 168);
 }
+
 setmetatable(ESPColors, {
 	__index = function()
 		return ESPColors["Backup"]
@@ -497,56 +495,6 @@ getgenv()["BuildHighlight"].FillColor = Color3.fromRGB(255, 204, 102)
 getgenv()["BuildHighlight"].Parent = ReplicatedFirst
 getgenv()["BuildHighlight"].FillTransparency = 0.5
 getgenv()["BuildHighlight"].Enabled = true
-
---[=[
-    Description:
-    Retrieves a `Highlight` instance from the reuse pool, or creates a new one if allowed.
-    Enforces a maximum limit (`MAX_HIGHLIGHTS`) to prevent excessive instance creation.
-    If the limit is reached and no pooled highlights are available, the oldest active highlight is recycled.
-
-    Returns:
-    - `Highlight`: A `Highlight` instance, either reused, newly created, or recycled.
-
-    Features:
-    - **Object Pooling**:
-        - Prioritizes reuse from `HighlightPool` to minimize instance creation overhead.
-    - **Instance Cap**:
-        - Respects `MAX_HIGHLIGHTS` to avoid unbounded memory usage.
-    - **Automatic Recycling**:
-        - When the cap is reached, it recycles the oldest active highlight by clearing its `Adornee`.
-
-    Notes:
-    - Recycled highlights have their `Adornee` property cleared to prepare for reuse.
-    - The function does not parent or configure the returned `Highlight`—that must be handled externally.
-
-    Example Usage:
-    ```lua
-    local Highlight = GetHighlight()
-    Highlight.Adornee = SomePart
-    Highlight.FillColor = Color3.new(1, 0, 0)
-    Highlight.Parent = SomePart
-    ```
-
-    Edge Cases:
-    - If the pool is empty and the active list is at capacity, the first (oldest) highlight is always reused.
-    - `HighlightPool` and `ActiveHighlights` must be properly initialized externally for this function to work correctly.
-
-]=]
-local function GetHighlight()
-    if (#HighlightPool > 0) then
-        return table.remove(HighlightPool)
-    elseif (#ActiveHighlights < MAX_HIGHLIGHTS) then
-        local NewHighlight = Instance.new("Highlight")
-        table.insert(ActiveHighlights, NewHighlight)
-        return NewHighlight
-    else
-        --//warn("[WARNING]: Highlight limit reached. Reusing the oldest highlight.")
-        local OldestHighlight = ActiveHighlights[1]
-        table.remove(ActiveHighlights, 1)
-        OldestHighlight.Adornee = nil
-        return OldestHighlight
-    end
-end
 
 --[=[
     Description:
@@ -629,33 +577,45 @@ local function AddEsp(
         or "None"
 
 	if (type(Type) == "string") and (Type ~= "None") then
-		local NewHighlight = GetHighlight()
+		local NewHighlight = Instance.new("BoxHandleAdornment")
 		if not NewHighlight then
-			task.delay(ZombieESPWait, AddEsp, Character, Head, IsIgniter, IsRunner, IsSapper, IsBomber, IsHeadless, IsCuirassier)
+			task.delay(ZombieESPWait, AddEsp, 
+                Character, 
+                Head, 
+                IsIgniter, 
+                IsRunner, 
+                IsSapper, 
+                IsBomber, 
+                IsHeadless, 
+                IsCuirassier
+            )
 			return 
 		end
 
-		Character:AddTag("Highlighted_")
-		NewHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		NewHighlight.OutlineColor = ESPColors[Type]
-		NewHighlight.FillColor = ESPColors[Type]
-		NewHighlight.FillTransparency = 0.5
-		NewHighlight.Enabled = true
-		NewHighlight.Adornee = Character
-		NewHighlight.Parent = ReplicatedFirst
-		
-		local Connection
-        Connection = Character.AncestryChanged:Connect(function()
-            if not Character.Parent then
-                NewHighlight.Adornee = nil
-                NewHighlight.Enabled = false
-                NewHighlight.Parent = nil
-                table.insert(HighlightPool, NewHighlight) -- Return to pool
-                Connection:Disconnect()
-				Connection = nil
-            end
-        end)
+        local PrimaryPart = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
+        if not PrimaryPart then 
+            task.delay(ZombieESPWait, AddEsp, 
+                Character, 
+                Head, 
+                IsIgniter, 
+                IsRunner, 
+                IsSapper, 
+                IsBomber, 
+                IsHeadless, 
+                IsCuirassier
+            )
+            return
+        end
 
+		Character:AddTag("Highlighted_")
+		NewHighlight.AlwaysOnTop = true
+        NewHighlight.ZIndex = 10
+		NewHighlight.Color3 = ESPColors[Type]
+        NewHighlight.Size = (UseVectorLibrary and vector.create(3, 5, 3)) or Vector3.new(3, 5, 3)
+		NewHighlight.Transparency = 0.5
+		NewHighlight.Adornee = PrimaryPart
+		NewHighlight.Parent = Character
+		
 		if Head and (typeof(Head) == "Instance" and Head:IsA("BasePart")) then
 			Head.Color = ESPColors[Type]
 		end
@@ -1411,7 +1371,7 @@ end
 getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(
     Orig:Instance
 ):(nil)
-	if Orig and not Orig:IsA("Highlight") and Orig:IsA("ObjectValue") and (Orig.Name == "Orig") then 
+	if Orig and Orig:IsA("ObjectValue") and (Orig.Name == "Orig") then 
 		repeat
 			task.wait()
 		until not Orig or Orig.Value and Orig.Parent
@@ -1781,9 +1741,7 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 											Agent,
 											((Agent.PrimaryPart and Agent.PrimaryPart.Position) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position),
 											true,
-											(UseVectorLibrary and vector.create(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096))) or Vector3.new(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096)),
-											((Agent:FindFirstChild("Head") and "Head") or "HumanoidRootPart"),
-											((Agent.PrimaryPart and Agent.PrimaryPart.CFrame.LookVector * 5) or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).CFrame.LookVector * 5)
+                                            ((Agent:FindFirstChild("Head") and "Head") or "HumanoidRootPart")
 										)
 										break
 									end
