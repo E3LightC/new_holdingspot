@@ -386,6 +386,9 @@ local function HighlightGenerators():(boolean)
     for _, Generator:Model in pairs(Generators) do 
         if Generator and Generator:IsA("Model") and (Generator.Name == "Generator") and Generator:FindFirstChild("Progress") then 
             local ItemRoot = Generator:FindFirstChild("Main")
+            if not ItemRoot then 
+                return
+            end
             if ItemRoot:FindFirstChild("__") then
                 return
                 --[[repeat
@@ -664,6 +667,7 @@ getgenv().ScriptThread = coroutine.create(function()
                 elseif (CurrentSolutionText ~= OldSolutionText) then
                     Started = os.clock()
                     OldSolutionText = CurrentSolutionText
+                    task.wait(0.05)
                 end
 
                 local TimePassed = (os.clock() - Started)
