@@ -638,6 +638,7 @@ end
 getgenv().ScriptThread = coroutine.create(function()
     local Started = 0
     local WasInGenerator = false
+    local OldSolutionText = ""
 
     while true do
         if ItemEspToggle.Value then 
@@ -649,14 +650,22 @@ getgenv().ScriptThread = coroutine.create(function()
         if GeneratorEspToggle.Value then 
             task.spawn(HighlightGenerators)
         end
+
         if AutoGenToggle.Value then
-            local InGenerator = (FlowGameManager.activeGame ~= nil)
+            local ActiveGame = FlowGameManager.activeGame
+            local InGenerator = (ActiveGame ~= nil)
 
-            if (InGenerator and not WasInGenerator) then
-                Started = os.clock()
-            end
+            if InGenerator then
+                local CurrentSolutionText = ActiveGame.SolutionText
 
-            if (InGenerator) then
+                if not WasInGenerator then
+                    Started = os.clock()
+                    OldSolutionText = CurrentSolutionText
+                elseif (CurrentSolutionText ~= OldSolutionText) then
+                    Started = os.clock()
+                    OldSolutionText = CurrentSolutionText
+                end
+
                 local TimePassed = (os.clock() - Started)
                 if (TimePassed >= ScriptSettings.Misc.AutoGenSpeed) then
                     task.spawn(AttemptToCompleteGeneratorPuzzle)
