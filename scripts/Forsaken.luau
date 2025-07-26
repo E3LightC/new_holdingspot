@@ -285,16 +285,18 @@ local function ApplyPlayerHighlight(
     end
 
     if RootPart:FindFirstChild("__") then
-        return
-        --[[repeat
-            if RootPart:FindFirstChild("__") then
-                RootPart:FindFirstChild("__"):Destroy()
-            else
-                break
-            end
+        if (Role == "Remove") then 
+            repeat
+                if RootPart:FindFirstChild("__") then
+                    RootPart:FindFirstChild("__"):Destroy()
+                else
+                    break
+                end
 
-            task.wait()
-        until not RootPart:FindFirstChild("__")]]
+                task.wait()
+            until not RootPart:FindFirstChild("__")
+        end
+        return
     end
 
     local Highlight = MakeHighlight(ScriptSettings.EspSettings.PlayerESPSize, "__")
@@ -389,6 +391,7 @@ local function HighlightGenerators():(boolean)
             if not ItemRoot then 
                 return
             end
+            
             if ItemRoot:FindFirstChild("__") then
                 return
                 --[[repeat
@@ -446,13 +449,21 @@ local function HighlightPlayers():(boolean)
     end
 
     for _, Survivor:Model in pairs(RoundPlayers.Survivors) do 
-        if Survivor and Survivor:IsA("Model") and (Players:GetPlayerFromCharacter(Survivor) ~= LocalPlayer) then 
-            task.spawn(ApplyPlayerHighlight, Survivor, "Survivor")
+        if Survivor and Survivor:IsA("Model") then
+            if (Players:GetPlayerFromCharacter(Survivor) ~= LocalPlayer) then 
+                task.spawn(ApplyPlayerHighlight, Survivor, "Survivor")
+            else
+                task.spawn(ApplyPlayerHighlight, Survivor, "Remove")
+            end
         end
     end
     for _, Killer:Model in pairs(RoundPlayers.Killers) do 
         if Killer and Killer:IsA("Model") and (Players:GetPlayerFromCharacter(Killer) ~= LocalPlayer) then 
-            task.spawn(ApplyPlayerHighlight, Killer, "Killer")
+            if (Players:GetPlayerFromCharacter(Survivor) ~= LocalPlayer) then 
+                task.spawn(ApplyPlayerHighlight, Killer, "Killer")
+            else
+                task.spawn(ApplyPlayerHighlight, Killer, "Remove")
+            end
         end
     end
 
