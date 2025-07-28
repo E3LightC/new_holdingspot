@@ -6,6 +6,7 @@
  * [SCP: Apprehension (PC only)](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/SCP%20Apprehension.luau)
  * [Project Lazarus (PC only)](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/Project%20Lazarus.luau)
  * [3008 Script (PC and Mobile)](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/3008.luau)
+ * [Forsaken Script (PC and Mobile)](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/Forsaken.luau)
 
 # *other stuff*
  * [Infinite Yield FOV Plugin](https://github.com/E3LightC/new_holdingspot/blob/main/scripts/FOV_Commands.iy)
@@ -69,3 +70,10 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdings
 --// godmode, infinite stamina, infinite hunger, item teleporting, teleporting to an item, grabbing an item from far, far away, blah blah blah
 loadstring(game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/3008.luau", true))()
 ```
+ * Forsaken Script 
+```lua
+--// Forsaken Script
+--// infinite stamina, survivor & killer esp, item esp, generator esp, block esp(highlights when a killer's attack can be blocked, slightly buggy), auto generator, silent footsteps
+loadstring(game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/Forsaken.luau", true))()
+```
+
