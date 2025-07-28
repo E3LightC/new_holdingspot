@@ -168,6 +168,12 @@ local DefaultSettings = {
     };
 }
 
+local KillerAnimations = {
+    ["Jason"] = {
+        ["Slash"] = 
+    }
+}
+
 local TableInsert = table.insert
 
 local LocalPlayer = Players.LocalPlayer
@@ -285,17 +291,17 @@ local function ApplyPlayerHighlight(
     end
 
     if RootPart:FindFirstChild("__") then
-        if (Role == "Remove") then 
-            repeat
-                if RootPart:FindFirstChild("__") then
-                    RootPart:FindFirstChild("__"):Destroy()
-                else
-                    break
-                end
+        --[[repeat
+            if RootPart:FindFirstChild("__") then
+                RootPart:FindFirstChild("__"):Destroy()
+            else
+                break
+            end
 
-                task.wait()
-            until not RootPart:FindFirstChild("__")
-        end
+            task.wait()
+        until not RootPart:FindFirstChild("__")
+        return]]
+
         return
     end
 
@@ -452,17 +458,13 @@ local function HighlightPlayers():(boolean)
         if Survivor and Survivor:IsA("Model") then
             if (Players:GetPlayerFromCharacter(Survivor) ~= LocalPlayer) then 
                 task.spawn(ApplyPlayerHighlight, Survivor, "Survivor")
-            else
-                task.spawn(ApplyPlayerHighlight, Survivor, "Remove")
             end
         end
     end
     for _, Killer:Model in pairs(RoundPlayers.Killers) do 
-        if Killer and Killer:IsA("Model") and (Players:GetPlayerFromCharacter(Killer) ~= LocalPlayer) then 
+        if Killer and Killer:IsA("Model") then 
             if (Players:GetPlayerFromCharacter(Survivor) ~= LocalPlayer) then 
                 task.spawn(ApplyPlayerHighlight, Killer, "Killer")
-            else
-                task.spawn(ApplyPlayerHighlight, Killer, "Remove")
             end
         end
     end
