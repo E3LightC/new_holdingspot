@@ -172,29 +172,8 @@ local DefaultSettings = {
     };
 }
 
-local KillerAnimations = {
-    ["Jason"] = {
-        126830014841198;
-        126355327951215;
-        102228729296384;
-    };
-    ["JohnDoe"] = {
-        105458270463374;
-    };
-    ["Noli"] = {
-        109230267448394;
-        93841120533318;
-    };
-    ["c00lkidd"] = {
-        18885909645;
-        106776364623742;
-    };
-    ["1x1x1x1"] = {
-        83829782357897;
-    };
-}
-
 local TableInsert = table.insert
+local TableFind = table.find
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -208,6 +187,7 @@ local SurvivorsFolder = PlayersFolder:WaitForChild("Survivors")
 
 local Systems:Folder = ReplicatedStorage:WaitForChild("Systems")
 local Modules:Folder = ReplicatedStorage:WaitForChild("Modules")
+local Assets:Folder = ReplicatedStorage:WaitForChild("Assets")
 
 local CharacterSystems:Folder = Systems:WaitForChild("Character")
 local CharacterSystems_Game:Folder = CharacterSystems:WaitForChild("Game")
@@ -216,13 +196,100 @@ local SprintingSystem:ModuleScript = require(CharacterSystems_Game:WaitForChild(
 local Network:ModuleScript = Modules:WaitForChild("Network")
 local UnreliableRemoteEvent:UnreliableRemoteEvent = Network:WaitForChild("UnreliableRemoteEvent")
 
+local AssetKillers = Assets:WaitForChild("Killers")
+local Skins = Assets:WaitForChild("Skins")
+local KillerSkins = Skins:WaitForChild("Killers")
+
 local Misc:Folder = Modules:WaitForChild("Misc")
 local FlowGameManager:ModuleScript = require(Misc:WaitForChild("FlowGameManager"))
 
 local ChatWindowConfig = TextChatService:WaitForChild("ChatWindowConfiguration")
 
+local function FetchAnimationsOfKiller(KillerName:string, AnimationIdentifiers:{string}):({number?})
+	local Animations = {}
+
+	if (type(KillerName) ~= "string") then
+		return Animations
+	end
+    if (type(AnimationIdentifiers) ~= "table") then
+        return Animations
+    end
+
+	local function ExtractAnimations(AnimationsTable:{string})
+		if (type(AnimationsTable) ~= "table") then 
+            return 
+        end
+
+		for Identifier:string, AnimationIdOrTable:string|{string} in pairs(AnimationsTable) do
+			if (type(AnimationIdOrTable) == "string") then
+				if TableFind(AnimationIdentifiers, tostring(Identifier)) then
+					local Id = tonumber(string.match(AnimationIdOrTable, "%d+"))
+					if Id then
+						TableInsert(Animations, Id)
+					end
+				end
+			elseif (type(AnimationIdOrTable) == "table") then
+				for SubIdentifier:string, IdStr:string in pairs(AnimationIdOrTable) do
+					if (type(IdStr) == "string") and TableFind(AnimationIdentifiers, tostring(SubIdentifier)) then
+						local Id = tonumber(string.match(IdStr, "%d+"))
+						if Id then
+							TableInsert(Animations, Id)
+						end
+					end
+				end
+			end
+		end
+	end
+
+	local KillerFolder_Assets:Folder = AssetKillers:FindFirstChild(KillerName)
+	if KillerFolder_Assets then
+		local ConfigModule:ModuleScript = KillerFolder_Assets:FindFirstChild("Config")
+		if ConfigModule and ConfigModule:IsA("ModuleScript") then
+			local Config = require(ConfigModule)
+			ExtractAnimations(Config.Animations)
+		end
+	end
+
+	local KillerFolder_Skins:Folder = KillerSkins:FindFirstChild(KillerName)
+	if KillerFolder_Skins then
+		for _, SkinFolder:Folder in pairs(KillerFolder_Skins:GetChildren()) do
+			if SkinFolder:IsA("Folder") then
+				local ConfigModule:ModuleScript = SkinFolder:FindFirstChild("Config")
+				if ConfigModule and ConfigModule:IsA("ModuleScript") then
+					local Config = require(ConfigModule)
+					ExtractAnimations(Config.Animations)
+				end
+			end
+		end
+	end
+
+	return Animations
+end
+
+local KillerAnimations = {
+    ["Jason"] = FetchAnimationsOfKiller("Jason", {"Slash";"Behead";"GashingWoundStart"}); --[[{
+        126830014841198;
+        126355327951215;
+        102228729296384;
+    };]]
+    ["JohnDoe"] = FetchAnimationsOfKiller("JohnDoe", {"Slash"}); --[[{
+        105458270463374;
+    };]]
+    ["Noli"] = FetchAnimationsOfKiller("Noli", {"Stab";"LoopCharge";"LoopDashCombo"}); --[[{
+        109230267448394;
+        93841120533318;
+    };]]
+    ["c00lkidd"] = FetchAnimationsOfKiller("c00lkidd", {"Attack";"WalkspeedOverrideStart";"WalkspeedOverrideLoop"}); --[[{
+        18885909645;
+        106776364623742;
+    };]]
+    ["1x1x1x1"] = FetchAnimationsOfKiller("1x1x1x1", {"Slash";"MassInfection"}); --[[{
+        83829782357897;
+    };]]
+}
+
 local function GetMaxIndexOfTable(
-    Table:{[any]: any}
+    Table:{[any]:any}
 ):(number)
 	if (Table ~= nil) then 
 		if (type(Table) ~= "table") then
