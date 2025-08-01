@@ -5,11 +5,9 @@ local Utils = loadstring(
     game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/Utils.luau")
 )()
 
-local Services = Utils.Services
-
-local Players:Players = Services.Players
-local RunService:RunService = Services.RunService
-local ContextActionService:ContextActionService = Services.ContextActionService
+local Players:Players = Utils.GeneralUtils.GetService("Players")
+local RunService:RunService = Utils.GeneralUtils.GetService("RunService")
+local ContextActionService:ContextActionService = Utils.GeneralUtils.GetService("ContextActionService")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -27,19 +25,19 @@ local GunNames = {
 local GetPredictedPositionUsingGravityAndVelocity:(
     BasePart:BasePart, 
     TimeDelta:number
-) -> (Vector3|boolean?) = Utils.GetPredictedPositionUsingGravityAndVelocity
+) -> (Vector3|boolean?) = Utils.PredictionUtils.GetPredictedPositionUsingGravityAndVelocity
 local GetPlayerByName:(
     PlayerName:string
-) -> (Player|boolean?) = Utils.GetPlayerByName
+) -> (Player|boolean?) = Utils.PlayerUtils.GetPlayerByName
 local GetClosestPlayerToMouseOnScreen:(
     MaxScreenDistance:number?, 
     IgnoreDead:boolean?, 
     RequireOnScreen:boolean?
-) -> (Player, BasePart, number) = Utils.GetClosestPlayerToMouseOnScreen
+) -> (Player, BasePart, number) = Utils.PlayerUtils.GetClosestPlayerToMouseOnScreen
 local GetCharacterPart:(
     Player:Player, 
     Prefer:string?
-) -> (BasePart?) = Utils.GetCharacterPart
+) -> (BasePart?) = Utils.PlayerUtils.GetCharacterPart
 
 local function SelectTargetFunction():(boolean)
     local Player:Player?, Part:BasePart, Distance:number = GetClosestPlayerToMouseOnScreen(math.huge, true, false)
