@@ -30,139 +30,197 @@ end
 local Mouse:Mouse = LocalPlayer:GetMouse()
 
 export type ClientUtil_Types = {
-	LocalPlayer:Player,
+	LocalPlayer:(Player);
+	IsStudio:(boolean);
+	IsClient:(boolean);
 
-	GetCamera:() -> (Camera?);
+	GeneralUtils:{
+		CreateInstance:(
+			Class:string, 
+			Properties:{[string]:any}?
+		) -> (Instance | false, boolean?);
+		
+		WaitForChildWhichIsA:(
+			Parent:Instance, 
+			ClassName:string, 
+			Name:string?, 
+			TimeOut:number?
+		) -> (Instance?);
+
+		BindToInstance:(
+			Object:Instance,
+			Event:RBXScriptSignal,
+			Callback:((...any) -> any)
+		) -> (RBXScriptConnection | false?);
+
+		SetInstanceProperties:(
+			Object:Instance, 
+			Properties:{[string]:any}
+		) -> (boolean);
+
+		SafeCall:(
+			Function:(...any) -> any, 
+			...any
+		) -> (boolean, any);
+
+		QuickSafeCall:(
+			Function:(...any) -> any, 
+			...any
+		) -> (boolean, any);
+
+		GetService:(
+			ServiceName:string
+		) -> (any?);
+
+		IsKeyDown:(
+			Key:Enum.KeyCode
+		) -> (boolean);
+
+		IsOnMobile:() -> (boolean);
+
+		IsPointOnScreen:(
+			Position:Vector3
+		) -> (boolean);
+		
+		GetCamera:() -> (Camera?)
+	};
 	
-	WaitForChildWhichIsA:(
-		Parent:Instance, 
-		ClassName:string, 
-		Name:string?, 
-		TimeOut:number?
-	) -> (Instance?);
+	ConnectionUtils:{
+		CreateConnection:(
+			Identifier:string,
+			Signal:RBXScriptSignal,
+			FunctionToBind:((...any) -> any)
+		) -> (RBXScriptConnection | false?);
+
+		RemoveConnection:(
+			Identifier:string
+		) -> (boolean);
+
+		ClearConnections:() -> (boolean);
+
+		GetConnection:(
+			Identifier:string
+		) -> (RBXScriptConnection | false?);
+	};
 	
-	BindToInstance:(
-		Object:Instance,
-		Event:RBXScriptSignal,
-		Callback:((...any) -> any)
-	) -> (RBXScriptConnection | false?);
+	PlayerUtils:{
+		GetPlayerByName:(
+			PlayerName:string
+		) -> (Player | false?);
+		
+		GetRandomPlayer:() -> Player;
 
-	GetMouseHitPosition:(
-		UseCustomRaycast:boolean?, 
-		DirectionMultiplier:number?, 
-		RaycastParameters:RaycastParams?
-	) -> (Vector3, RaycastResult?);
+		IsDescendantOfLocalPlayerCharacter:(
+			Object:Instance
+		) -> (boolean);
 
-	GetMouseTarget:(
-		UseCustomRaycast:boolean?, 
-		DirectionMultiplier:number?, 
-		RaycastParameters:RaycastParams?
-	) -> (Instance?, RaycastResult?);
+		IsDescendantOfPlayerCharacter:(
+			Player:Player, 
+			Object:Instance
+		) -> (boolean);
 
-	GetClosestPlayerToCharacter:(
-		IgnoreDead:boolean?
-	) -> (Player?, BasePart?, number);
+		GetClosestPlayerToCharacter:(
+			IgnoreDead:boolean?
+		) -> (Player?, BasePart?, number);
 
-	GetClosestPlayerToMouseOnScreen:(
-		MaxScreenDistance:number?, 
-		IgnoreDead:boolean?, 
-		RequireOnScreen:boolean?
-	) -> (Player?, BasePart?, number);
+		GetClosestPlayerToMouseOnScreen:(
+			MaxScreenDistance:number?, 
+			IgnoreDead:boolean?, 
+			RequireOnScreen:boolean?
+		) -> (Player?, BasePart?, number);
 
-	GetPredictedPosition:(
-		BasePartOrPosition:BasePart|Vector3,
-		VelocityIfPosition:Vector3?
-	) -> (Vector3 | false);
+		GetCharacterPart:(
+			Player:Player, 
+			Prefer:string?
+		) -> (BasePart? | false?);
+	};
 	
-	GetPredictedPositionUsingGravityAndVelocity:(
-		BasePartOrPosition:BasePart|Vector3, 
-		TimeDelta:number,
-		VelocityIfPosition:Vector3?
-	) -> (Vector3 | false);
+	RaycastUtils:{
+		GetMouseHitPosition:(
+			UseCustomRaycast:boolean?, 
+			DirectionMultiplier:number?, 
+			RaycastParameters:RaycastParams?
+		) -> (Vector3, RaycastResult?);
 
-	CreateInstance:(
-		Class:string, 
-		Properties:{[string]:any}?
-	) -> (Instance | false, boolean?);
+		GetMouseTarget:(
+			UseCustomRaycast:boolean?, 
+			DirectionMultiplier:number?, 
+			RaycastParameters:RaycastParams?
+		) -> (Instance?, RaycastResult?);
 
-	SetInstanceProperties:(
-		Object:Instance, 
-		Properties:{[string]:any}
-	) -> (boolean);
+		FireRaycast:(
+			Origin:Vector3, 
+			Direction:Vector3, 
+			RaycastParameters:RaycastParams?
+		) -> (RaycastResult? | false?);
+	};
 
-	GetRandomPlayer:() -> Player;
+	PredictionUtils:{
+		GetPredictedPosition:(
+			BasePartOrPosition:BasePart|Vector3,
+			VelocityIfPosition:Vector3?
+		) -> (Vector3 | false);
+
+		GetPredictedPositionUsingGravityAndVelocity:(
+			BasePartOrPosition:BasePart|Vector3, 
+			TimeDelta:number,
+			VelocityIfPosition:Vector3?
+		) -> (Vector3 | false);
+	};
 	
-	GetPlayerByName:(
-		PlayerName:string
-	) -> (Player | false?);
-
-	IsDescendantOfLocalPlayerCharacter:(
-		Object:Instance
-	) -> (boolean);
-
-	IsDescendantOfPlayerCharacter:(
-		Player:Player, 
-		Object:Instance
-	) -> (boolean);
-
-	IsKeyDown:(
-		Key:Enum.KeyCode
-	) -> (boolean);
-	
-	IsOnMobile:() -> (boolean);
-
-	GetAngleBetween:(
-		V1:Vector3, 
-		V2:Vector3
-	) -> (number);
-
-	FireRaycast:(
-		Origin:Vector3, 
-		Direction:Vector3, 
-		RaycastParameters:RaycastParams?
-	) -> (RaycastResult? | false?);
-
-	GetCharacterPart:(
-		Player:Player, 
-		Prefer:string?
-	) -> (BasePart? | false?);
-
-	IsPointOnScreen:(
-		Position:Vector3
-	) -> (boolean);
-
-	SafeCall:(
-		Function:(...any) -> any, 
-		...any
-	) -> (boolean, any);
-
-	QuickSafeCall:(
-		Function:(...any) -> any, 
-		...any
-	) -> (boolean, any);
-	
-	GetService:(
-		ServiceName:string
-	) -> (any?);
-
-	CreateConnection:(
-		Identifier:string,
-		Signal:RBXScriptSignal,
-		FunctionToBind:((...any) -> any)
-	) -> (RBXScriptConnection | false?);
-
-	RemoveConnection:(
-		Identifier:string
-	) -> (boolean);
-
-	ClearConnections:() -> (boolean);
-
-	GetConnection:(
-		Identifier:string
-	) -> (RBXScriptConnection | false?);
+	MathUtils:{
+		GetAngleBetween:(
+			V1:Vector3, 
+			V2:Vector3
+		) -> (number);
+		
+		GetAbsoluteValueOfNumber:(
+			Value:number
+		) -> (number);
+		
+		GetDistanceFromPosition:(
+			From:Vector3, 
+			Position:Vector3
+		) -> (number);
+		
+		GetFlatDistance:(
+			V1:Vector3, 
+			V2:Vector3
+		) -> (number);
+		
+		IsPositionWithinDistance:(
+			Position:Vector3, 
+			From:Vector3, 
+			MaxDistance:number
+		) -> (boolean);
+		
+		IsPositionOutOfDistance:(
+			Position:Vector3, 
+			From:Vector3, 
+			MaxDistance:number
+		) -> (boolean);
+		
+		ClampNumber:(
+			Value:number, 
+			Min:number, 
+			Max:number
+		) -> (number);
+		
+		GetDirection:(
+			From:Vector3, 
+			To:Vector3
+		) -> (Vector3);
+	};
 }
 
-local ClientUtils = {}
+local ClientUtils = {
+	MathUtils = {};
+	PredictionUtils = {};
+	RaycastUtils = {};
+	PlayerUtils = {};
+	ConnectionUtils = {};
+	GeneralUtils = {};
+}
 local Connections = {}
 local ServicesCache = {}
 
@@ -174,7 +232,7 @@ ClientUtils.LocalPlayer = LocalPlayer
 -- Calls a function in a protected (pcall) environment.
 -- @param Function (...any) -> any: The function to call.
 -- @return success:boolean, result:any
-function ClientUtils.SafeCall(
+function ClientUtils.GeneralUtils.SafeCall(
 	Function:((...any) -> any),
 	...
 ):(boolean, any)
@@ -187,8 +245,9 @@ end
 
 --// QuickSafeCall
 -- Same as SafeCall, but spawns the call asynchronously.
--- Always returns true.
-function ClientUtils.QuickSafeCall(
+-- @param Functio (...any) -> any: The function to call.
+-- @return success:boolean, result:any
+function ClientUtils.GeneralUtils.QuickSafeCall(
 	Function:((...any) -> any),
 	...
 ):(boolean, any)
@@ -204,7 +263,7 @@ end
 -- Returns a service from the game by name, with caching.
 -- @param ServiceName:string
 -- @return ServiceInstance:any?
-function ClientUtils.GetService(
+function ClientUtils.GeneralUtils.GetService(
 	ServiceName:string
 ):(any?)
 	if ServicesCache[ServiceName] then
@@ -226,7 +285,7 @@ end
 --// GetCamera
 -- Gets the current camera, falling back if needed.
 -- @return Camera?
-function ClientUtils.GetCamera():(Camera)
+function ClientUtils.GeneralUtils.GetCamera():(Camera?)
 	return Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera")
 end
 
@@ -237,7 +296,7 @@ end
 -- @param Name:string?
 -- @param TimeOut:number?
 -- @return Instance?
-function ClientUtils.WaitForChildWhichIsA(
+function ClientUtils.GeneralUtils.WaitForChildWhichIsA(
 	Parent:Instance, 
 	ClassName:string, 
 	Name:string?, 
@@ -315,7 +374,7 @@ end
 --// BindToInstance
 -- Binds a callback to an instance's event, and disconnects on destroy.
 -- @return RBXScriptConnection | false
-function ClientUtils.BindToInstance(
+function ClientUtils.GeneralUtils.BindToInstance(
 	Object:Instance,
 	Event:RBXScriptSignal,
 	Callback:((...any) -> any)
@@ -353,7 +412,7 @@ end
 -- @param DirectionMultiplier:number?
 -- @param RaycastParams:RaycastParams?
 -- @return Vector3, RaycastResult?
-function ClientUtils.GetMouseHitPosition(
+function ClientUtils.RaycastUtils.GetMouseHitPosition(
 	UseCustomRaycast:boolean?, 
 	DirectionMultiplier:number?, 
 	RaycastParameters:RaycastParams?
@@ -399,7 +458,7 @@ end
 --// GetMouseTarget
 -- Gets the instance the mouse is pointing at.
 -- @return Instance?, RaycastResult?
-function ClientUtils.GetMouseTarget(
+function ClientUtils.RaycastUtils.GetMouseTarget(
 	UseCustomRaycast:boolean?, 
 	DirectionMultiplier:number?, 
 	RaycastParameters:RaycastParams?
@@ -446,7 +505,7 @@ end
 -- Finds the closest player to the local player's character.
 -- @param IgnoreDead:boolean?
 -- @return Player?, BasePart?, Distance:number
-function ClientUtils.GetClosestPlayerToCharacter(
+function ClientUtils.PlayerUtils.GetClosestPlayerToCharacter(
 	IgnoreDead:boolean?
 ):(Player, BasePart, number)
 	local ClosestDistance = math.huge
@@ -499,7 +558,7 @@ end
 -- @param IgnoreDead:boolean?
 -- @param RequireOnScreen:boolean?
 -- @return Player?, BasePart?, Distance:number
-function ClientUtils.GetClosestPlayerToMouseOnScreen(
+function ClientUtils.PlayerUtils.GetClosestPlayerToMouseOnScreen(
 	MaxScreenDistance:number?, 
 	IgnoreDead:boolean?, 
 	RequireOnScreen:boolean?
@@ -551,7 +610,7 @@ end
 -- @param BasePartOrPosition:BasePart | Vector3
 -- @param VelocityIfPosition:Vector3?
 -- @return Vector3 | false
-function ClientUtils.GetPredictedPosition(
+function ClientUtils.PredictionUtils.GetPredictedPosition(
 	BasePartOrPosition:BasePart|Vector3,
 	VelocityIfPosition:Vector3?
 ):(Vector3|boolean?)
@@ -589,7 +648,7 @@ end
 -- @param TimeDelta:number
 -- @param VelocityIfPosition:Vector3?
 -- @return Vector3 | false
-function ClientUtils.GetPredictedPositionUsingGravityAndVelocity(
+function ClientUtils.PredictionUtils.GetPredictedPositionUsingGravityAndVelocity(
 	BasePartOrPosition:BasePart|Vector3, 
 	TimeDelta:number,
 	VelocityIfPosition:Vector3?
@@ -636,7 +695,7 @@ end
 -- @param Class:string
 -- @param Properties:{[string]:any}?
 -- @return Instance | false, boolean?
-function ClientUtils.CreateInstance(
+function ClientUtils.GeneralUtils.CreateInstance(
 	Class:string, 
 	Properties:{[string]:any?}
 ):(Instance, false?)
@@ -677,7 +736,7 @@ end
 -- @param Object:Instance
 -- @param Properties:{[string]:any}
 -- @return boolean
-function ClientUtils.SetInstanceProperties(
+function ClientUtils.GeneralUtils.SetInstanceProperties(
 	Object:Instance, 
 	Properties:{[string]:any}
 ):(boolean)
@@ -711,7 +770,7 @@ end
 --// GetRandomPlayer
 -- Returns a random player from the current player list.
 -- @return Player
-function ClientUtils.GetRandomPlayer():(Player)
+function ClientUtils.PlayerUtils.GetRandomPlayer():(Player)
 	local PlayerList = Players:GetPlayers()
 	local AmountOfPlayers = #PlayerList
 	if (AmountOfPlayers == 1) then
@@ -725,7 +784,7 @@ end
 -- Gets a player by name or display name (case-insensitive, partial supported).
 -- @param PlayerName:string
 -- @return Player | false
-function ClientUtils.GetPlayerByName(
+function ClientUtils.PlayerUtils.GetPlayerByName(
 	PlayerName:string
 ):(Player|false?)
 	if (type(PlayerName) ~= "string") then
@@ -761,7 +820,7 @@ end
 -- Checks if an instance is part of the local player's character.
 -- @param Object:Instance
 -- @return boolean
-function ClientUtils.IsDescendantOfLocalPlayerCharacter(
+function ClientUtils.PlayerUtils.IsDescendantOfLocalPlayerCharacter(
 	Object:Instance
 ):(boolean)
 	local Character = LocalPlayer.Character
@@ -780,7 +839,7 @@ end
 -- @param Player:Player
 -- @param Object:Instance
 -- @return boolean
-function ClientUtils.IsDescendantOfPlayerCharacter(
+function ClientUtils.PlayerUtils.IsDescendantOfPlayerCharacter(
 	Player:Player,
 	Object:Instance
 ):(boolean)
@@ -799,7 +858,7 @@ end
 -- Checks if a specific key is currently held down.
 -- @param Key:Enum.KeyCode
 -- @return boolean
-function ClientUtils.IsKeyDown(
+function ClientUtils.GeneralUtils.IsKeyDown(
 	Key:Enum.KeyCode
 ):(boolean)
 	if (typeof(Key) ~= "EnumItem") then
@@ -815,7 +874,7 @@ end
 --// IsOnMobile
 -- Returns true if the client is a mobile device (touch without keyboard).
 -- @return boolean
-function ClientUtils.IsOnMobile():(boolean)
+function ClientUtils.GeneralUtils.IsOnMobile():(boolean)
 	return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 end
 
@@ -824,7 +883,7 @@ end
 -- @param V1:Vector3
 -- @param V2:Vector3
 -- @return number
-function ClientUtils.GetAngleBetween(
+function ClientUtils.MathUtils.GetAngleBetween(
 	V1:Vector3, 
 	V2:Vector3
 ):(number)
@@ -838,13 +897,196 @@ function ClientUtils.GetAngleBetween(
 	return math.deg(math.acos(math.clamp(V1.Unit:Dot(V2.Unit), -1, 1)))
 end
 
+--// GetDistanceFromPosition
+-- Gets the distance from a position.
+-- @param From:Vector3
+-- @param Position:Vector3
+-- @return number
+function ClientUtils.MathUtils.GetDistanceFromPosition(
+	From:Vector3,
+	Position:Vector3
+):(number)
+	if (typeof(From) ~= "Vector3") then
+		return 0
+	end
+	if (typeof(Position) ~= "Vector3") then
+		return 0
+	end
+	
+	local Distance = (Position - From).Magnitude
+	return Distance
+end
+
+function ClientUtils.MathUtils.GetFlatDistance(
+	V1:Vector3, 
+	V2:Vector3
+):(number)
+	if (typeof(V1) ~= "Vector3") then
+		return 0
+	end
+	if (typeof(V2) ~= "Vector3") then
+		return 0
+	end
+	if (V1.X == V2.X) and (V1.Z == V2.Z) then
+		return 0
+	end
+
+	local Distance = (
+		Vector3.new(V1.X, 0, V1.Z) - Vector3.new(V2.X, 0, V2.Z)
+	).Magnitude
+	return Distance
+end
+
+--// IsPositionWithinDistance
+-- Returns if position is within distance or not.
+-- @param From:Vector3
+-- @param Position:Vector3
+-- @param MaxDistance:number
+-- @return boolean
+function ClientUtils.MathUtils.IsPositionWithinDistance(
+	Position:Vector3,
+	From:Vector3,
+	MaxDistance:number
+):(boolean)
+	if (typeof(Position) ~= "Vector3") then
+		return false
+	end
+	if (typeof(From) ~= "Vector3") then
+		return false
+	end
+	if (type(MaxDistance) ~= "number") then
+		return false
+	end
+	
+	if (MaxDistance == math.huge) then
+		return true
+	end
+	if (MaxDistance == -math.huge) then
+		return false
+	end
+	if (MaxDistance ~= MaxDistance) then
+		return false
+	end
+
+	local Distance = (Position - From).Magnitude
+	return (Distance <= MaxDistance)
+end
+
+--// IsPositionOutOfDistance
+-- Returns if position is out of distance or not.
+-- @param From:Vector3
+-- @param Position:Vector3
+-- @param MaxDistance:number
+-- @return boolean
+function ClientUtils.MathUtils.IsPositionOutOfDistance(
+	Position:Vector3,
+	From:Vector3,
+	MaxDistance:number
+):(boolean)
+	if (typeof(Position) ~= "Vector3") then
+		return false
+	end
+	if (typeof(From) ~= "Vector3") then
+		return false
+	end
+	if (type(MaxDistance) ~= "number") then
+		return false
+	end
+
+	if (MaxDistance == math.huge) then
+		return false
+	end
+	if (MaxDistance == -math.huge) then
+		return true
+	end
+	if (MaxDistance ~= MaxDistance) then
+		return true
+	end
+
+	local Distance = (Position - From).Magnitude
+	return (Distance > MaxDistance)
+end
+
+
+--// GetAbsoluteValueOfNumber
+-- Gets the absolute value of a number.
+-- @param Value:number
+-- @return number
+function ClientUtils.MathUtils.GetAbsoluteValueOfNumber(
+	Value:number
+):(number)
+	if (type(Value) ~= "number") then
+		return 0
+	end
+	if (Value ~= Value) then
+		return Value
+	end
+
+	return math.abs(Value)
+end
+
+--// ClampNumber
+-- Returns a number between min and max.
+-- @param Value:number
+-- @param Min:number
+-- @param Max:number
+-- @return boolean
+function ClientUtils.MathUtils.ClampNumber(
+	Value:number,
+	Min:number,
+	Max:number
+):(number)
+	if (type(Value) ~= "number") then
+		return 0
+	end
+	if (type(Min) ~= "number") then
+		return 0
+	end
+	if (type(Max) ~= "number") then
+		return 0
+	end
+	if (Value ~= Value) then
+		return 0
+	end
+	
+	if (Value < Min) then
+		return Min
+	elseif (Value > Max) then
+		return Max
+	end
+	
+	return Value
+end
+
+--// GetDirection
+-- Returns the normalized direction vector pointing from `From` to `To`. If either vector is invalid or if both positions are equal, returns a zero vector.
+-- @param From Vector3 -- The starting position.
+-- @param To Vector3 -- The target position.
+-- @return Vector3 -- The direction from `From` to `To`, normalized.
+function ClientUtils.MathUtils.GetDirection(
+	From:Vector3, 
+	To:Vector3
+):(Vector3)
+	if (typeof(From) ~= "Vector3") then
+		return Vector3.zero
+	end
+	if (typeof(To) ~= "Vector3") then
+		return Vector3.zero
+	end
+	if (From == To) then
+		return Vector3.zero
+	end
+
+	return (To - From).Unit
+end
+
 --// FireRaycast
 -- Performs a raycast with optional parameters.
 -- @param Origin:Vector3
 -- @param Direction:Vector3
 -- @param RaycastParams:RaycastParams?
 -- @return RaycastResult | false
-function ClientUtils.FireRaycast(
+function ClientUtils.RaycastUtils.FireRaycast(
 	Origin:Vector3, 
 	Direction:Vector3, 
 	RaycastParameters:RaycastParams?
@@ -868,7 +1110,7 @@ end
 -- @param Player:Player
 -- @param Prefer:string?
 -- @return BasePart? | false
-function ClientUtils.GetCharacterPart(
+function ClientUtils.PlayerUtils.GetCharacterPart(
 	Player:Player, 
 	Prefer:string?
 ):(BasePart?|false?)
@@ -893,7 +1135,7 @@ end
 -- Determines if a 3D world point is on screen.
 -- @param Position:Vector3
 -- @return boolean
-function ClientUtils.IsPointOnScreen(
+function ClientUtils.GeneralUtils.IsPointOnScreen(
 	Position:Vector3
 ):(boolean)
 	if (typeof(Position) ~= "Vector3") then
@@ -914,7 +1156,7 @@ end
 -- @param Signal:RBXScriptSignal
 -- @param FunctionToBind:(...any) -> any
 -- @return RBXScriptConnection | false
-function ClientUtils.CreateConnection(
+function ClientUtils.ConnectionUtils.CreateConnection(
 	Identifier:string,
 	Signal:RBXScriptSignal, 
 	FunctionToBind:((...any) -> any)
@@ -955,7 +1197,7 @@ end
 -- Disconnects and removes a stored connection.
 -- @param Identifier:string
 -- @return boolean
-function ClientUtils.RemoveConnection(
+function ClientUtils.ConnectionUtils.RemoveConnection(
 	Identifier:string
 ):(boolean)
 	if (type(Identifier) ~= "string") then
@@ -979,7 +1221,7 @@ end
 --// ClearConnections
 -- Disconnects all tracked connections.
 -- @return boolean
-function ClientUtils.ClearConnections():(boolean)
+function ClientUtils.ConnectionUtils.ClearConnections():(boolean)
 	local Success, _ = ClientUtils.SafeCall(function()
 		for Index, Connection:RBXScriptConnection in pairs(Connections) do 
 			if (typeof(Connection) == "RBXScriptConnection") then
@@ -1001,7 +1243,7 @@ end
 -- Retrieves a stored connection by name.
 -- @param Identifier:string
 -- @return RBXScriptConnection | false
-function ClientUtils.GetConnection(
+function ClientUtils.ConnectionUtils.GetConnection(
 	Identifier:string
 ):(RBXScriptConnection|false?)
 	if (type(Identifier) ~= "string") then
