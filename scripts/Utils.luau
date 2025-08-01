@@ -4,8 +4,6 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
-local Camera = Workspace.CurrentCamera
-
 local LocalPlayer:Player = Players.LocalPlayer
 if not LocalPlayer then
 	repeat
@@ -16,9 +14,109 @@ end
 
 local Mouse:Mouse = LocalPlayer:GetMouse()
 
+export type ClientUtil_Types = {
+	LocalPlayer:Player,
+	Services:{[string]:any},
+
+	GetCamera:() -> Camera?,
+	WaitForChildWhichIsA:(
+		Parent:Instance, 
+		ClassName:string, 
+		Name:string?, 
+		TimeOut:number?
+	) -> Instance?,
+
+	GetMouseHitPosition:(
+		UseCustomRaycast:boolean?, 
+		DirectionMultiplier:number?, 
+		RaycastParameters:RaycastParams?
+	) -> (Vector3, RaycastResult?),
+
+	GetMouseTarget:(
+		UseCustomRaycast:boolean?, 
+		DirectionMultiplier:number?, 
+		RaycastParameters:RaycastParams?
+	) -> (Instance?, RaycastResult?),
+
+	GetClosestPlayerToCharacter:(
+		IgnoreDead:boolean?
+	) -> (Player?, BasePart?, number),
+
+	GetClosestPlayerToMouseOnScreen:(
+		MaxScreenDistance:number?, 
+		IgnoreDead:boolean?, 
+		RequireOnScreen:boolean?
+	) -> (Player?, BasePart?, number),
+
+	GetPredictedPosition:(
+		BasePart:BasePart
+	) -> (Vector3 | false),
+
+	GetPredictedPositionUsingVelocity:(
+		Position:Vector3, 
+		Velocity:Vector3
+	) -> (Vector3 | false),
+
+	GetPredictedPositionUsingGravityAndVelocity:(
+		BasePart:BasePart, 
+		TimeDelta:number
+	) -> (Vector3 | false),
+
+	CreateInstance:(
+		Class:string, 
+		Properties:{[string]:any}?
+	) -> (Instance | false, boolean?),
+
+	SetInstanceProperties:(
+		Object:Instance, 
+		Properties:{[string]:any}
+	) -> boolean,
+
+	GetRandomPlayer:() -> Player,
+	GetPlayerByName:(PlayerName:string) -> (Player | false),
+
+	IsDescendantOfLocalPlayerCharacter:(
+		Object:Instance
+	) -> boolean,
+
+	IsDescendantOfPlayerCharacter:(
+		Player:Player, 
+		Object:Instance
+	) -> boolean,
+
+	IsKeyDown:(Key:Enum.KeyCode) -> boolean,
+	IsOnMobile:() -> boolean,
+
+	GetAngleBetween:(V1:Vector3, V2:Vector3) -> number,
+
+	FireRaycast:(
+		Origin:Vector3, 
+		Direction:Vector3, 
+		RaycastParameters:RaycastParams?
+	) -> (RaycastResult | false),
+
+	GetCharacterPart:(
+		Player:Player, 
+		Prefer:string?
+	) -> (BasePart | false),
+
+	IsPointOnScreen:(Position:Vector3) -> boolean,
+
+	SafeCall:(
+		Function:(...any) -> any, 
+		...any
+	) -> (boolean, any),
+
+	QuickSafeCall:(
+		Function:(...any) -> any, 
+		...any
+	) -> (boolean, any),
+}
+
 local ClientUtils = {}
-ClientUtils.Services = {}
-setmetatable(ClientUtils.Services, {
+
+ClientUtils.LocalPlayer = LocalPlayer
+ClientUtils.Services = setmetatable({}, {
 	__index = function(_, Service)
 		local Success, Service = pcall(game.GetService, game, Service)
 		if Success then
@@ -28,6 +126,10 @@ setmetatable(ClientUtils.Services, {
 		end
 	end
 })
+
+function ClientUtils.GetCamera():(Camera)
+	return Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera")
+end
 
 function ClientUtils.WaitForChildWhichIsA(
 	Parent:Instance, 
@@ -116,7 +218,7 @@ function ClientUtils.GetMouseHitPosition(
 		return Mouse.Hit.Position
 	end
 
-	local Camera = Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera")
+	local Camera = ClientUtils.GetCamera()
 	if not Camera then
 		return
 	end
@@ -146,6 +248,7 @@ function ClientUtils.GetMouseHitPosition(
 		return (RayFromViewport.Origin + (RayFromViewport.Direction * 1000))
 	end
 end
+
 function ClientUtils.GetMouseTarget(
 	UseCustomRaycast:boolean?, 
 	DirectionMultiplier:number?, 
@@ -158,7 +261,7 @@ function ClientUtils.GetMouseTarget(
 		return Mouse.Target
 	end
 
-	local Camera = Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera")
+	local Camera = ClientUtils.GetCamera()
 	if not Camera then
 		return
 	end
@@ -188,6 +291,7 @@ function ClientUtils.GetMouseTarget(
 		return nil
 	end
 end
+
 
 function ClientUtils.GetClosestPlayerToCharacter(
 	IgnoreDead:boolean?
@@ -241,7 +345,7 @@ function ClientUtils.GetClosestPlayerToMouseOnScreen(
 	IgnoreDead:boolean?, 
 	RequireOnScreen:boolean?
 ):(Player, BasePart, number)
-	local Camera = Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera")
+	local Camera = ClientUtils.GetCamera()
 	if not Camera then
 		return
 	end
@@ -308,7 +412,7 @@ end
 function ClientUtils.GetPredictedPositionUsingVelocity(
 	Position:Vector3, 
 	Velocity:Vector3
-):(Vector3|boolean?)
+):(Vector3|false?)
 	if (typeof(Position) ~= "Vector3") then
 		return false
 	end
@@ -329,7 +433,7 @@ end
 function ClientUtils.GetPredictedPositionUsingGravityAndVelocity(
 	BasePart:BasePart, 
 	TimeDelta:number
-):(Vector3|boolean?)
+):(Vector3|false?)
 	if (typeof(BasePart) ~= "Instance") or not BasePart:IsA("BasePart") then
 		return false
 	end
@@ -362,7 +466,7 @@ end
 function ClientUtils.CreateInstance(
 	Class:string, 
 	Properties:{[string]:any?}
-):(Instance, boolean?)
+):(Instance, false?)
 	if (type(Class) ~= "string") then
 		return false
 	end
@@ -436,7 +540,7 @@ function ClientUtils.GetRandomPlayer():(Player)
 end
 function ClientUtils.GetPlayerByName(
 	PlayerName:string
-):(Player|boolean?)
+):(Player|false?)
 	if (type(PlayerName) ~= "string") then
 		return false
 	end
@@ -479,6 +583,7 @@ function ClientUtils.IsDescendantOfLocalPlayerCharacter(
 
 	return Object:IsDescendantOf(Character)
 end
+
 function ClientUtils.IsDescendantOfPlayerCharacter(
 	Player:Player,
 	Object:Instance
@@ -506,6 +611,7 @@ function ClientUtils.IsKeyDown(
 
 	return UserInputService:IsKeyDown(Key)
 end
+
 function ClientUtils.IsOnMobile():(boolean)
 	return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 end
@@ -528,7 +634,7 @@ function ClientUtils.FireRaycast(
 	Origin:Vector3, 
 	Direction:Vector3, 
 	RaycastParameters:RaycastParams?
-):(RaycastResult|boolean?)
+):(RaycastResult|false?)
 	if (typeof(Origin) ~= "Vector3") then
 		return false
 	end
@@ -537,9 +643,9 @@ function ClientUtils.FireRaycast(
 	end
 
 	if (typeof(RaycastParameters) ~= "RaycastParams") then
-		return workspace:Raycast(Origin, Direction)
+		return Workspace:Raycast(Origin, Direction)
 	else
-		return workspace:Raycast(Origin, Direction, RaycastParameters)
+		return Workspace:Raycast(Origin, Direction, RaycastParameters)
 	end
 end
 
@@ -570,9 +676,9 @@ function ClientUtils.IsPointOnScreen(
 	if (typeof(Position) ~= "Vector3") then
 		return false
 	end
-	local Camera = Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera")
+	local Camera = ClientUtils.GetCamera()
 	if not Camera then
-		return false
+		return
 	end
 
 	local _, OnScreen = Camera:WorldToViewportPoint(Position)
@@ -586,7 +692,7 @@ function ClientUtils.SafeCall(
 	if (type(Function) ~= "function") then
 		return false, "Not a function"
 	end
-	
+
 	return pcall(Function, ...)
 end
 function ClientUtils.QuickSafeCall(
@@ -599,23 +705,6 @@ function ClientUtils.QuickSafeCall(
 
 	task.spawn(pcall, Function, ...)
 	return true
-end
-function ClientUtils.QuickRunFunction(
-	Function:((...any) -> any), 
-	ReportError:boolean?,
-	...
-):()
-	if (type(Function) ~= "function") then
-		return
-	end
-	ReportError = ((type(ReportError) == "boolean") and ReportError)
-
-	task.spawn(function(...)
-		local Success, Error = pcall(Function, ...)
-		if not Success and ReportError then
-			warn("[ClientUtils]: RunFunctionOffThread error:", Error)
-		end
-	end, ...)
 end
 
 return ClientUtils
