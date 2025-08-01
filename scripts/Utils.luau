@@ -1,9 +1,23 @@
---// @_x4yz
+--// contact: @_x4yz
 --!native
+
+--// Provides various client-side utility functions for use in local scripts, including:
+--// Player handling, instance creation, raycasting, prediction, connection management, and more.
+
+--// Public Fields:
+-- ClientUtils.LocalPlayer: The current local player.
+-- ClientUtils.IsStudio: True if running in Roblox Studio.
+-- ClientUtils.IsClient: True if running on the client.
+
+--// Types:
+-- export type ClientUtil_Types = {
+--     [Documentation for each method defined in the module]
+-- }
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 
 local LocalPlayer:Player = Players.LocalPlayer
 if not LocalPlayer then
@@ -17,17 +31,21 @@ local Mouse:Mouse = LocalPlayer:GetMouse()
 
 export type ClientUtil_Types = {
 	LocalPlayer:Player,
-	Services:{
-		[string]:any
-	};
 
 	GetCamera:() -> (Camera?);
+	
 	WaitForChildWhichIsA:(
 		Parent:Instance, 
 		ClassName:string, 
 		Name:string?, 
 		TimeOut:number?
 	) -> (Instance?);
+	
+	BindToInstance:(
+		Object:Instance,
+		Event:RBXScriptSignal,
+		Callback:((...any) -> any)
+	) -> (RBXScriptConnection | false?);
 
 	GetMouseHitPosition:(
 		UseCustomRaycast:boolean?, 
@@ -122,6 +140,10 @@ export type ClientUtil_Types = {
 		Function:(...any) -> any, 
 		...any
 	) -> (boolean, any);
+	
+	GetService:(
+		ServiceName:string
+	) -> (any?);
 
 	CreateConnection:(
 		Identifier:string,
@@ -142,19 +164,16 @@ export type ClientUtil_Types = {
 
 local ClientUtils = {}
 local Connections = {}
+local ServicesCache = {}
 
+ClientUtils.IsStudio = RunService:IsStudio()
+ClientUtils.IsClient = RunService:IsClient()
 ClientUtils.LocalPlayer = LocalPlayer
-ClientUtils.Services = setmetatable({}, {
-	__index = function(_, Service)
-		local Success, Service = pcall(game.GetService, game, Service)
-		if Success then
-			return Service
-		else
-			return nil
-		end
-	end
-})
 
+--// SafeCall
+-- Calls a function in a protected (pcall) environment.
+-- @param Function (...any) -> any: The function to call.
+-- @return success:boolean, result:any
 function ClientUtils.SafeCall(
 	Function:((...any) -> any),
 	...
@@ -166,6 +185,9 @@ function ClientUtils.SafeCall(
 	return pcall(Function, ...)
 end
 
+--// QuickSafeCall
+-- Same as SafeCall, but spawns the call asynchronously.
+-- Always returns true.
 function ClientUtils.QuickSafeCall(
 	Function:((...any) -> any),
 	...
@@ -178,10 +200,43 @@ function ClientUtils.QuickSafeCall(
 	return true
 end
 
+--// GetService
+-- Returns a service from the game by name, with caching.
+-- @param ServiceName:string
+-- @return ServiceInstance:any?
+function ClientUtils.GetService(
+	ServiceName:string
+):(any?)
+	if ServicesCache[ServiceName] then
+		return ServicesCache[ServiceName]
+	end
+
+	local Success, Service = ClientUtils.SafeCall(function()
+		return game:GetService(ServiceName)
+	end)
+	
+	if Success and Service then
+		ServicesCache[ServiceName] = Service
+		return Service
+	end
+	
+	return nil
+end
+
+--// GetCamera
+-- Gets the current camera, falling back if needed.
+-- @return Camera?
 function ClientUtils.GetCamera():(Camera)
 	return Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera")
 end
 
+--// WaitForChildWhichIsA
+-- Waits for a child of a specific class and optional name.
+-- @param Parent:Instance
+-- @param ClassName:string
+-- @param Name:string?
+-- @param TimeOut:number?
+-- @return Instance?
 function ClientUtils.WaitForChildWhichIsA(
 	Parent:Instance, 
 	ClassName:string, 
@@ -257,6 +312,47 @@ function ClientUtils.WaitForChildWhichIsA(
 	end
 end
 
+--// BindToInstance
+-- Binds a callback to an instance's event, and disconnects on destroy.
+-- @return RBXScriptConnection | false
+function ClientUtils.BindToInstance(
+	Object:Instance,
+	Event:RBXScriptSignal,
+	Callback:((...any) -> any)
+):(RBXScriptConnection|false?)
+	if (typeof(Object) ~= "Instance") then
+		return false
+	end
+	if (typeof(Event) ~= "RBXScriptSignal") then
+		return false
+	end
+	if (type(Callback) ~= "function") then
+		return false
+	end
+	
+	local Success, Connection = ClientUtils.SafeCall(function()
+		return Event:Connect(Callback)
+	end)
+	
+	if Success and (typeof(Connection) == "RBXScriptConnection") then
+		Instance.Destroying:Once(ClientUtils.SafeCall(function()
+			if Connection and Connection.Connected then
+				Connection:Disconnect()
+			end
+		end))
+		
+		return Connection
+	end
+	
+	return false
+end
+
+--// GetMouseHitPosition
+-- Gets the 3D position the mouse is pointing at using raycast or legacy mouse.
+-- @param UseCustomRaycast:boolean?
+-- @param DirectionMultiplier:number?
+-- @param RaycastParams:RaycastParams?
+-- @return Vector3, RaycastResult?
 function ClientUtils.GetMouseHitPosition(
 	UseCustomRaycast:boolean?, 
 	DirectionMultiplier:number?, 
@@ -300,6 +396,9 @@ function ClientUtils.GetMouseHitPosition(
 	end
 end
 
+--// GetMouseTarget
+-- Gets the instance the mouse is pointing at.
+-- @return Instance?, RaycastResult?
 function ClientUtils.GetMouseTarget(
 	UseCustomRaycast:boolean?, 
 	DirectionMultiplier:number?, 
@@ -343,6 +442,10 @@ function ClientUtils.GetMouseTarget(
 	end
 end
 
+--// GetClosestPlayerToCharacter
+-- Finds the closest player to the local player's character.
+-- @param IgnoreDead:boolean?
+-- @return Player?, BasePart?, Distance:number
 function ClientUtils.GetClosestPlayerToCharacter(
 	IgnoreDead:boolean?
 ):(Player, BasePart, number)
@@ -390,6 +493,12 @@ function ClientUtils.GetClosestPlayerToCharacter(
 	return ClosestPlayer, ClosestPart, ClosestDistance
 end
 
+--// GetClosestPlayerToMouseOnScreen
+-- Finds the closest player to the mouse in screen space.
+-- @param MaxScreenDistance:number?
+-- @param IgnoreDead:boolean?
+-- @param RequireOnScreen:boolean?
+-- @return Player?, BasePart?, Distance:number
 function ClientUtils.GetClosestPlayerToMouseOnScreen(
 	MaxScreenDistance:number?, 
 	IgnoreDead:boolean?, 
@@ -437,6 +546,11 @@ function ClientUtils.GetClosestPlayerToMouseOnScreen(
 	return ClosestPlayer, ClosestPart, ClosestDistance
 end
 
+--// GetPredictedPosition
+-- Predicts a moving object's future position based on ping.
+-- @param BasePartOrPosition:BasePart | Vector3
+-- @param VelocityIfPosition:Vector3?
+-- @return Vector3 | false
 function ClientUtils.GetPredictedPosition(
 	BasePartOrPosition:BasePart|Vector3,
 	VelocityIfPosition:Vector3?
@@ -469,6 +583,12 @@ function ClientUtils.GetPredictedPosition(
 	return PredictedPosition
 end
 
+--// GetPredictedPositionUsingGravityAndVelocity
+-- Predicts future position with gravity and velocity included.
+-- @param BasePartOrPosition:BasePart | Vector3
+-- @param TimeDelta:number
+-- @param VelocityIfPosition:Vector3?
+-- @return Vector3 | false
 function ClientUtils.GetPredictedPositionUsingGravityAndVelocity(
 	BasePartOrPosition:BasePart|Vector3, 
 	TimeDelta:number,
@@ -511,6 +631,11 @@ function ClientUtils.GetPredictedPositionUsingGravityAndVelocity(
 	return PredictedPosition
 end
 
+--// CreateInstance
+-- Creates and optionally configures an Instance.
+-- @param Class:string
+-- @param Properties:{[string]:any}?
+-- @return Instance | false, boolean?
 function ClientUtils.CreateInstance(
 	Class:string, 
 	Properties:{[string]:any?}
@@ -547,6 +672,11 @@ function ClientUtils.CreateInstance(
 	return NewInstance
 end
 
+--// SetInstanceProperties
+-- Sets multiple properties on an instance, safely.
+-- @param Object:Instance
+-- @param Properties:{[string]:any}
+-- @return boolean
 function ClientUtils.SetInstanceProperties(
 	Object:Instance, 
 	Properties:{[string]:any}
@@ -578,6 +708,9 @@ function ClientUtils.SetInstanceProperties(
 	return true
 end
 
+--// GetRandomPlayer
+-- Returns a random player from the current player list.
+-- @return Player
 function ClientUtils.GetRandomPlayer():(Player)
 	local PlayerList = Players:GetPlayers()
 	local AmountOfPlayers = #PlayerList
@@ -588,6 +721,10 @@ function ClientUtils.GetRandomPlayer():(Player)
 	return PlayerList[math.random(1, AmountOfPlayers)]
 end
 
+--// GetPlayerByName
+-- Gets a player by name or display name (case-insensitive, partial supported).
+-- @param PlayerName:string
+-- @return Player | false
 function ClientUtils.GetPlayerByName(
 	PlayerName:string
 ):(Player|false?)
@@ -620,6 +757,10 @@ function ClientUtils.GetPlayerByName(
 	return FoundPlayer or false
 end
 
+--// IsDescendantOfLocalPlayerCharacter
+-- Checks if an instance is part of the local player's character.
+-- @param Object:Instance
+-- @return boolean
 function ClientUtils.IsDescendantOfLocalPlayerCharacter(
 	Object:Instance
 ):(boolean)
@@ -634,6 +775,11 @@ function ClientUtils.IsDescendantOfLocalPlayerCharacter(
 	return Object:IsDescendantOf(Character)
 end
 
+--// IsDescendantOfPlayerCharacter
+-- Checks if an instance is part of a given player's character.
+-- @param Player:Player
+-- @param Object:Instance
+-- @return boolean
 function ClientUtils.IsDescendantOfPlayerCharacter(
 	Player:Player,
 	Object:Instance
@@ -649,6 +795,10 @@ function ClientUtils.IsDescendantOfPlayerCharacter(
 	return Object:IsDescendantOf(Character)
 end
 
+--// IsKeyDown
+-- Checks if a specific key is currently held down.
+-- @param Key:Enum.KeyCode
+-- @return boolean
 function ClientUtils.IsKeyDown(
 	Key:Enum.KeyCode
 ):(boolean)
@@ -662,10 +812,18 @@ function ClientUtils.IsKeyDown(
 	return UserInputService:IsKeyDown(Key)
 end
 
+--// IsOnMobile
+-- Returns true if the client is a mobile device (touch without keyboard).
+-- @return boolean
 function ClientUtils.IsOnMobile():(boolean)
 	return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 end
 
+--// GetAngleBetween
+-- Gets the angle between two vectors in degrees.
+-- @param V1:Vector3
+-- @param V2:Vector3
+-- @return number
 function ClientUtils.GetAngleBetween(
 	V1:Vector3, 
 	V2:Vector3
@@ -680,6 +838,12 @@ function ClientUtils.GetAngleBetween(
 	return math.deg(math.acos(math.clamp(V1.Unit:Dot(V2.Unit), -1, 1)))
 end
 
+--// FireRaycast
+-- Performs a raycast with optional parameters.
+-- @param Origin:Vector3
+-- @param Direction:Vector3
+-- @param RaycastParams:RaycastParams?
+-- @return RaycastResult | false
 function ClientUtils.FireRaycast(
 	Origin:Vector3, 
 	Direction:Vector3, 
@@ -699,6 +863,11 @@ function ClientUtils.FireRaycast(
 	end
 end
 
+--// GetCharacterPart
+-- Returns a preferred part of a player's character, or fallback part.
+-- @param Player:Player
+-- @param Prefer:string?
+-- @return BasePart? | false
 function ClientUtils.GetCharacterPart(
 	Player:Player, 
 	Prefer:string?
@@ -720,6 +889,10 @@ function ClientUtils.GetCharacterPart(
 		or Character:FindFirstChildWhichIsA("BasePart")
 end
 
+--// IsPointOnScreen
+-- Determines if a 3D world point is on screen.
+-- @param Position:Vector3
+-- @return boolean
 function ClientUtils.IsPointOnScreen(
 	Position:Vector3
 ):(boolean)
@@ -735,6 +908,12 @@ function ClientUtils.IsPointOnScreen(
 	return OnScreen
 end
 
+--// CreateConnection
+-- Binds and stores a named connection.
+-- @param Identifier:string
+-- @param Signal:RBXScriptSignal
+-- @param FunctionToBind:(...any) -> any
+-- @return RBXScriptConnection | false
 function ClientUtils.CreateConnection(
 	Identifier:string,
 	Signal:RBXScriptSignal, 
@@ -772,6 +951,10 @@ function ClientUtils.CreateConnection(
 	return (Success and (typeof(Connection) == "RBXScriptConnection") and Connection or false), ""
 end
 
+--// RemoveConnection
+-- Disconnects and removes a stored connection.
+-- @param Identifier:string
+-- @return boolean
 function ClientUtils.RemoveConnection(
 	Identifier:string
 ):(boolean)
@@ -793,6 +976,9 @@ function ClientUtils.RemoveConnection(
 	return Success
 end
 
+--// ClearConnections
+-- Disconnects all tracked connections.
+-- @return boolean
 function ClientUtils.ClearConnections():(boolean)
 	local Success, _ = ClientUtils.SafeCall(function()
 		for Index, Connection:RBXScriptConnection in pairs(Connections) do 
@@ -811,6 +997,10 @@ function ClientUtils.ClearConnections():(boolean)
 	return Success
 end
 
+--// GetConnection
+-- Retrieves a stored connection by name.
+-- @param Identifier:string
+-- @return RBXScriptConnection | false
 function ClientUtils.GetConnection(
 	Identifier:string
 ):(RBXScriptConnection|false?)
