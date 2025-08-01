@@ -1,18 +1,18 @@
---// contact: @_x4yz
+--//// contact: @_x4yz
 --!native
 
---// Provides various client-side utility functions for use in local scripts, including:
---// Player handling, instance creation, raycasting, prediction, connection management, and more.
+--//// Provides various client-side utility functions for use in local scripts, including:
+--//// Player handling, instance creation, raycasting, prediction, connection management, and more.
 
---// Public Fields:
--- ClientUtils.LocalPlayer: The current local player.
--- ClientUtils.IsStudio: True if running in Roblox Studio.
--- ClientUtils.IsClient: True if running on the client.
+--//// Public Fields:
+--// ClientUtils.LocalPlayer: The current local player.
+--// ClientUtils.IsStudio: True if running in Roblox Studio.
+--// ClientUtils.IsClient: True if running on the client.
 
---// Types:
--- export type ClientUtil_Types = {
---     [Documentation for each method defined in the module]
--- }
+--//// Types:
+--// export type ClientUtil_Types = {
+--//     [Documentation for each method defined in the module]
+--// }
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
