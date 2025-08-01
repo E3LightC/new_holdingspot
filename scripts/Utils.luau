@@ -1,4 +1,5 @@
 --// @_x4yz
+--!native
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -16,104 +17,131 @@ local Mouse:Mouse = LocalPlayer:GetMouse()
 
 export type ClientUtil_Types = {
 	LocalPlayer:Player,
-	Services:{[string]:any},
+	Services:{
+		[string]:any
+	};
 
-	GetCamera:() -> Camera?,
+	GetCamera:() -> (Camera?);
 	WaitForChildWhichIsA:(
 		Parent:Instance, 
 		ClassName:string, 
 		Name:string?, 
 		TimeOut:number?
-	) -> Instance?,
+	) -> (Instance?);
 
 	GetMouseHitPosition:(
 		UseCustomRaycast:boolean?, 
 		DirectionMultiplier:number?, 
 		RaycastParameters:RaycastParams?
-	) -> (Vector3, RaycastResult?),
+	) -> (Vector3, RaycastResult?);
 
 	GetMouseTarget:(
 		UseCustomRaycast:boolean?, 
 		DirectionMultiplier:number?, 
 		RaycastParameters:RaycastParams?
-	) -> (Instance?, RaycastResult?),
+	) -> (Instance?, RaycastResult?);
 
 	GetClosestPlayerToCharacter:(
 		IgnoreDead:boolean?
-	) -> (Player?, BasePart?, number),
+	) -> (Player?, BasePart?, number);
 
 	GetClosestPlayerToMouseOnScreen:(
 		MaxScreenDistance:number?, 
 		IgnoreDead:boolean?, 
 		RequireOnScreen:boolean?
-	) -> (Player?, BasePart?, number),
+	) -> (Player?, BasePart?, number);
 
 	GetPredictedPosition:(
-		BasePart:BasePart
-	) -> (Vector3 | false),
-
-	GetPredictedPositionUsingVelocity:(
-		Position:Vector3, 
-		Velocity:Vector3
-	) -> (Vector3 | false),
-
+		BasePartOrPosition:BasePart|Vector3,
+		VelocityIfPosition:Vector3?
+	) -> (Vector3 | false);
+	
 	GetPredictedPositionUsingGravityAndVelocity:(
-		BasePart:BasePart, 
-		TimeDelta:number
-	) -> (Vector3 | false),
+		BasePartOrPosition:BasePart|Vector3, 
+		TimeDelta:number,
+		VelocityIfPosition:Vector3?
+	) -> (Vector3 | false);
 
 	CreateInstance:(
 		Class:string, 
 		Properties:{[string]:any}?
-	) -> (Instance | false, boolean?),
+	) -> (Instance | false, boolean?);
 
 	SetInstanceProperties:(
 		Object:Instance, 
 		Properties:{[string]:any}
-	) -> boolean,
+	) -> (boolean);
 
-	GetRandomPlayer:() -> Player,
-	GetPlayerByName:(PlayerName:string) -> (Player | false),
+	GetRandomPlayer:() -> Player;
+	
+	GetPlayerByName:(
+		PlayerName:string
+	) -> (Player | false?);
 
 	IsDescendantOfLocalPlayerCharacter:(
 		Object:Instance
-	) -> boolean,
+	) -> (boolean);
 
 	IsDescendantOfPlayerCharacter:(
 		Player:Player, 
 		Object:Instance
-	) -> boolean,
+	) -> (boolean);
 
-	IsKeyDown:(Key:Enum.KeyCode) -> boolean,
-	IsOnMobile:() -> boolean,
+	IsKeyDown:(
+		Key:Enum.KeyCode
+	) -> (boolean);
+	
+	IsOnMobile:() -> (boolean);
 
-	GetAngleBetween:(V1:Vector3, V2:Vector3) -> number,
+	GetAngleBetween:(
+		V1:Vector3, 
+		V2:Vector3
+	) -> (number);
 
 	FireRaycast:(
 		Origin:Vector3, 
 		Direction:Vector3, 
 		RaycastParameters:RaycastParams?
-	) -> (RaycastResult | false),
+	) -> (RaycastResult? | false?);
 
 	GetCharacterPart:(
 		Player:Player, 
 		Prefer:string?
-	) -> (BasePart | false),
+	) -> (BasePart? | false?);
 
-	IsPointOnScreen:(Position:Vector3) -> boolean,
+	IsPointOnScreen:(
+		Position:Vector3
+	) -> (boolean);
 
 	SafeCall:(
 		Function:(...any) -> any, 
 		...any
-	) -> (boolean, any),
+	) -> (boolean, any);
 
 	QuickSafeCall:(
 		Function:(...any) -> any, 
 		...any
-	) -> (boolean, any),
+	) -> (boolean, any);
+
+	CreateConnection:(
+		Identifier:string,
+		Signal:RBXScriptSignal,
+		FunctionToBind:((...any) -> any)
+	) -> (RBXScriptConnection | false?);
+
+	RemoveConnection:(
+		Identifier:string
+	) -> (boolean);
+
+	ClearConnections:() -> (boolean);
+
+	GetConnection:(
+		Identifier:string
+	) -> (RBXScriptConnection | false?);
 }
 
 local ClientUtils = {}
+local Connections = {}
 
 ClientUtils.LocalPlayer = LocalPlayer
 ClientUtils.Services = setmetatable({}, {
@@ -126,6 +154,29 @@ ClientUtils.Services = setmetatable({}, {
 		end
 	end
 })
+
+function ClientUtils.SafeCall(
+	Function:((...any) -> any),
+	...
+):(boolean, any)
+	if (type(Function) ~= "function") then
+		return false, "Not a function."
+	end
+
+	return pcall(Function, ...)
+end
+
+function ClientUtils.QuickSafeCall(
+	Function:((...any) -> any),
+	...
+):(boolean, any)
+	if (type(Function) ~= "function") then
+		return false, "Not a function."
+	end
+
+	task.spawn(pcall, Function, ...)
+	return true
+end
 
 function ClientUtils.GetCamera():(Camera)
 	return Workspace.CurrentCamera or Workspace:FindFirstChildWhichIsA("Camera")
@@ -292,7 +343,6 @@ function ClientUtils.GetMouseTarget(
 	end
 end
 
-
 function ClientUtils.GetClosestPlayerToCharacter(
 	IgnoreDead:boolean?
 ):(Player, BasePart, number)
@@ -388,74 +438,72 @@ function ClientUtils.GetClosestPlayerToMouseOnScreen(
 end
 
 function ClientUtils.GetPredictedPosition(
-	BasePart:BasePart
+	BasePartOrPosition:BasePart|Vector3,
+	VelocityIfPosition:Vector3?
 ):(Vector3|boolean?)
-	if (typeof(BasePart) ~= "Instance") or not BasePart:IsA("BasePart") then
+	local IsVector3 = (typeof(BasePartOrPosition) == "Vector3")
+	local IsBasePart = ((typeof(BasePartOrPosition) == "Instance") and BasePartOrPosition:IsA("BasePart"))
+
+	if (not IsVector3 and not IsBasePart) then
 		return false
 	end
-
-	if BasePart.Anchored then
-		return BasePart.Position
+	
+	local BasePartOrPositionIsAVector3 = (typeof(BasePartOrPosition) == "Vector3")
+	
+	if not BasePartOrPositionIsAVector3 and BasePartOrPosition.Anchored then
+		return BasePartOrPosition.Position
 	end
-
-	local Ping = LocalPlayer:GetNetworkPing()
-	local Velocity = BasePart.AssemblyLinearVelocity
-
+	
+	local Velocity = BasePartOrPositionIsAVector3 and (
+		((typeof(VelocityIfPosition) == "Vector3") and VelocityIfPosition) or Vector3.zero
+	) or BasePartOrPosition.AssemblyLinearVelocity
 	if (Velocity == Vector3.zero) then
-		return Position
+		return BasePartOrPosition.Position
 	end
+	
+	local Ping = LocalPlayer:GetNetworkPing()
 
 	local Displacement = (Velocity * (Ping * 1.85))
-	local PredictedPosition = (BasePart.Position + Displacement)
+	local PredictedPosition = (BasePartOrPosition.Position + Displacement)
+	
 	return PredictedPosition
 end
-function ClientUtils.GetPredictedPositionUsingVelocity(
-	Position:Vector3, 
-	Velocity:Vector3
-):(Vector3|false?)
-	if (typeof(Position) ~= "Vector3") then
-		return false
-	end
-	if (typeof(Velocity) ~= "Vector3") then
-		return false
-	end
 
-	if (Velocity == Vector3.zero) then
-		return Position
-	end
-
-	local Ping = LocalPlayer:GetNetworkPing()
-	local Displacement = (Velocity * (Ping * 1.85))
-	local PredictedPosition = (Position + Displacement)
-
-	return PredictedPosition
-end
 function ClientUtils.GetPredictedPositionUsingGravityAndVelocity(
-	BasePart:BasePart, 
-	TimeDelta:number
+	BasePartOrPosition:BasePart|Vector3, 
+	TimeDelta:number,
+	VelocityIfPosition:Vector3?
 ):(Vector3|false?)
-	if (typeof(BasePart) ~= "Instance") or not BasePart:IsA("BasePart") then
+	local IsVector3 = (typeof(BasePartOrPosition) == "Vector3")
+	local IsBasePart = ((typeof(BasePartOrPosition) == "Instance") and BasePartOrPosition:IsA("BasePart"))
+
+	if (not IsVector3 and not IsBasePart) then
 		return false
 	end
 	if (type(TimeDelta) ~= "number") then
 		TimeDelta = LocalPlayer:GetNetworkPing()
 	end
-
-	if BasePart.Anchored then
-		return BasePart.Position
+	
+	local BasePartOrPositionIsAVector3 = (typeof(BasePartOrPosition) == "Vector3")
+	
+	if not BasePartOrPositionIsAVector3 and BasePartOrPosition.Anchored then
+		return BasePartOrPosition.Position
 	end
 
 	local Ping = LocalPlayer:GetNetworkPing()
 	local EffectiveTime = (TimeDelta + Ping)
 
-	local CurrentPosition = BasePart.Position
-	local Velocity = BasePart.AssemblyLinearVelocity
+	local CurrentPosition = BasePartOrPositionIsAVector3 and BasePartOrPosition or BasePartOrPosition.Position
+	local Velocity = BasePartOrPositionIsAVector3 and (
+		((typeof(VelocityIfPosition) == "Vector3") and VelocityIfPosition) or Vector3.zero
+	) or BasePartOrPosition.AssemblyLinearVelocity
 
-	if (Velocity == Vector3.zero) then
+	if (Velocity == Vector3.zero) or (Velocity.Magnitude < 1e-4) then
 		return CurrentPosition
 	end
 
-	local Gravity = Vector3.new(0, workspace.Gravity, 0)
+	local ApplyGravity = (math.abs(Velocity.Y) > 1e-3)
+	local Gravity = ApplyGravity and Vector3.new(0, -workspace.Gravity, 0) or Vector3.zero
 
 	local Displacement = (Velocity * EffectiveTime) + (0.5 * Gravity * (EffectiveTime ^ 2))
 	local PredictedPosition = (CurrentPosition + Displacement)
@@ -472,7 +520,7 @@ function ClientUtils.CreateInstance(
 	end
 	local UseProperties = (type(Properties) == "table")
 
-	local Success, NewInstance = pcall(function()
+	local Success, NewInstance = ClientUtils.SafeCall(function()
 		return Instance.new(Class)
 	end)
 	if not Success or not NewInstance then
@@ -483,7 +531,7 @@ function ClientUtils.CreateInstance(
 		local ParentPropertyToSet:Instance
 		for Property:string, Value:any? in pairs(Properties) do 
 			if (Property ~= "Parent") then
-				task.spawn(pcall, function()
+				ClientUtils.QuickSafeCall(function()
 					NewInstance[Property] = Value
 				end)
 			elseif (Property == "Parent") and (typeof(Value) == "Instance") then
@@ -498,6 +546,7 @@ function ClientUtils.CreateInstance(
 
 	return NewInstance
 end
+
 function ClientUtils.SetInstanceProperties(
 	Object:Instance, 
 	Properties:{[string]:any}
@@ -512,7 +561,7 @@ function ClientUtils.SetInstanceProperties(
 	local ParentPropertyToSet:Instance
 	for Property:string, Value:any? in pairs(Properties) do 
 		if (Property ~= "Parent") then
-			task.spawn(pcall, function()
+			ClientUtils.QuickSafeCall(function()
 				Object[Property] = Value
 			end)
 		elseif (Property == "Parent") and (typeof(Value) == "Instance") then
@@ -521,7 +570,7 @@ function ClientUtils.SetInstanceProperties(
 	end
 
 	if ParentPropertyToSet then
-		task.spawn(pcall, function()
+		ClientUtils.QuickSafeCall(function()
 			Object.Parent = ParentPropertyToSet
 		end)
 	end
@@ -538,6 +587,7 @@ function ClientUtils.GetRandomPlayer():(Player)
 
 	return PlayerList[math.random(1, AmountOfPlayers)]
 end
+
 function ClientUtils.GetPlayerByName(
 	PlayerName:string
 ):(Player|false?)
@@ -554,7 +604,7 @@ function ClientUtils.GetPlayerByName(
 			local LoweredName = string.lower(Player.Name)
 			local LoweredDisplayName = string.lower(Player.DisplayName)
 
-			local LoweredPlayerName = string.lower(PlayerName)
+			local LoweredPlayerName = string.lower(tostring(PlayerName))
 
 			if (LoweredName == LoweredPlayerName) 
 				or (LoweredDisplayName == LoweredPlayerName) 
@@ -652,7 +702,7 @@ end
 function ClientUtils.GetCharacterPart(
 	Player:Player, 
 	Prefer:string?
-):(BasePart?)
+):(BasePart?|false?)
 	local Character = (typeof(Player) == "Instance") and Player:IsA("Player") and Player.Character
 	if not Character then
 		return false
@@ -685,26 +735,95 @@ function ClientUtils.IsPointOnScreen(
 	return OnScreen
 end
 
-function ClientUtils.SafeCall(
-	Function:((...any) -> any),
-	...
-):(boolean, any)
-	if (type(Function) ~= "function") then
-		return false, "Not a function"
+function ClientUtils.CreateConnection(
+	Identifier:string,
+	Signal:RBXScriptSignal, 
+	FunctionToBind:((...any) -> any)
+):(RBXScriptConnection|false?)
+	if (type(Identifier) ~= "string") then
+		return false
 	end
-
-	return pcall(Function, ...)
+	if (typeof(Signal) ~= "RBXScriptSignal") then
+		return false
+	end
+	if (type(FunctionToBind) ~= "function") then
+		return false
+	end
+	
+	local Success, Connection = ClientUtils.SafeCall(function()
+		return Signal:Connect(FunctionToBind)
+	end)
+	
+	if Success and (typeof(Connection) == "RBXScriptConnection") then
+		local ExistingConnection:RBXScriptConnection? = Connections[Identifier]
+		if (typeof(ExistingConnection) == "RBXScriptConnection") then
+			ClientUtils.SafeCall(function()
+				Connections[Identifier] = nil
+				if ExistingConnection.Connected then
+					ExistingConnection:Disconnect()
+				end
+			end)
+			ExistingConnection = nil
+		end
+		
+		Connections[Identifier] = Connection
+	end
+	
+	return (Success and (typeof(Connection) == "RBXScriptConnection") and Connection or false), ""
 end
-function ClientUtils.QuickSafeCall(
-	Function:((...any) -> any),
-	...
-):(boolean, any)
-	if (type(Function) ~= "function") then
-		return false, "Not a function"
+
+function ClientUtils.RemoveConnection(
+	Identifier:string
+):(boolean)
+	if (type(Identifier) ~= "string") then
+		return false
 	end
 
-	task.spawn(pcall, Function, ...)
-	return true
+	local Success, _ = ClientUtils.SafeCall(function()
+		local ExistingConnection:RBXScriptConnection? = Connections[Identifier]
+		if (typeof(ExistingConnection) == "RBXScriptConnection") then
+			Connections[Identifier] = nil
+			if ExistingConnection.Connected then
+				ExistingConnection:Disconnect()
+			end
+			ExistingConnection = nil
+		end
+	end)
+
+	return Success
+end
+
+function ClientUtils.ClearConnections():(boolean)
+	local Success, _ = ClientUtils.SafeCall(function()
+		for Index, Connection:RBXScriptConnection in pairs(Connections) do 
+			if (typeof(Connection) == "RBXScriptConnection") then
+				Connections[Index] = nil
+				if Connection.Connected then
+					Connection:Disconnect()
+				end
+				Connection = nil
+			else
+				Connections[Index] = nil
+			end
+		end
+	end)
+
+	return Success
+end
+
+function ClientUtils.GetConnection(
+	Identifier:string
+):(RBXScriptConnection|false?)
+	if (type(Identifier) ~= "string") then
+		return false
+	end
+	
+	local ExistingConnection:RBXScriptConnection? = Connections[Identifier]
+	if (typeof(ExistingConnection) == "RBXScriptConnection") then
+		return ExistingConnection
+	end
+
+	return false
 end
 
 return ClientUtils
