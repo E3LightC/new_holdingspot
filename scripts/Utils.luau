@@ -14,6 +14,27 @@
 --//     [Documentation for each method defined in the module]
 --// }
 
+local ClientUtils = {
+	MathUtils = {};
+	PredictionUtils = {};
+	RaycastUtils = {};
+	PlayerUtils = {};
+	ConnectionUtils = {};
+	GeneralUtils = {};
+}
+
+if shared.ClientUtils then
+	return shared.ClientUtils
+else
+	shared.ClientUtils = ClientUtils
+	shared.DestroyClientUtils = (function():(boolean)
+		shared.ClientUtils = nil
+		shared.DestroyClientUtils = nil
+		
+		return true
+	end)
+end
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
@@ -39,7 +60,7 @@ export type ClientUtil_Types = {
 			Class:string, 
 			Properties:{[string]:any}?
 		) -> (Instance | false, boolean?);
-		
+
 		WaitForChildWhichIsA:(
 			Parent:Instance, 
 			ClassName:string, 
@@ -81,10 +102,10 @@ export type ClientUtil_Types = {
 		IsPointOnScreen:(
 			Position:Vector3
 		) -> (boolean);
-		
+
 		GetCamera:() -> (Camera?)
 	};
-	
+
 	ConnectionUtils:{
 		CreateConnection:(
 			Identifier:string,
@@ -102,12 +123,12 @@ export type ClientUtil_Types = {
 			Identifier:string
 		) -> (RBXScriptConnection | false?);
 	};
-	
+
 	PlayerUtils:{
 		GetPlayerByName:(
 			PlayerName:string
 		) -> (Player | false?);
-		
+
 		GetRandomPlayer:() -> Player;
 
 		IsDescendantOfLocalPlayerCharacter:(
@@ -134,7 +155,7 @@ export type ClientUtil_Types = {
 			Prefer:string?
 		) -> (BasePart? | false?);
 	};
-	
+
 	RaycastUtils:{
 		GetMouseHitPosition:(
 			UseCustomRaycast:boolean?, 
@@ -167,45 +188,45 @@ export type ClientUtil_Types = {
 			VelocityIfPosition:Vector3?
 		) -> (Vector3 | false);
 	};
-	
+
 	MathUtils:{
 		GetAngleBetween:(
 			V1:Vector3, 
 			V2:Vector3
 		) -> (number);
-		
+
 		GetAbsoluteValueOfNumber:(
 			Value:number
 		) -> (number);
-		
+
 		GetDistanceFromPosition:(
 			From:Vector3, 
 			Position:Vector3
 		) -> (number);
-		
+
 		GetFlatDistance:(
 			V1:Vector3, 
 			V2:Vector3
 		) -> (number);
-		
+
 		IsPositionWithinDistance:(
 			Position:Vector3, 
 			From:Vector3, 
 			MaxDistance:number
 		) -> (boolean);
-		
+
 		IsPositionOutOfDistance:(
 			Position:Vector3, 
 			From:Vector3, 
 			MaxDistance:number
 		) -> (boolean);
-		
+
 		ClampNumber:(
 			Value:number, 
 			Min:number, 
 			Max:number
 		) -> (number);
-		
+
 		GetDirection:(
 			From:Vector3, 
 			To:Vector3
@@ -213,14 +234,6 @@ export type ClientUtil_Types = {
 	};
 }
 
-local ClientUtils = {
-	MathUtils = {};
-	PredictionUtils = {};
-	RaycastUtils = {};
-	PlayerUtils = {};
-	ConnectionUtils = {};
-	GeneralUtils = {};
-}
 local Connections = {}
 local ServicesCache = {}
 
@@ -273,12 +286,12 @@ function ClientUtils.GeneralUtils.GetService(
 	local Success, Service = ClientUtils.SafeCall(function()
 		return game:GetService(ServiceName)
 	end)
-	
+
 	if Success and Service then
 		ServicesCache[ServiceName] = Service
 		return Service
 	end
-	
+
 	return nil
 end
 
@@ -388,21 +401,21 @@ function ClientUtils.GeneralUtils.BindToInstance(
 	if (type(Callback) ~= "function") then
 		return false
 	end
-	
+
 	local Success, Connection = ClientUtils.SafeCall(function()
 		return Event:Connect(Callback)
 	end)
-	
+
 	if Success and (typeof(Connection) == "RBXScriptConnection") then
 		Instance.Destroying:Once(ClientUtils.SafeCall(function()
 			if Connection and Connection.Connected then
 				Connection:Disconnect()
 			end
 		end))
-		
+
 		return Connection
 	end
-	
+
 	return false
 end
 
@@ -620,25 +633,25 @@ function ClientUtils.PredictionUtils.GetPredictedPosition(
 	if (not IsVector3 and not IsBasePart) then
 		return false
 	end
-	
+
 	local BasePartOrPositionIsAVector3 = (typeof(BasePartOrPosition) == "Vector3")
-	
+
 	if not BasePartOrPositionIsAVector3 and BasePartOrPosition.Anchored then
 		return BasePartOrPosition.Position
 	end
-	
+
 	local Velocity = BasePartOrPositionIsAVector3 and (
 		((typeof(VelocityIfPosition) == "Vector3") and VelocityIfPosition) or Vector3.zero
 	) or BasePartOrPosition.AssemblyLinearVelocity
 	if (Velocity == Vector3.zero) then
 		return BasePartOrPosition.Position
 	end
-	
+
 	local Ping = LocalPlayer:GetNetworkPing()
 
 	local Displacement = (Velocity * (Ping * 1.85))
 	local PredictedPosition = (BasePartOrPosition.Position + Displacement)
-	
+
 	return PredictedPosition
 end
 
@@ -662,9 +675,9 @@ function ClientUtils.PredictionUtils.GetPredictedPositionUsingGravityAndVelocity
 	if (type(TimeDelta) ~= "number") then
 		TimeDelta = LocalPlayer:GetNetworkPing()
 	end
-	
+
 	local BasePartOrPositionIsAVector3 = (typeof(BasePartOrPosition) == "Vector3")
-	
+
 	if not BasePartOrPositionIsAVector3 and BasePartOrPosition.Anchored then
 		return BasePartOrPosition.Position
 	end
@@ -912,27 +925,33 @@ function ClientUtils.MathUtils.GetDistanceFromPosition(
 	if (typeof(Position) ~= "Vector3") then
 		return 0
 	end
-	
+
 	local Distance = (Position - From).Magnitude
 	return Distance
 end
 
+
+--// GetFlatDistance
+-- Gets the distance from a position, not using the Y axis.
+-- @param From:Vector3
+-- @param Position:Vector3
+-- @return number
 function ClientUtils.MathUtils.GetFlatDistance(
-	V1:Vector3, 
-	V2:Vector3
+	From:Vector3, 
+	Position:Vector3
 ):(number)
-	if (typeof(V1) ~= "Vector3") then
+	if (typeof(From) ~= "Vector3") then
 		return 0
 	end
-	if (typeof(V2) ~= "Vector3") then
+	if (typeof(Position) ~= "Vector3") then
 		return 0
 	end
-	if (V1.X == V2.X) and (V1.Z == V2.Z) then
+	if (From.X == Position.X) and (From.Z == Position.Z) then
 		return 0
 	end
 
 	local Distance = (
-		Vector3.new(V1.X, 0, V1.Z) - Vector3.new(V2.X, 0, V2.Z)
+		Vector3.new(From.X, 0, From.Z) - Vector3.new(Position.X, 0, Position.Z)
 	).Magnitude
 	return Distance
 end
@@ -957,7 +976,7 @@ function ClientUtils.MathUtils.IsPositionWithinDistance(
 	if (type(MaxDistance) ~= "number") then
 		return false
 	end
-	
+
 	if (MaxDistance == math.huge) then
 		return true
 	end
@@ -1048,13 +1067,13 @@ function ClientUtils.MathUtils.ClampNumber(
 	if (Value ~= Value) then
 		return 0
 	end
-	
+
 	if (Value < Min) then
 		return Min
 	elseif (Value > Max) then
 		return Max
 	end
-	
+
 	return Value
 end
 
@@ -1170,11 +1189,11 @@ function ClientUtils.ConnectionUtils.CreateConnection(
 	if (type(FunctionToBind) ~= "function") then
 		return false
 	end
-	
+
 	local Success, Connection = ClientUtils.SafeCall(function()
 		return Signal:Connect(FunctionToBind)
 	end)
-	
+
 	if Success and (typeof(Connection) == "RBXScriptConnection") then
 		local ExistingConnection:RBXScriptConnection? = Connections[Identifier]
 		if (typeof(ExistingConnection) == "RBXScriptConnection") then
@@ -1186,10 +1205,10 @@ function ClientUtils.ConnectionUtils.CreateConnection(
 			end)
 			ExistingConnection = nil
 		end
-		
+
 		Connections[Identifier] = Connection
 	end
-	
+
 	return (Success and (typeof(Connection) == "RBXScriptConnection") and Connection or false), ""
 end
 
@@ -1249,7 +1268,7 @@ function ClientUtils.ConnectionUtils.GetConnection(
 	if (type(Identifier) ~= "string") then
 		return false
 	end
-	
+
 	local ExistingConnection:RBXScriptConnection? = Connections[Identifier]
 	if (typeof(ExistingConnection) == "RBXScriptConnection") then
 		return ExistingConnection
