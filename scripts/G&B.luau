@@ -1410,11 +1410,11 @@ getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(
 
 		if Head then
 			Head.Massless = true
-			--Head.Size = HeadSizeToUse or (UseVectorLibrary and vector.create(3, 3, 3)) or Vector3.new(3, 3, 3)
+			Head.Size = HeadSizeToUse or (UseVectorLibrary and vector.create(3, 3, 3)) or Vector3.new(3, 3, 3)
 			Head.Transparency = HeadTransparency
 		end
 
-		if IsRunner and Agent and Agent.Parent and Agent.PrimaryPart then
+--[[		if IsRunner and Agent and Agent.Parent and Agent.PrimaryPart then
 			local AgentPrimaryPart = Agent.PrimaryPart
 			local FakePart = Instance.new("Part")
 			FakePart.Name = "FakeHead"
@@ -1442,7 +1442,7 @@ getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(
 					end
 				end
 			end)
-		end
+		end]]
 
 		coroutine.wrap(pcall)(AddEsp, Character, Head,
 			IsIgniter,
