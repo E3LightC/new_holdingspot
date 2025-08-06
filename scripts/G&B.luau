@@ -1596,7 +1596,7 @@ getgenv()["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Proce
 			if LocalPlayer.Character and LocalPlayer.Character.Parent then
 				local Character = LocalPlayer.Character
 				local HRP = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
-				local AgentsInRange = GetAgentsInRange(nil, ShoveRange)
+				local AgentsInRange = GetAgentsInRange(nil, ShoveRange * 2)
 
 				if (type(AgentsInRange) ~= "table") then
                     ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# ShoveBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4) 
@@ -1656,7 +1656,7 @@ getgenv()["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Proce
 							if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
 								Remote:FireServer("FeedbackStun", 
 									Agent,
-									(Agent.PrimaryPart and Agent.PrimaryPart.Position or (Agent:WaitForChild("HumanoidRootPart", math.huge)::BasePart).Position)
+									(HRP.CFrame * CFrame.new(0, 0, -2.5)).Position
 								)
 							end
 
@@ -1730,7 +1730,7 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 									if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
 										WeaponRemote:FireServer("HitZombie",
 											Agent,
-											(PrimaryPart.CFrame * CFrame.new(0, 0, -5)).Position,
+											(PrimaryPart.CFrame * CFrame.new(0, 0, -2.5)).Position,
 											true,
 											(UseVectorLibrary and vector.create(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096))) or Vector3.new(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096)),
 											((Agent:FindFirstChild("Head") and "Head") or "HumanoidRootPart"),
@@ -1745,7 +1745,7 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 									if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
 										WeaponRemote:FireServer("Bayonet_HitZombie",
 											Agent,
-											(PrimaryPart.CFrame * CFrame.new(0, 0, -5)).Position,
+											(PrimaryPart.CFrame * CFrame.new(0, 0, -2.5)).Position,
 											true,
                                             ((Agent:FindFirstChild("Head") and "Head") or "HumanoidRootPart")
 										)
