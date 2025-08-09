@@ -21,6 +21,7 @@ local ClientUtils = {
 	PlayerUtils = {};
 	ConnectionUtils = {};
 	GeneralUtils = {};
+	StringMath = {};
 }
 
 if shared.ClientUtils then
@@ -30,7 +31,7 @@ else
 	shared.DestroyClientUtils = (function():(boolean)
 		shared.ClientUtils = nil
 		shared.DestroyClientUtils = nil
-		
+
 		return true
 	end)
 end
@@ -49,6 +50,51 @@ if not LocalPlayer then
 end
 
 local Mouse:Mouse = LocalPlayer:GetMouse()
+
+local function PadStringRight(
+	String:string, 
+	Length:number
+):(string)
+	if (type(String) ~= "string") then
+		return ""
+	end
+	if (type(Length) ~= "number") then
+		return ""
+	end
+
+	return `{String}{string.rep("0", (Length - #String))}` --// String..string.rep("0", (Length - #String))
+end
+local function PadStringLeft(
+	String:string, 
+	Length:number
+):(string)
+	if (type(String) ~= "string") then
+		return ""
+	end
+	if (type(Length) ~= "number") then
+		return ""
+	end
+
+	return `{string.rep("0", (Length - #String))}{String}` --//string.rep("0", (Length - #String))..String
+end
+local function StripTrailingZeros(
+	String:string
+):(string)
+	if (type(String) ~= "string") then
+		return ""
+	end
+
+	return String:match("^(.-)0*$") or "0"
+end
+local function StripLeadingZeros(
+	String:string
+):(string)
+	if (type(String) ~= "string") then
+		return ""
+	end
+
+	return String:match("^0*(.-)$") or "0"
+end
 
 export type ClientUtil_Types = {
 	LocalPlayer:(Player);
@@ -265,6 +311,10 @@ export type ClientUtil_Types = {
 			From:Vector3, 
 			To:Vector3
 		) -> (Vector3);
+	};
+
+	StringMath:{
+
 	};
 }
 
@@ -1110,7 +1160,7 @@ do
 
 		return ((typeof(CharacterPart) == "Instance") and CharacterPart:IsA("BasePart") and (
 			(not GetCFrame and CharacterPart.Position) or (GetCFrame and CharacterPart.CFrame)
-		)) or false
+			)) or false
 	end
 
 	--// GetPlayersWithinDistance
@@ -1506,7 +1556,7 @@ do
 			then
 				continue
 			end
-			
+
 			local Success = ClientUtils.ConnectionUtils.CreateConnection(
 				Identifier, 
 				Definition.Signal, 
@@ -1518,6 +1568,449 @@ do
 		end
 
 		return (SuccessCount > 0)
+	end
+end
+
+--// StringMath
+do
+	function ClientUtils.StringMath.CompareStrings(
+		A:string, 
+		B:string
+	):(number)
+		if (type(A) ~= "string") then 
+			return 0
+		end
+		if (type(B) ~= "string") then 
+			return 0
+		end
+
+		local SignA = 1
+		if (A:sub(1, 1) == "-") then
+			SignA = -1
+			A = A:sub(2)
+		elseif (A:sub(1, 1) == "+") then
+			A = A:sub(2)
+		end
+
+		local SignB = 1
+		if (B:sub(1, 1) == "-") then
+			SignB = -1
+			B = B:sub(2)
+		elseif (B:sub(1, 1) == "+") then
+			B = B:sub(2)
+		end
+
+		if (A == "") or not tostring(A):match("^%d*%.?%d*$") then
+			A = "0"
+		end
+		if (B == "") or not tostring(A):match("^%d*%.?%d*$") then
+			B = "0"
+		end
+
+		if (SignA > SignB) then 
+			return 1 
+		end
+		if (SignA < SignB) then 
+			return -1 
+		end
+
+		local AInt:string, AFrac:string = A:match("^(%d*)%.?(%d*)$")
+		local BInt:string, BFrac:string = B:match("^(%d*)%.?(%d*)$")
+
+		AInt = AInt:gsub("^0+", "")
+		BInt = BInt:gsub("^0+", "")
+
+		if (AInt == "") then
+			AInt = "0" 
+		end
+		if (BInt == "") then
+			BInt = "0" 
+		end
+
+		if (#AInt > #BInt) then
+			return SignA
+		elseif (#AInt < #BInt) then
+			return -SignA
+		else
+			for i = 1, #AInt do
+				local DigitA = tonumber(AInt:sub(i, i)) or 0
+				local DigitB = tonumber(BInt:sub(i, i)) or 0
+				if (DigitA > DigitB) then
+					return SignA
+				elseif (DigitA < DigitB) then
+					return -SignA
+				end
+			end
+
+			local MaxFracLen = math.max(#AFrac, #BFrac)
+			AFrac ..= string.rep("0", (MaxFracLen - #AFrac))
+			BFrac ..= string.rep("0", (MaxFracLen - #BFrac))
+
+			for i = 1, MaxFracLen do
+				local DigitA = tonumber(AFrac:sub(i, i)) or 0
+				local DigitB = tonumber(BFrac:sub(i, i)) or 0
+				if (DigitA > DigitB) then
+					return SignA
+				elseif (DigitA < DigitB) then
+					return -SignA
+				end
+			end
+		end
+
+		return 0
+	end
+
+	function ClientUtils.StringMath.AddStrings(
+		A:string, 
+		B:string
+	):(string)
+		if (type(A) ~= "string") then
+			return "0"
+		end
+		if (type(B) ~= "string") then
+			return "0"
+		end
+		if (type(tonumber(A)) ~= "number") then
+			return "0"
+		end
+		if (type(tonumber(B)) ~= "number") then
+			return "0"
+		end
+		if (tonumber(A) == 0) then
+			return B
+		end
+		if (tonumber(B) == 0) then
+			return A
+		end
+
+		local AInt, AFrac = A:match("^(%d*)%.?(%d*)$")
+		local BInt, BFrac = B:match("^(%d*)%.?(%d*)$")
+
+		AInt, AFrac = (AInt or "0"), (AFrac or "")
+		BInt, BFrac = (BInt or "0"), (BFrac or "")
+
+		local MaxFracLen = math.max(#AFrac, #BFrac)
+		AFrac, BFrac = PadStringRight(AFrac, MaxFracLen), PadStringRight(BFrac, MaxFracLen)
+
+		local FracResult, Carry = "", 0
+		for i = MaxFracLen, 1, -1 do
+			local DigitA = tonumber(AFrac:sub(i, i)) or 0
+			local DigitB = tonumber(BFrac:sub(i, i)) or 0
+			local Sum = (DigitA + DigitB + Carry)
+			Carry = math.floor(Sum / 10)
+			FracResult = `{tostring(Sum % 10)}{FracResult}`
+		end
+
+		local MaxIntLen = math.max(#AInt, #BInt)
+		AInt, BInt = PadStringLeft(AInt, MaxIntLen), PadStringLeft(BInt, MaxIntLen)
+
+		local IntResult = ""
+		for i = MaxIntLen, 1, -1 do
+			local DigitA = tonumber(AInt:sub(i, i)) or 0
+			local DigitB = tonumber(BInt:sub(i, i)) or 0
+			local Sum = (DigitA + DigitB + Carry)
+			Carry = math.floor(Sum / 10)
+			IntResult = `{tostring(Sum % 10)}{IntResult}`
+		end
+
+		if (Carry > 0) then
+			IntResult = `{tostring(Carry)}{IntResult}`
+		end
+
+		FracResult = FracResult:gsub("0+$", "")
+
+		return (FracResult ~= "") and (`{IntResult}.{FracResult}`) or IntResult
+	end
+
+	function ClientUtils.StringMath.SubtractStrings(
+		A:string, 
+		B:string
+	):(string)
+		if (type(A) ~= "string") then
+			return "0"
+		end
+		if (type(B) ~= "string") then
+			return "0"
+		end
+		if (type(tonumber(A)) ~= "number") then
+			return "0"
+		end
+		if (type(tonumber(B)) ~= "number") then
+			return "0"
+		end
+		if (tonumber(B) == 0) then
+			return A
+		end
+		if (tonumber(A) == 0) then
+			if (tonumber(B) > 0) then
+				return `-{B}`
+			else
+				return B
+			end
+		end
+
+		if (ClientUtils.StringMath.CompareStrings(A, B) < 0) then
+			local PositiveResult = ClientUtils.StringMath.SubtractStrings(B, A)
+			return `-{PositiveResult}`
+		end
+
+		local AInt, AFrac = A:match("^(%d*)%.?(%d*)$")
+		local BInt, BFrac = B:match("^(%d*)%.?(%d*)$")
+
+		AInt, AFrac = (AInt or "0"), (AFrac or "")
+		BInt, BFrac = (BInt or "0"), (BFrac or "")
+
+		local MaxFracLen = math.max(#AFrac, #BFrac)
+		AFrac, BFrac = PadStringRight(AFrac, MaxFracLen), PadStringRight(BFrac, MaxFracLen)
+
+		local ResultFrac, Borrow = "", 0
+		for i = MaxFracLen, 1, -1 do
+			local DigitA = tonumber(AFrac:sub(i, i)) or 0
+			local DigitB = tonumber(BFrac:sub(i, i)) or 0
+			local Diff = (DigitA - DigitB - Borrow)
+
+			if (Diff < 0) then
+				Diff = (Diff + 10)
+				Borrow = 1
+			else
+				Borrow = 0
+			end
+
+			ResultFrac = `{tostring(Diff)}{ResultFrac}`
+		end
+
+		local MaxIntLen = math.max(#AInt, #BInt)
+		AInt, BInt = PadStringLeft(AInt, MaxIntLen), PadStringLeft(BInt, MaxIntLen)
+
+		local ResultInt = ""
+		for i = MaxIntLen, 1, -1 do
+			local DigitA = tonumber(AInt:sub(i, i)) or 0
+			local DigitB = tonumber(BInt:sub(i, i)) or 0
+			local Diff = (DigitA - DigitB - Borrow)
+
+			if (Diff < 0) then
+				Diff = (Diff + 10)
+				Borrow = 1
+			else
+				Borrow = 0
+			end
+
+			ResultInt = `{tostring(Diff)}{ResultInt}`
+		end
+
+		ResultInt = StripLeadingZeros(ResultInt)
+		ResultFrac = StripTrailingZeros(ResultFrac)
+
+		if (ResultInt == "") then
+			ResultInt = "0"
+		end
+		if (ResultFrac ~= "") then
+			return (`{ResultInt}.{ResultFrac}`)
+		end
+
+		return ResultInt
+	end
+
+	function ClientUtils.StringMath.MultiplyStrings(
+		A:string, 
+		B:string
+	):(string)
+		if (type(A) ~= "string") then
+			return "0"
+		end
+		if (type(B) ~= "string") then
+			return "0"
+		end
+		if (type(tonumber(A)) ~= "number") then
+			return "0"
+		end
+		if (type(tonumber(B)) ~= "number") then
+			return "0"
+		end
+		if ((tonumber(A) == 0) or (tonumber(B) == 0)) then
+			return "0"
+		end
+
+		local AInt, AFrac = A:match("^(%d*)%.?(%d*)$")
+		local BInt, BFrac = B:match("^(%d*)%.?(%d*)$")
+
+		AInt, AFrac = (AInt or "0"), (AFrac or "")
+		BInt, BFrac = (BInt or "0"), (BFrac or "")
+
+		local DecimalPlaces = (#AFrac + #BFrac)
+
+		local AWhole, BWhole = (`{AInt}{AFrac}`), (`{BInt}{BFrac}`)
+
+		local ADigits = {}
+		for I = #AWhole, 1, -1 do
+			table.insert(ADigits, tonumber(AWhole:sub(I, I)))
+		end
+
+		local BDigits = {}
+		for I = #BWhole, 1, -1 do
+			table.insert(BDigits, tonumber(BWhole:sub(I, I)))
+		end
+
+		local Result = table.create((#ADigits + #BDigits), 0)
+
+		for I = 1, #ADigits do
+			for J = 1, #BDigits do
+				Result[(I + J - 1)] += (ADigits[I] * BDigits[J])
+			end
+		end
+
+		for I = 1, #Result do
+			if (Result[I] >= 10) then
+				local Carry = (Result[I] // 10)
+				Result[I] %= 10
+				Result[(I + 1)] += Carry
+			end
+		end
+
+		while (#Result > 1 and Result[#Result] == 0) do
+			table.remove(Result, #Result)
+		end
+
+		local Str:string = ""
+		for I = #Result, 1, -1 do
+			Str ..= tostring(Result[I])
+		end
+
+		if (DecimalPlaces > 0) then
+			if (#Str <= DecimalPlaces) then
+				Str = `{string.rep("0", (DecimalPlaces - #Str + 1))}{Str}`
+			end
+			local IntPart = Str:sub(1, (#Str - DecimalPlaces))
+			local FracPart = Str:sub(#Str - DecimalPlaces + 1)
+
+			FracPart = (FracPart:match("^(.-)0*$") or "")
+			if (FracPart ~= "") then
+				Str = (`{IntPart}.{FracPart}`)
+			else
+				Str = IntPart
+			end
+		end
+
+		Str = Str:match("^0*(.-)$")
+		if (Str == "") then
+			Str = "0"
+		end
+
+		return Str
+	end
+
+	function ClientUtils.StringMath.DivideStrings(
+		A:string, 
+		B:string, 
+		DecimalPlaces:number
+	):(string)
+		if (type(A) ~= "string") then
+			return "0"
+		end
+		if (type(B) ~= "string") then
+			return "0"
+		end
+		if (type(tonumber(A)) ~= "number") then
+			return "0"
+		end
+		if (type(tonumber(B)) ~= "number") then
+			return "0"
+		end
+		if (tonumber(B) == 0) then
+			return "0"
+		end
+		if (tonumber(A) == 0) then
+			return "0"
+		end
+
+		DecimalPlaces = (
+			(type(DecimalPlaces) == "number") 
+			and (DecimalPlaces == DecimalPlaces) 
+			and (math.abs(DecimalPlaces) ~= math.huge) 
+			and DecimalPlaces
+		) or 10
+
+		local Sign = ""
+		if (A:sub(1, 1) == "-") ~= (B:sub(1, 1) == "-") then
+			Sign = "-"
+		end
+		A = A:gsub("^[+-]", "")
+		B = B:gsub("^[+-]", "")
+
+		local AInt, AFrac = A:match("^(%d*)%.?(%d*)$")
+		local BInt, BFrac = B:match("^(%d*)%.?(%d*)$")
+		AInt, AFrac = (AInt or "0"), (AFrac or "")
+		BInt, BFrac = (BInt or "0"), (BFrac or "")
+
+		local Shift = math.max(#AFrac, #BFrac)
+		A = `{AInt}{AFrac}{string.rep("0", (Shift - #AFrac))}`
+		B = `{BInt}{BFrac}{string.rep("0", (Shift - #BFrac))}`
+
+		A, B = A:gsub("^0+", ""), B:gsub("^0+", "")
+		if (A == "") then 
+			A = "0" 
+		end
+		if (B == "") then 
+			B = "0" 
+		end
+
+		local Result, Remainder = "", ""
+		local Count = 0
+		local Decimals = 0
+		local StartedDecimal = false
+
+		while true do
+			if (#A > 0) then
+				Remainder ..= A:sub(1,1)
+				A = A:sub(2)
+			else
+				if not StartedDecimal then
+					Result ..= "."
+					StartedDecimal = true
+				end
+				
+				Remainder ..= "0"
+				Decimals += 1
+
+				if (Decimals > DecimalPlaces) then
+					break
+				end
+			end
+
+			Remainder = Remainder:gsub("^0+", "")
+			if (Remainder == "") then 
+				Remainder = "0"
+			end
+
+			local Digit = 0
+			if (ClientUtils.StringMath.CompareStrings(Remainder, B) >= 0) then
+				while (ClientUtils.StringMath.CompareStrings(Remainder, B) >= 0) do
+					Remainder = ClientUtils.StringMath.SubtractStrings(Remainder, B)
+					Digit += 1
+				end
+			end
+			Result ..= tostring(Digit)
+
+			if (#A == 0) and (Remainder == "0") and (not StartedDecimal or (Decimals >= DecimalPlaces)) then
+				break
+			end
+		end
+
+		Result = Result:gsub("^0+", "")
+		if Result:sub(1,1) == "." then
+			Result = `{"0"}{Result}`
+		end
+		if Result == "" then
+			Result = "0"
+		end
+
+		Result = Result:gsub("%.$", "")
+
+		if (Result == "") then
+			Result = "0"
+		end
+
+		return `{Sign}{Result}`
 	end
 end
 
