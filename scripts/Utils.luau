@@ -1617,8 +1617,8 @@ do
 		local AInt:string, AFrac:string = A:match("^(%d*)%.?(%d*)$")
 		local BInt:string, BFrac:string = B:match("^(%d*)%.?(%d*)$")
 
-		AInt = AInt:gsub("^0+", "")
-		BInt = BInt:gsub("^0+", "")
+		AInt = StripLeadingZeros(AInt)
+		BInt = StripLeadingZeros(BInt)
 
 		if (AInt == "") then
 			AInt = "0" 
@@ -1946,7 +1946,7 @@ do
 		A = `{AInt}{AFrac}{string.rep("0", (Shift - #AFrac))}`
 		B = `{BInt}{BFrac}{string.rep("0", (Shift - #BFrac))}`
 
-		A, B = A:gsub("^0+", ""), B:gsub("^0+", "")
+		A, B = StripLeadingZeros(A), StripLeadingZeros(B)
 		if (A == "") then 
 			A = "0" 
 		end
@@ -1977,7 +1977,7 @@ do
 				end
 			end
 
-			Remainder = Remainder:gsub("^0+", "")
+			Remainder = StripLeadingZeros(Remainder)
 			if (Remainder == "") then 
 				Remainder = "0"
 			end
@@ -1996,11 +1996,12 @@ do
 			end
 		end
 
-		Result = Result:gsub("^0+", "")
+		Result = StripLeadingZeros(Result)
+		Result = StripTrailingZeros(Result)
 		if Result:sub(1,1) == "." then
 			Result = `{"0"}{Result}`
 		end
-		if Result == "" then
+		if (Result == "") then
 			Result = "0"
 		end
 
