@@ -62,7 +62,7 @@ local function PadStringRight(
 		return ""
 	end
 
-	return `{String}{string.rep("0", (Length - #String))}` --// String..string.rep("0", (Length - #String))
+	return `{String}{string.rep("0", (Length - #String))}`
 end
 local function PadStringLeft(
 	String:string, 
@@ -75,7 +75,7 @@ local function PadStringLeft(
 		return ""
 	end
 
-	return `{string.rep("0", (Length - #String))}{String}` --//string.rep("0", (Length - #String))..String
+	return `{string.rep("0", (Length - #String))}{String}`
 end
 local function StripTrailingZeros(
 	String:string
@@ -1902,7 +1902,7 @@ do
 	function ClientUtils.StringMath.DivideStrings(
 		A:string, 
 		B:string, 
-		DecimalPlaces:number
+		DecimalPlaces:number?
 	):(string)
 		if (type(A) ~= "string") then
 			return "0"
