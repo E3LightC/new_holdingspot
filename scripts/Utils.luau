@@ -1,18 +1,13 @@
 --//// contact: @_x4yz
 --!native
 
---//// Provides various client-side utility functions for use in local scripts, including:
---//// Player handling, instance creation, raycasting, prediction, connection management, and more.
+--//// Provides various client-side utility functions for use in client-side scripts, including:
+--//// player handling, instance creation, raycasting, prediction, connection management, math utilities, etc.
 
---//// Public Fields:
---// ClientUtils.LocalPlayer: The current local player.
---// ClientUtils.IsStudio: True if running in Roblox Studio.
---// ClientUtils.IsClient: True if running on the client.
-
---//// Types:
---// export type ClientUtil_Types = {
---//     [Documentation for each method defined in the module]
---// }
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 
 local ClientUtils = {
 	MathUtils = {};
@@ -22,7 +17,28 @@ local ClientUtils = {
 	ConnectionUtils = {};
 	GeneralUtils = {};
 	StringMathUtils = {};
+
+	IsStudio = RunService:IsStudio();
+	IsClient = RunService:IsClient();
+	IsServer = RunService:IsServer();
 }
+
+local LocalPlayer
+if ClientUtils.IsClient then
+	local LocalPlayer:Player = Players.LocalPlayer
+	if not LocalPlayer then
+		repeat
+			LocalPlayer = Players.LocalPlayer
+			task.wait()
+		until LocalPlayer
+	end
+elseif ClientUtils.IsServer then
+	warn("[CLIENT_UTILS]: This module is not meant to be used by the server, returning.")
+	return
+end
+
+local Mouse:Mouse = LocalPlayer:GetMouse()
+ClientUtils.Mouse = Mouse
 
 if shared.ClientUtils then
 	return shared.ClientUtils
@@ -35,21 +51,6 @@ else
 		return true
 	end)
 end
-
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
-local RunService = game:GetService("RunService")
-
-local LocalPlayer:Player = Players.LocalPlayer
-if not LocalPlayer then
-	repeat
-		LocalPlayer = Players.LocalPlayer
-		task.wait()
-	until LocalPlayer
-end
-
-local Mouse:Mouse = LocalPlayer:GetMouse()
 
 local function PadStringRight(
 	String:string, 
@@ -98,8 +99,11 @@ end
 
 export type ClientUtil_Types = {
 	LocalPlayer:(Player);
+	Mouse:(Mouse);
+
 	IsStudio:(boolean);
 	IsClient:(boolean);
+	IsServer:(boolean);
 
 	GeneralUtils:{
 		CreateInstance:(
@@ -348,10 +352,6 @@ export type ClientUtil_Types = {
 
 local Connections = {}
 local ServicesCache = {}
-
-ClientUtils.IsStudio = RunService:IsStudio()
-ClientUtils.IsClient = RunService:IsClient()
-ClientUtils.LocalPlayer = LocalPlayer
 
 --// GeneralUtils
 do
