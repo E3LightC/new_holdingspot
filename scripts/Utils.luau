@@ -21,7 +21,7 @@ local ClientUtils = {
 	PlayerUtils = {};
 	ConnectionUtils = {};
 	GeneralUtils = {};
-	StringMath = {};
+	StringMathUtils = {};
 }
 
 if shared.ClientUtils then
@@ -313,8 +313,36 @@ export type ClientUtil_Types = {
 		) -> (Vector3);
 	};
 
-	StringMath:{
+	StringMathUtils:{
+		CompareStrings:(
+			A:string, 
+			B:string
+		) -> (number);
 
+		AddStrings:(
+			A:string, 
+			B:string
+		) -> (string);
+
+		SubtractStrings:(
+			A:string, 
+			B:string
+		) -> (string);
+
+		MultiplyStrings:(
+			A:string, 
+			B:string
+		) -> (string);
+
+		DivideStrings:(
+			A:string, 
+			B:string, 
+			DecimalPlaces:number?
+		) -> (string);
+
+		AbsString:(
+			Value:string
+		) -> (string);
 	};
 }
 
@@ -1571,9 +1599,9 @@ do
 	end
 end
 
---// StringMath
+--// StringMathUtils
 do
-	function ClientUtils.StringMath.CompareStrings(
+	function ClientUtils.StringMathUtils.CompareStrings(
 		A:string, 
 		B:string
 	):(number)
@@ -1660,7 +1688,7 @@ do
 		return 0
 	end
 
-	function ClientUtils.StringMath.AddStrings(
+	function ClientUtils.StringMathUtils.AddStrings(
 		A:string, 
 		B:string
 	):(string)
@@ -1722,7 +1750,7 @@ do
 		return (FracResult ~= "") and (`{IntResult}.{FracResult}`) or IntResult
 	end
 
-	function ClientUtils.StringMath.SubtractStrings(
+	function ClientUtils.StringMathUtils.SubtractStrings(
 		A:string, 
 		B:string
 	):(string)
@@ -1749,8 +1777,8 @@ do
 			end
 		end
 
-		if (ClientUtils.StringMath.CompareStrings(A, B) < 0) then
-			local PositiveResult = ClientUtils.StringMath.SubtractStrings(B, A)
+		if (ClientUtils.StringMathUtils.CompareStrings(A, B) < 0) then
+			local PositiveResult = ClientUtils.StringMathUtils.SubtractStrings(B, A)
 			return `-{PositiveResult}`
 		end
 
@@ -1811,7 +1839,7 @@ do
 		return ResultInt
 	end
 
-	function ClientUtils.StringMath.MultiplyStrings(
+	function ClientUtils.StringMathUtils.MultiplyStrings(
 		A:string, 
 		B:string
 	):(string)
@@ -1899,7 +1927,7 @@ do
 		return Str
 	end
 
-	function ClientUtils.StringMath.DivideStrings(
+	function ClientUtils.StringMathUtils.DivideStrings(
 		A:string, 
 		B:string, 
 		DecimalPlaces:number?
@@ -1968,6 +1996,10 @@ do
 					Result ..= "."
 					StartedDecimal = true
 				end
+
+				if (Remainder == "0") then
+					break
+				end
 				
 				Remainder ..= "0"
 				Decimals += 1
@@ -1983,9 +2015,9 @@ do
 			end
 
 			local Digit = 0
-			if (ClientUtils.StringMath.CompareStrings(Remainder, B) >= 0) then
-				while (ClientUtils.StringMath.CompareStrings(Remainder, B) >= 0) do
-					Remainder = ClientUtils.StringMath.SubtractStrings(Remainder, B)
+			if (ClientUtils.StringMathUtils.CompareStrings(Remainder, B) >= 0) then
+				while (ClientUtils.StringMathUtils.CompareStrings(Remainder, B) >= 0) do
+					Remainder = ClientUtils.StringMathUtils.SubtractStrings(Remainder, B)
 					Digit += 1
 				end
 			end
@@ -2012,6 +2044,22 @@ do
 		end
 
 		return `{Sign}{Result}`
+	end
+
+	function ClientUtils.StringMathUtils.AbsString(
+		Value:string
+	):(string)
+		if (type(A) ~= "string") then
+			return "0"
+		end
+		if (type(tonumber(A)) ~= "number") then
+			return "0"
+		end
+
+		if (A:sub(1, 1) == "-") then
+			return A:sub(2)
+		end
+		return A
 	end
 end
 
