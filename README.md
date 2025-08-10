@@ -10,6 +10,7 @@
 
 # *other stuff*
  * [Infinite Yield FOV Plugin](https://github.com/E3LightC/new_holdingspot/blob/main/scripts/FOV_Commands.iy)
+ * [Client Utils](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/Utils.luau)
 
  
 # *loadstrings*
