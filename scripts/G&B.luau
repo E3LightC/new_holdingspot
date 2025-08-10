@@ -1,6 +1,6 @@
 --//// Discord: @_x4yz \\\\--
 --// https://www.roblox.com/games/12334109280/Guts-Blackpowder
---//    Made with Wave and Swift. [https://getwave.gg] [https://getswift.gg] | This script should work with most executors, as most of it is standard Roblox Luau.
+--//    Made with Wave, Swift, and VSCode. [https://getwave.gg] [https://getswift.gg] | This script should work with most executors, as most of it is standard Roblox Luau.
 --//    Each function has a description if whoever is reading this is curious about what they do.
 --//    * This script is entirely made from boredom and my passion for exploiting/pen-testing! *
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
@@ -60,6 +60,28 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local UserInputService = game:GetService("UserInputService")
 
+--// Types for silencing warnings.
+type VectorLibrary = { 
+	create:(x:number, y:number, z:number) -> (Vector3);
+	magnitude:(vec:Vector3) -> (number);
+	normalize:(vec:Vector3) -> (Vector3);
+	cross:(vec1:Vector3, vec2:Vector3) -> (Vector3);
+	dot:(vec1:Vector3, vec2:Vector3) -> number;
+	angle:(vec1:Vector3, vec2:Vector3, axis:Vector3) -> (number);
+	floor:(vec:Vector3) -> (Vector3);
+	ceil:(vec:Vector3) -> (Vector3);
+	abs:(vec:Vector3) -> (Vector3);
+	sign:(vec:Vector3) -> (Vector3);
+	clamp:(vec:Vector3, min:Vector3, max:Vector3) -> (Vector3);
+	max:(any:Vector3) -> (Vector3);
+	min:(any:Vector3) -> (Vector3);
+
+	zero: (Vector3);
+	one: (Vector3);
+}
+type DebugLibrary = {
+	info: (level:number, options:string) -> (any)
+}
 local hookmetamethod:(
         Object:any,
         Metamethod:string,
@@ -74,6 +96,7 @@ local checkcaller:(
 local getgenv = getfenv().getgenv or (function()
 	return _G
 end)
+--//
 
 local CanUseHookMetamethod:boolean = (type(hookmetamethod) == "function")
 local CanUseGetNameCallMethod:boolean = (type(getnamecallmethod) == "function")
@@ -88,32 +111,13 @@ end
 local OldNameCall = nil
 local OldIndex = nil
 
---// Types for silencing warnings.
-type VectorLibrary = { 
-	create: (x:number, y:number, z:number) -> (Vector3);
-	magnitude: (vec:Vector3) -> (number);
-	normalize: (vec:Vector3) -> (Vector3);
-	cross: (vec1:Vector3, vec2:Vector3) -> (Vector3);
-	dot: (vec1:Vector3, vec2:Vector3) -> number;
-	angle: (vec1:Vector3, vec2:Vector3, axis:Vector3) -> (number);
-	floor: (vec:Vector3) -> (Vector3);
-	ceil: (vec:Vector3) -> (Vector3);
-	abs: (vec:Vector3) -> (Vector3);
-	sign: (vec:Vector3) -> (Vector3);
-	clamp: (vec:Vector3, min:Vector3, max:Vector3) -> (Vector3);
-	max: (any:Vector3) -> (Vector3);
-	min: (any:Vector3) -> (Vector3);
-
-	zero: (Vector3);
-	one: (Vector3);
-}
-type DebugLibrary = {
-	info: (level:number, options:string) -> (any)
-}
---//
-
 local vector:VectorLibrary = (getfenv().vector) --// Since Wave doesn't have Lua's global "vector" class?
 local debug:DebugLibrary = (getfenv().debug) --// Since debug.info isn't registered for some reason?
+local unpack:(
+	list:{any},
+	i:number?,
+	j:number?
+) -> (...any) = table.unpack
 local ClientSubtitles:BindableEvent = (ReplicatedStorage:FindFirstChild("ClientSubtitles") or ReplicatedStorage:WaitForChild("ClientSubtitles", math.huge))::BindableEvent
 
 --[=[
@@ -188,6 +192,93 @@ local function GenerateText(
 	end)
 
 	return Result
+end
+
+--[=[
+    Description:
+    Creates a new `Instance` of the specified `Class` and optionally sets its properties.
+    Supports safely assigning properties (including `Parent` last) and handles invalid inputs gracefully.
+
+    Parameters:
+    - `Class: string`: The Roblox class name of the instance to create (e.g., `"Part"`, `"Folder"`).
+    - `Properties: { [string]: any? }` (optional): A table of properties to assign to the new instance.
+        - All keys are treated as property names.
+        - If `"Parent"` is specified, it will be set last to ensure other properties are applied first.
+
+    Returns:
+    - `(Instance, boolean?)`: The newly created instance if successful, otherwise `false`.
+        - If the instance creation fails (invalid class name or error during `Instance.new`), returns `false`.
+
+    Behavior:
+    - Attempts to create a Roblox instance of the given class.
+    - If a `Properties` table is provided:
+        - Assigns each property via `pcall` to avoid errors from invalid assignments.
+        - Spawns property setting operations asynchronously using `task.spawn`.
+        - Defers setting the `Parent` property until all other properties are applied.
+    - Gracefully handles invalid `Class` type or failed instance creation.
+
+    Notes:
+    - If `Class` is not a string, returns `false`.
+    - If `Properties` is not a table, the function will simply return the raw instance without modifications.
+    - The returned `boolean?` is unused here but kept for consistency in return signature.
+
+    Example Usage:
+    ```lua
+    -- Create a red anchored part inside Workspace
+    local Part = CreateInstance("Part", {
+        Name = "MyPart";
+        Size = Vector3.new(4, 1, 2);
+        Color = Color3.new(1, 0, 0);
+        Anchored = true;
+        Parent = workspace;
+    })
+
+    if Part then
+        print("Part created successfully:", Part:GetFullName())
+    else
+        warn("Failed to create instance.")
+    end
+    ```
+
+    Edge Cases:
+    - Returns `false` if `Class` is not a string.
+    - Returns `false` if `Instance.new(Class)` fails due to an invalid class name.
+    - Invalid properties will be ignored silently without interrupting the rest of the property assignments.
+]=]
+local function CreateInstance(
+    Class:string, 
+    Properties:{[string]:any?}
+):(Instance, boolean?)
+    if (type(Class) ~= "string") then
+        return false
+    end
+    local UseProperties = (type(Properties) == "table")
+
+    local Success, NewInstance = pcall(function()
+        return Instance.new(Class)
+    end)
+    if not Success or not NewInstance then
+        return false
+    end
+
+    if UseProperties then
+        local ParentPropertyToSet:Instance
+        for Property:string, Value:any? in pairs(Properties) do 
+            if (Property ~= "Parent") then
+                task.spawn(pcall, function()
+                    NewInstance[Property] = Value
+                end)
+            elseif (Property == "Parent") and (typeof(Value) == "Instance") then
+                ParentPropertyToSet = Value
+            end
+        end
+
+        if ParentPropertyToSet then
+            NewInstance.Parent = ParentPropertyToSet
+        end
+    end
+
+    return NewInstance
 end
 
 --[=[
@@ -488,13 +579,14 @@ if getgenv()["OnCharacterAdded"] then
 	getgenv()["OnCharacterAdded"] = nil
 end
 
-getgenv()["BuildHighlight"] = Instance.new("Highlight")
-getgenv()["BuildHighlight"].DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-getgenv()["BuildHighlight"].OutlineColor = Color3.fromRGB(255, 204, 0)
-getgenv()["BuildHighlight"].FillColor = Color3.fromRGB(255, 204, 102)
-getgenv()["BuildHighlight"].Parent = ReplicatedFirst
-getgenv()["BuildHighlight"].FillTransparency = 0.5
-getgenv()["BuildHighlight"].Enabled = true
+getgenv()["BuildHighlight"] = CreateInstance("Highlight", {
+	DepthMode = Enum.HighlightDepthMode.AlwaysOnTop;
+	OutlineColor = Color3.fromRGB(255, 204, 0);
+	FillColor = Color3.fromRGB(255, 204, 102);
+	FillTransparency = 0.5;
+	Enabled = true;
+	Parent = ReplicatedFirst;
+})
 
 --[=[
     Description:
@@ -564,7 +656,7 @@ local function AddEsp(
 
 		return
 	end
-	if Character:HasTag("Highlighted_") then
+	if Character:GetAttribute("Highlighted_") then
 		return
 	end
 
@@ -577,21 +669,6 @@ local function AddEsp(
         or "None"
 
 	if (type(Type) == "string") and (Type ~= "None") then
-		local NewHighlight = Instance.new("BoxHandleAdornment")
-		if not NewHighlight then
-			task.delay(ZombieESPWait, AddEsp, 
-                Character, 
-                Head, 
-                IsIgniter, 
-                IsRunner, 
-                IsSapper, 
-                IsBomber, 
-                IsHeadless, 
-                IsCuirassier
-            )
-			return 
-		end
-
         local PrimaryPart = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
         if not PrimaryPart then 
             task.delay(ZombieESPWait, AddEsp, 
@@ -607,16 +684,18 @@ local function AddEsp(
             return
         end
 
-		Character:AddTag("Highlighted_")
-		NewHighlight.AlwaysOnTop = true
-        NewHighlight.ZIndex = 10
-		NewHighlight.Color3 = ESPColors[Type]
-        NewHighlight.Size = (UseVectorLibrary and vector.create(3, 5, 3)) or Vector3.new(3, 5, 3)
-		NewHighlight.Transparency = 0.5
-		NewHighlight.Adornee = PrimaryPart
-		NewHighlight.Parent = Character
+		Character:SetAttribute("Highlighted_", true)
+		CreateInstance("BoxHandleAdornment", {
+			AlwaysOnTop = true;
+			ZIndex = 10;
+			Color3 = ESPColors[Type];
+			Size = (UseVectorLibrary and vector.create(3, 5, 3)) or Vector3.new(3, 5, 3);
+			Transparency = 0.6;
+			Adornee = PrimaryPart;
+			Parent = Character;
+		})
 		
-		if Head and (typeof(Head) == "Instance" and Head:IsA("BasePart")) then
+		if Head and (typeof(Head) == "Instance") and Head:IsA("BasePart") then
 			Head.Color = ESPColors[Type]
 		end
 	end
@@ -1043,7 +1122,7 @@ end
         - Must be a valid Lua table; otherwise, the function warns and returns early.
     - `Function: function`:
         - The function to call for each key-value pair.
-        - The function is invoked with two arguments: the key and the value.
+        - The function is invoked with two parameters: the key and the value.
         - The function must be valid; otherwise, it warns and returns early.
     - `Instant: boolean?` (optional):
         - Defaults to `true`.
@@ -1368,20 +1447,20 @@ local function GetMaxIndexOfTable(
 	return 0
 end
 
-getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(
-    Orig:Instance
-):(nil)
-	if Orig and Orig:IsA("ObjectValue") and (Orig.Name == "Orig") then 
+local function AddZombieEsp(
+	ZombieOrig:ObjectValue
+)
+	if ZombieOrig and ZombieOrig:IsA("ObjectValue") and (ZombieOrig.Name == "Orig") then 
 		repeat
 			task.wait()
-		until not Orig or Orig.Value and Orig.Parent
-		if not Orig then
+		until not ZombieOrig or ZombieOrig.Value and ZombieOrig.Parent
+		if not ZombieOrig then
 			return
 		end
 		task.wait(ZombieESPWait)
 
-		local Character:Model = (Orig.Parent::Model)
-		local Agent:Model = (Orig.Value::Model)
+		local Character:Model = (ZombieOrig.Parent::Model)
+		local Agent:Model = (ZombieOrig.Value::Model)
 		local Type:string = (Agent and tostring(Agent:GetAttribute("Type"))) or ""
 
 		local IsIgniter:boolean = (Type == "Igniter")
@@ -1453,9 +1532,14 @@ getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(function(
 			IsCuirassier
 		)
 	end
+end
 
-    return
-end)
+getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(AddZombieEsp)
+for _, ZombieOrig:ObjectValue in pairs(Camera:GetDescendants()) do 
+	if ZombieOrig and ZombieOrig:IsA("ObjectValue") and (ZombieOrig.Name == "Orig") then
+		task.spawn(AddZombieEsp, ZombieOrig)
+	end
+end
 
 getgenv()["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 	if BuildingBindEnabled and LocalPlayer.Character then 
@@ -1664,6 +1748,7 @@ getgenv()["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Proce
 						end)
 
                         if ParentWasBackpack then 
+							task.wait(0.0125)
                             Weapon.Parent = Backpack
                         end
 						table.clear(AgentsInRange)
@@ -1805,8 +1890,9 @@ getgenv()["BlockBarrelBind"] = UserInputService.InputBegan:Connect(function(Key,
 		if (Key.KeyCode == Binds["BlockBarrelBind_Bind"]) then 
 			if not ReplicatedStorage:FindFirstChild("BlockBarrel") then
                 if not getgenv()["_BlockBarrel"] then
-                    getgenv()["_BlockBarrel"] = Instance.new("BoolValue")
-                    getgenv()["_BlockBarrel"].Name = "BlockBarrel"
+                    getgenv()["_BlockBarrel"] = CreateInstance("BoolValue", {
+						Name = "BlockBarrel";
+					})
                 end
 
                 getgenv()["_BlockBarrel"].Parent = ReplicatedStorage
@@ -1827,8 +1913,7 @@ if Debug then
 	getgenv()["FlameTouchRemover"] = Workspace.DescendantAdded:Connect(function(NewWorkspaceChild)
 		if NewWorkspaceChild then
 			if (NewWorkspaceChild.Name == "IgniterFire") and NewWorkspaceChild:IsA("BasePart") then
-				local TouchInterest = NewWorkspaceChild:WaitForChild("TouchInterest", 3)
-
+				local TouchInterest = WaitForChildWhichIsA(NewWorkspaceChild, "TouchTransmitter", "TouchInterest", 3)
 				if TouchInterest then
 					TouchInterest:Destroy()
 				end
@@ -1940,7 +2025,7 @@ if (getgenv()["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNam
 							Remote["FireServer"](Remote, unpack(Parameters))
 							return nil
 						elseif (Parameters[1] == "CancelReload") then 
-							print(`[INFO # Namecall Hook]: "CancelReload" argument blocked.`)
+							print(`[INFO # Namecall Hook]: "CancelReload" parameter blocked.`)
 							return nil
 						elseif (Parameters[1] == "Swing") then 
 							local Character = LocalPlayer.Character
