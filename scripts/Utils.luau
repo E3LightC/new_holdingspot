@@ -1,8 +1,18 @@
 --//// contact: @_x4yz
 --!native
 
---//// Provides various client-side utility functions for use in client-side scripts, including:
---//// player handling, instance creation, raycasting, prediction, connection management, math utilities, etc.
+--//// Provides various client-side utility functions for use in local scripts, including:
+--//// Player handling, instance creation, raycasting, prediction, connection management, and more.
+
+--//// Public Fields:
+--// ClientUtils.LocalPlayer: The current local player.
+--// ClientUtils.IsStudio: True if running in Roblox Studio.
+--// ClientUtils.IsClient: True if running on the client.
+
+--//// Types:
+--// export type ClientUtil_Types = {
+--//     [Documentation for each method defined in the module]
+--// }
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -2049,17 +2059,17 @@ do
 	function ClientUtils.StringMathUtils.AbsString(
 		Value:string
 	):(string)
-		if (type(A) ~= "string") then
+		if (type(Value) ~= "string") then
 			return "0"
 		end
-		if (type(tonumber(A)) ~= "number") then
+		if (type(tonumber(Value)) ~= "number") then
 			return "0"
 		end
 
-		if (A:sub(1, 1) == "-") then
-			return A:sub(2)
+		if (Value:sub(1, 1) == "-") then
+			return Value:sub(2)
 		end
-		return A
+		return Value
 	end
 end
 
