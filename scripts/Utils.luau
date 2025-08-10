@@ -1999,7 +1999,7 @@ do
 
 		while true do
 			if (#A > 0) then
-				Remainder ..= A:sub(1,1)
+				Remainder ..= A:sub(1, 1)
 				A = A:sub(2)
 			else
 				if not StartedDecimal then
@@ -2040,7 +2040,7 @@ do
 
 		Result = StripLeadingZeros(Result)
 		Result = StripTrailingZeros(Result)
-		if Result:sub(1,1) == "." then
+		if Result:sub(1, 1) == "." then
 			Result = `{"0"}{Result}`
 		end
 		if (Result == "") then
