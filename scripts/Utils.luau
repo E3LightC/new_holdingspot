@@ -25,7 +25,7 @@ local ClientUtils = {
 
 local LocalPlayer:Player
 if ClientUtils.IsClient then
-	LocalPlayer:Player = Players.LocalPlayer
+	LocalPlayer = Players.LocalPlayer
 	if not LocalPlayer then
 		repeat
 			LocalPlayer = Players.LocalPlayer
