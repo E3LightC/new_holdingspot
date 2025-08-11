@@ -4,16 +4,6 @@
 --//// Provides various client-side utility functions for use in local scripts, including:
 --//// Player handling, instance creation, raycasting, prediction, connection management, and more.
 
---//// Public Fields:
---// ClientUtils.LocalPlayer: The current local player.
---// ClientUtils.IsStudio: True if running in Roblox Studio.
---// ClientUtils.IsClient: True if running on the client.
-
---//// Types:
---// export type ClientUtil_Types = {
---//     [Documentation for each method defined in the module]
---// }
-
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
@@ -33,9 +23,9 @@ local ClientUtils = {
 	IsServer = RunService:IsServer();
 }
 
-local LocalPlayer
+local LocalPlayer:Player
 if ClientUtils.IsClient then
-	local LocalPlayer:Player = Players.LocalPlayer
+	LocalPlayer:Player = Players.LocalPlayer
 	if not LocalPlayer then
 		repeat
 			LocalPlayer = Players.LocalPlayer
@@ -54,12 +44,17 @@ if shared.ClientUtils then
 	return shared.ClientUtils
 else
 	shared.ClientUtils = ClientUtils
-	shared.DestroyClientUtils = (function():(boolean)
-		shared.ClientUtils = nil
-		shared.DestroyClientUtils = nil
 
-		return true
-	end)
+	if not shared.DestroyClientUtils then 
+		shared.DestroyClientUtils = (function():(boolean)
+			if shared.ClientUtils then
+				shared.ClientUtils = nil
+				return true
+			end
+			
+			return false
+		end)
+	end
 end
 
 local function PadStringRight(
@@ -1986,10 +1981,10 @@ do
 
 		A, B = StripLeadingZeros(A), StripLeadingZeros(B)
 		if (A == "") then 
-			A = "0" 
+			A = "0"
 		end
 		if (B == "") then 
-			B = "0" 
+			B = "0"
 		end
 
 		local Result, Remainder = "", ""
