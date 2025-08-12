@@ -6,9 +6,9 @@
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Recent Changes \\\\--
---//        Grab log keybind removed, fixed in dev zone.
 --//        Switched ESP system to use BoxHandleAdornments instead of Highlights due to Highlights having a max of 31.
 --//        Fixed bayonet weapons not working with the kill bind due to changes with how the events work.
+--//        Updated `GenerateText` function to have more features.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
