@@ -1,6 +1,6 @@
 --//// Discord: @_x4yz \\\\--
 --// https://www.roblox.com/games/12334109280/Guts-Blackpowder
---//    Made with Wave, Swift, and VSCode. [https://getwave.gg] [https://getswift.gg] | This script should work with most executors, as most of it is standard Roblox Luau.
+--//    Made with Wave and Swift. [https://getwave.gg] [https://getswift.gg] | This script should work with most executors, as most of it is standard Roblox Luau.
 --//    Each function has a description if whoever is reading this is curious about what they do.
 --//    * This script is entirely made from boredom and my passion for exploiting/pen-testing! *
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
@@ -122,43 +122,99 @@ local ClientSubtitles:BindableEvent = (ReplicatedStorage:FindFirstChild("ClientS
 
 --[=[
     Description:
+    Escapes special HTML characters in a string so it can be safely used inside Roblox RichText elements.
+    Prevents issues where user-supplied text could break formatting by containing tags or special symbols.
+
+    Parameters:
+    - `String: string` — The text to escape.
+
+    Returns:
+    - `string`: The escaped text, with the following replacements:
+        - `&` → `&amp;`
+        - `<` → `&lt;`
+        - `>` → `&gt;`
+
+    Behavior:
+    - Replaces all special HTML characters with their corresponding HTML entities.
+    - If `String` is not a string, returns `"[INVALID_TEXT]"`.
+
+    Notes:
+    - This function is designed for use with Roblox's RichText feature.
+    - Only escapes characters necessary to prevent unintended HTML tag interpretation.
+    - Safe to use on player names, chat messages, and other user input.
+
+    Example Usage:
+    ```lua
+    local SafeText = EscapeHTML("Player <Admin> & Co.")
+    print(SafeText) --// Output: Player &lt;Admin&gt; &amp; Co.
+    ```
+
+    Edge Cases:
+    - Passing `nil` or a non-string value will return `"[INVALID_TEXT]"`.
+    - Already-escaped entities will be double-escaped.
+]=]
+local function EscapeHTML(
+	String:string
+):(string)
+	if (type(String) ~= "string") then
+		return "[INVALID_TEXT]"
+	end
+
+	return
+		String
+			:gsub("&", "&amp;")
+			:gsub("<", "&lt;")
+			:gsub(">", "&gt;")
+end
+
+--[=[
+    Description:
     Generates a rich text string by replacing numbered placeholders with formatted font tags in a template.
-    Useful for dynamically inserting colored and styled text into UI elements.
+    Useful for dynamically inserting colored and styled text into UI elements, with support for bold, italic, underline, strikethrough, superscript, and subscript styles.
 
     Parameters:
     - `TemplateString: string`: The template string containing placeholders like `[1]`, `[2]`, etc.
     - `...: table`: A variable list of tables, each with:
         - `Text: string` (required) — the text to insert.
         - `Color: Color3 or string` (optional) — the color of the text, either a hex string or a Color3.
-        - `Font: string` (optional) — the font to use, defaults to `"Roboto"`.
+        - `Font: string` (optional) — the font to use, defaults to `"Merriweather"`.
+        - `Bold: boolean` (optional) — whether to display the text in bold.
+        - `Italic: boolean` (optional) — whether to display the text in italics.
+        - `Underline: boolean` (optional) — whether to underline the text.
+        - `Strikethrough: boolean` (optional) — whether to display the text with a strikethrough.
+        - `Superscript: boolean` (optional) — whether to display the text as superscript.
+        - `Subscript: boolean` (optional) — whether to display the text as subscript.
 
     Returns:
     - `string`: The generated rich text string. If an error occurs, it returns `"[NO_TEMPLATE]"`.
 
     Behavior:
     - Replaces `[n]` markers in the template with corresponding formatted text.
-    - Invalid or missing data results in `[INVALID_DATA]` or `[INVALID_TEXT]` placeholders.
+    - Escapes HTML special characters (`&`, `<`, `>`) to prevent unintended RichText formatting.
+    - Applies bold, italic, underline, strikethrough, superscript, and subscript styles if specified.
+    - Invalid or missing data results in `[INVALID_DATA | DATA NOT A TABLE]` or `[INVALID_TEXT]` placeholders.
     - If `TemplateString` is invalid, it sends a client subtitle warning and logs a warning to the developer console.
     - Defaults to white color (`#FFFFFF`) and `"Merriweather"` font if not specified.
 
     Notes:
-    - This function supports both Color3 and hex string color formats.
+    - Supports both Color3 and hex string color formats.
     - Designed for use with Roblox's `RichText` feature enabled.
+    - The escape behavior ensures user input does not break the formatting.
 
     Example Usage:
     ```lua
     local Text = GenerateText("[1] won against [2]!", 
-        {Text = "Player1", Color = Color3.new(1, 1, 0)}, 
-        {Text = "Boss", Color = "#FF0000"}
+        {Text = "Player1", Color = Color3.new(1, 1, 0), Bold = true, Italic = true, Superscript = true}, 
+        {Text = "Boss", Color = "#008000", Underline = true, Strikethrough = true}
     )
-    TextLabel.Text = Text
+    SomeTextLabel.Text = Text
     ```
 
     Edge Cases:
-    - If `TemplateString` is not a string, a client subtitle is fired and "[NO_TEMPLATE]" is returned.
-    - If a replacement table is missing, "[INVALID_DATA]" is inserted.
-    - If `Text` inside the replacement table is not a string, "[INVALID_TEXT]" is inserted.
-
+    - If `TemplateString` is not a string, a client subtitle is fired and `"[NO_TEMPLATE]"` is returned.
+    - If a replacement table is missing, `"[INVALID_DATA | DATA NOT A TABLE]"` is inserted.
+    - If `Text` inside the replacement table is not a string, `"[INVALID_TEXT]"` is inserted.
+    - If a style flag (Bold, Italic, Underline, Strikethrough, Superscript, Subscript) is not a boolean, it will be ignored.
 ]=]
 local function GenerateText(
     TemplateString:string, 
@@ -177,18 +233,26 @@ local function GenerateText(
 		local Data = Parameters[CurrentIndex]
         
         if (type(Data) ~= "table") then 
-            return ("[INVALID_DATA]")
+            return ("[INVALID_DATA | DATA NOT A TABLE]")
         end
         if (type(Data["Text"]) ~= "string") then 
             Data["Text"] = ("[INVALID_TEXT]")
         end
 
-		local Color = ((typeof(Data["Color"]) == "Color3") and `#{Data["Color"]:ToHex()}`) 
+		local Color:string = ((typeof(Data["Color"]) == "Color3") and `#{Data["Color"]:ToHex()}`) 
             or ((type(Data["Color"]) == "string") and Data["Color"]) 
             or "#FFFFFF"
-		local Font = Data["Font"] or "Merriweather"
+		local Font:string = Data["Font"] or "Merriweather"
 
-		return string.format("<font color=\"%s\" face=\"%s\">%s</font>", Color, Font, Data["Text"])
+        local StyledText = EscapeHTML(Data.Text)
+        if Data.Bold then StyledText = `<b>{StyledText}</b>` end
+        if Data.Italic then StyledText = `<i>{StyledText}</i>` end
+        if Data.Underline then StyledText = `<u>{StyledText}</u>` end
+		if Data.Strikethrough then StyledText = `<s>{StyledText}</s>` end
+		if Data.Superscript then StyledText = `<sup>{StyledText}</sup>` end
+		if Data.Subscript then StyledText = `<sub>{StyledText}</sub>` end
+
+		return string.format("<font color=\"%s\" face=\"%s\">%s</font>", Color, Font, StyledText)
 	end)
 
 	return Result
@@ -206,7 +270,7 @@ end
         - If `"Parent"` is specified, it will be set last to ensure other properties are applied first.
 
     Returns:
-    - `(Instance, boolean?)`: The newly created instance if successful, otherwise `false`.
+    - `(Instance, false?)`: The newly created instance if successful, otherwise `false`.
         - If the instance creation fails (invalid class name or error during `Instance.new`), returns `false`.
 
     Behavior:
@@ -224,7 +288,7 @@ end
 
     Example Usage:
     ```lua
-    -- Create a red anchored part inside Workspace
+    --// Create a red anchored part inside Workspace
     local Part = CreateInstance("Part", {
         Name = "MyPart";
         Size = Vector3.new(4, 1, 2);
@@ -248,8 +312,11 @@ end
 local function CreateInstance(
     Class:string, 
     Properties:{[string]:any?}
-):(Instance, boolean?)
+):(Instance, false?)
     if (type(Class) ~= "string") then
+        ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# CreateInstance] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
+        warn(`[FAIL # CreateInstance]: "Class" parameter is not a string.  ||| Current script line: {debug.info(1, "l")}`)
+
         return false
     end
     local UseProperties = (type(Properties) == "table")
@@ -649,7 +716,7 @@ local function AddEsp(
     IsBomber:boolean?, 
     IsHeadless:boolean?, 
     IsCuirassier:boolean?
-):(nil)
+):()
 	if (typeof(Character) ~= "Instance") or not Character:IsA("Model") then
         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# AddEsp] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
         warn(`[FAIL # AddEsp]: "Character" parameter is not an Instance, nor a Model.  ||| Current script line: {debug.info(1, "l")}`)
@@ -699,8 +766,6 @@ local function AddEsp(
 			Head.Color = ESPColors[Type]
 		end
 	end
-
-    return
 end
 
 --[=[
@@ -833,14 +898,14 @@ end
 
     Example Usage:
     ```lua
-    -- Get first melee weapon
+    --// Get first melee weapon
     local WeaponData = GetMeleeWeapon()
     if WeaponData then
         local Tool, RemoteEvent, LimitRange = unpack(WeaponData[1])
         print("Found weapon:", Tool.Name)
     end
 
-    -- Get list of all melee weapons
+    --// Get list of all melee weapons
     local AllWeapons = GetMeleeWeapon(true)
     for _, WeaponInfo in ipairs(AllWeapons) do
         local Tool = WeaponInfo[1]
@@ -1141,12 +1206,12 @@ end
     ```lua
     local SampleTable = {a = 1, b = 2, c = 3}
     
-    -- Synchronous iteration
+    --// Synchronous iteration
     IterateWithFunction(SampleTable, function(Key, Value)
         print(Key, Value)
     end, false)
     
-    -- Asynchronous iteration
+    --// Asynchronous iteration
     IterateWithFunction(SampleTable, function(Key, Value)
         print(Key, Value)
     end) --// Instant defaults to true
@@ -1162,7 +1227,7 @@ local function IterateWithFunction(
     Table:{[any]:any}, 
     Function:((any, any) -> (any)), 
     Instant:boolean?
-):(nil)
+):()
 	if (type(Instant) ~= "boolean") then
 		Instant = true
 	end
@@ -1351,9 +1416,9 @@ local function GetClosestBuilding():(any)
 			end
 
 			return (
-				(Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or vector.zero) 
+				(Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or Vector3.zero) 
 					< 
-					(Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or vector.zero)
+					(Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or Vector3.zero)
 			)
 		end)
 
@@ -2113,4 +2178,5 @@ warn(
 		end)()
 	)
 )
+
 ClientSubtitles:Fire("   Script successfully executed, <i>check developer console by pressing F9 or typing \"/console\" into chat to see more information.</i>   ")
