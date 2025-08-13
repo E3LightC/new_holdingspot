@@ -516,6 +516,9 @@ local Debug:boolean = true
 local DebugPrints:boolean = false
 local UseVectorLibrary:boolean = true
 
+local Enable_AntiRunnerTackle = false
+local Enable_SmallerSapperHitbox = true
+
 local CanRepair:boolean = true
 local BuildingBindEnabled:boolean = false
 local HammerCanWarn:boolean = true
@@ -1512,6 +1515,26 @@ local function GetMaxIndexOfTable(
 	return 0
 end
 
+local function GetRandomPlayer():(Player?)
+	local PlayerList = Players:GetPlayers()
+	local AmountOfPlayers = #PlayerList
+	if (AmountOfPlayers == 1) then
+		return nil
+	end
+
+	local ChosenPlayer = PlayerList[math.random(1, AmountOfPlayers)]
+	if (ChosenPlayer ~= LocalPlayer) then
+		return ChosenPlayer
+	else
+		repeat
+			ChosenPlayer = PlayerList[math.random(1, AmountOfPlayers)]
+			task.wait()
+		until (ChosenPlayer ~= LocalPlayer)
+	end
+
+	return ChosenPlayer
+end
+
 local function AddZombieEsp(
 	ZombieOrig:ObjectValue
 )
@@ -1558,35 +1581,77 @@ local function AddZombieEsp(
 			Head.Transparency = HeadTransparency
 		end
 
---[[		if IsRunner and Agent and Agent.Parent and Agent.PrimaryPart then
-			local AgentPrimaryPart = Agent.PrimaryPart
-			local FakePart = Instance.new("Part")
-			FakePart.Name = "FakeHead"
-			FakePart.Size = Head.Size
-			FakePart.Transparency = Head.Transparency
-			FakePart.CFrame = Head.CFrame
-			FakePart.CanCollide = false
-			FakePart.Parent = Character
+		if Agent and Agent.Parent and Agent.PrimaryPart then
+			if IsRunner and Enable_AntiRunnerTackle then
+				local AgentPrimaryPart = Agent.PrimaryPart
+				local FakePart = Instance.new("Part")
+				FakePart.Name = "FakeHead"
+				FakePart.Size = Head.Size
+				FakePart.Transparency = Head.Transparency
+				FakePart.CFrame = Head.CFrame
+				FakePart.CanCollide = false
+				FakePart.Parent = Character
 
-			local Weld = Instance.new("Weld")
-			Weld.Part0 = AgentPrimaryPart
-			Weld.Part1 = FakePart
-			Weld.Parent = AgentPrimaryPart
+				local Weld = Instance.new("Weld")
+				Weld.Part0 = AgentPrimaryPart
+				Weld.Part1 = FakePart
+				Weld.Parent = AgentPrimaryPart
 
-			Agent.ChildAdded:Connect(function(Hitbox:Instance)
-				if Hitbox:IsA("Model") and string.find(Hitbox.Name, "_Reb_") then
-					repeat 
-						task.wait() 
-					until not Hitbox or Hitbox.PrimaryPart
-                    
-					local PrimaryPart = Hitbox and Hitbox:IsDescendantOf(Workspace) and Hitbox.PrimaryPart
+				Agent.ChildAdded:Connect(function(Hitbox:Instance)
+					if Hitbox:IsA("Model") and string.find(Hitbox.Name, "_Reb_") then
+						repeat 
+							task.wait() 
+						until not Hitbox or Hitbox:FindFirstChild("HumanoidRootPart")
+						
+						local PrimaryPart = Hitbox and Hitbox:IsDescendantOf(Workspace) and Hitbox:FindFirstChild("HumanoidRootPart")
 
-					if PrimaryPart then
-						PrimaryPart.Anchored = true
+						if PrimaryPart then
+							PrimaryPart.Anchored = true
+						end
 					end
-				end
-			end)
-		end]]
+				end)
+			elseif IsSapper and Enable_SmallerSapperHitbox then
+				local AgentPrimaryPart = Agent.PrimaryPart
+				local FakePart = Instance.new("Part")
+				FakePart.Name = "FakeHead"
+				FakePart.Size = Head.Size
+				FakePart.Transparency = Head.Transparency
+				FakePart.CFrame = Head.CFrame
+				FakePart.CanCollide = false
+				FakePart.Parent = Character
+
+				local Weld = Instance.new("Weld")
+				Weld.Part0 = AgentPrimaryPart
+				Weld.Part1 = FakePart
+				Weld.Parent = AgentPrimaryPart
+
+				Agent.ChildAdded:Connect(function(Hitbox:Instance)
+					if Hitbox:IsA("Model") and string.find(Hitbox.Name, "_Bink_") then
+						repeat 
+							task.wait() 
+						until not Hitbox or Hitbox:FindFirstChild("HumanoidRootPart")
+						local PrimaryPart = Hitbox and Hitbox:IsDescendantOf(Workspace) and Hitbox:FindFirstChild("HumanoidRootPart")
+
+						if PrimaryPart then
+							local Target = GetRandomPlayer()
+							print(Target)
+							repeat
+								if not PrimaryPart then
+									break
+								end
+								local TargetPart = (Target and Target.Character and Target.Character.PrimaryPart) or PrimaryPart
+								local TargetCFrame = Target and Target.Character and Target.Character.PrimaryPart and (Target.Character.PrimaryPart.CFrame * CFrame.new(0, 1, 0)) or PrimaryPart.CFrame
+
+								PrimaryPart.AssemblyLinearVelocity = (CFrame.lookAt(PrimaryPart.Position, TargetCFrame.Position).LookVector * 3.25)
+								PrimaryPart.AssemblyAngularVelocity = Vector3.zero
+								PrimaryPart.CFrame = (TargetCFrame * CFrame.new(0, 0, 0))
+								task.wait()
+							until not PrimaryPart or not PrimaryPart:IsDescendantOf(Workspace)
+						end
+					end
+				end)
+			end
+		end
 
 		coroutine.wrap(pcall)(AddEsp, Character, Head,
 			IsIgniter,
