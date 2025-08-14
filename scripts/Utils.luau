@@ -193,6 +193,8 @@ export type ClientUtil_Types = {
 
 		GetRandomPlayer:(() -> Player?);
 
+		GetPlayers:(() -> {Player?});
+
 		IsDescendantOfLocalPlayerCharacter:(
 			Object:Instance
 		) -> (boolean);
@@ -1065,6 +1067,13 @@ do
 		end
 
 		return PlayerList[math.random(1, AmountOfPlayers)]
+	end
+
+	--// GetPlayers
+	-- Returns a list of all players.
+	-- @return { Player? }
+	function ClientUtils.PlayerUtils.GetPlayers():({Player?})
+		return Players:GetPlayers()
 	end
 
 	--// GetPlayerByName
