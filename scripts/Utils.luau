@@ -194,6 +194,10 @@ export type ClientUtil_Types = {
 		GetRandomPlayer:(() -> Player?);
 
 		GetPlayers:(() -> {Player?});
+		
+		GetPlayerCharacterHumanoid:(
+			Player:Player
+		) -> (Humanoid | false?);
 
 		IsDescendantOfLocalPlayerCharacter:(
 			Object:Instance
@@ -1203,6 +1207,24 @@ do
 		return ((typeof(CharacterPart) == "Instance") and CharacterPart:IsA("BasePart") and (
 			(not GetCFrame and CharacterPart.Position) or (GetCFrame and CharacterPart.CFrame)
 			)) or false
+	end
+
+	--// GetPlayerCharacterHumanoid
+	-- Gets humanoid of a player's character.
+	-- @param Player:Player
+	function ClientUtils.PlayerUtils.GetPlayerCharacterHumanoid(
+		Player:Player
+	):(Humanoid|false?)
+		if (typeof(Player) ~= "Instance") or not Player:IsA("Player") then
+			return false
+		end
+		local Character = Player.Character
+		if not Player.Character then
+			return false
+		end
+
+		local Humanoid = Character:FindFirstChildWhichIsA("Humanoid")
+		return Humanoid or false
 	end
 
 	--// GetPlayersWithinDistance
