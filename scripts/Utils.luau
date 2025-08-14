@@ -144,6 +144,11 @@ export type ClientUtil_Types = {
 			...any
 		) -> (boolean, any);
 
+		QuickCall:(
+			Function:((...any) -> any), 
+			...any
+		) -> (boolean, any);
+
 		GetService:(
 			ServiceName:string
 		) -> (any?);
@@ -369,7 +374,7 @@ do
 	--// SafeCall
 	-- Calls a function in a protected (pcall) environment.
 	-- @param Function (...any) -> any: The function to call.
-	-- @return success:boolean, result:any
+	-- @return boolean, any
 	function ClientUtils.GeneralUtils.SafeCall(
 		Function:((...any) -> any),
 		...
@@ -383,8 +388,8 @@ do
 
 	--// QuickSafeCall
 	-- Same as SafeCall, but spawns the call asynchronously.
-	-- @param Functio (...any) -> any: The function to call.
-	-- @return success:boolean, result:any
+	-- @param Function (...any) -> any: The function to call.
+	-- @return boolean, any
 	function ClientUtils.GeneralUtils.QuickSafeCall(
 		Function:((...any) -> any),
 		...
@@ -394,6 +399,21 @@ do
 		end
 
 		task.spawn(pcall, Function, ...)
+		return true
+	end
+
+	--// QuickCall
+	-- Similar to QuickSafeCall, but doesn't use pcall.
+	-- @param Function (...any) -> any: The function to call.
+	function ClientUtils.GeneralUtils.QuickCall(
+		Function:((...any) -> any),
+		...
+	):(boolean, any)
+		if (type(Function) ~= "function") then
+			return false, "Not a function."
+		end
+
+		task.spawn(Function, ...)
 		return true
 	end
 
