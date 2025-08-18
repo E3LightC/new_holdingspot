@@ -32,7 +32,7 @@ if ClientUtils.IsClient then
 			task.wait()
 		until LocalPlayer
 	end
-    Utils.LocalPlayer = LocalPlayer
+    ClientUtils.LocalPlayer = LocalPlayer
 elseif ClientUtils.IsServer then
 	warn("[CLIENT_UTILS]: This module is not meant to be used by the server, returning.")
 	return
