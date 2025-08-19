@@ -1,6 +1,6 @@
 --//// Discord: @_x4yz \\\\--
 --// https://www.roblox.com/games/12334109280/Guts-Blackpowder
---//    Made with Wave and Swift. [https://getwave.gg] [https://getswift.gg] | This script should work with most executors, as most of it is standard Roblox Luau.
+--//    Made with Wave, Swift, and Zenith. [https://getwave.gg] [https://getswift.gg] | This script should work with most executors, as most of it is standard Roblox Luau.
 --//    Each function has a description if whoever is reading this is curious about what they do.
 --//    * This script is entirely made from boredom and my passion for exploiting/pen-testing! *
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
@@ -516,8 +516,8 @@ local Debug:boolean = true
 local DebugPrints:boolean = false
 local UseVectorLibrary:boolean = true
 
-local Enable_AntiRunnerTackle = false
-local Enable_SmallerSapperHitbox = true
+local Enable_AntiRunnerTackle:boolean = false
+local Enable_SmallerSapperHitbox:boolean = false
 
 local CanRepair:boolean = true
 local BuildingBindEnabled:boolean = false
