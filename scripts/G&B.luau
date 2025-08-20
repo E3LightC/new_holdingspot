@@ -1,13 +1,12 @@
 --//// Discord: @_x4yz \\\\--
 --// https://www.roblox.com/games/12334109280/Guts-Blackpowder
---//    Made with Wave, Swift, and Zenith. [https://getwave.gg] [https://getswift.gg] | This script should work with most executors, as most of it is standard Roblox Luau.
+--//    Made with Wave, Swift, and Zenith. [https://getwave.gg] [https://getswift.gg] [https://zenith.win] | This script should work with most executors, as most of it is standard Roblox Luau.
 --//    Each function has a description if whoever is reading this is curious about what they do.
 --//    * This script is entirely made from boredom and my passion for exploiting/pen-testing! *
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Recent Changes \\\\--
---//        Switched ESP system to use BoxHandleAdornments instead of Highlights due to Highlights having a max of 31.
---//        Fixed bayonet weapons not working with the kill bind due to changes with how the events work.
+--//        Added performance mode bind [Numpad 4].
 --//        Updated `GenerateText` function to have more features.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
@@ -43,6 +42,7 @@
 --//        [Numpad 1] — Toggle auto-repair system.
 --//        [Numpad 2] — Switch auto-repair targeting mode.
 --//        [Numpad 3] — Allow/disallow "Barrel" zombie targeting.
+--//        [Numpad 4] — Enable performance mode.
 --// [Music]
 --//        [U, F, G, H, J, Y, T] — Play fife/drum songs; mapped via `MusicSelections`.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
@@ -507,6 +507,9 @@ local Backpack:Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or Wai
 local Remotes:Folder = (ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:WaitForChild("Remotes", math.huge))::Folder
 local AFKSignal:RemoteEvent = (Remotes:FindFirstChild("OnAFKSignalReceived") or Remotes:WaitForChild("OnAFKSignalReceived", math.huge))::RemoteEvent
 
+local ZombieReplication:LocalScript = (ReplicatedFirst:FindFirstChild("ZombieReplication") or ReplicatedFirst:WaitForChild("ZombieReplication", math.huge))::LocalScript
+local ZombieReplications:Folder = (ReplicatedFirst:FindFirstChild("ZombieReplication") or ZombieReplication:WaitForChild("ZombieReplications", math.huge))::Folder
+
 local ZombiesFolder:Folder = (Workspace:FindFirstChild("Zombies") or Workspace:WaitForChild("Zombies", math.huge))::Folder
 local BotsFolder:Folder = (Workspace:FindFirstChild("Bots"))::Folder
 local BuildingsFolder:Folder = (Workspace:FindFirstChild("Buildings") or Workspace:WaitForChild("Buildings", math.huge))::Folder
@@ -576,6 +579,7 @@ local Binds = {
 	["BuildingBind_Bind"] = Enum.KeyCode.KeypadOne;
 	["BuildingFetchTypeBind_Bind"] = Enum.KeyCode.KeypadTwo;
 	["BlockBarrelBind_Bind"] = Enum.KeyCode.KeypadThree;
+	["PerformanceBind_Bind"] = Enum.KeyCode.KeypadFour;
 }
 local ESPColors = {
 	["Igniter"] = Color3.fromRGB(255, 255, 0);
@@ -593,6 +597,12 @@ setmetatable(ESPColors, {
 		return ESPColors["Backup"]
 	end
 })
+
+--[=[
+    Description:
+	Empty apply function which is just used for disabling outfits of zombies.
+]=]
+local function EmptyApplyFunction(ZData:{any}) end
 
 --// disconnection of previous script connections if executed more than once.
 if getgenv()["FlameTouchRemover"] ~= nil then 
@@ -647,6 +657,10 @@ end
 if getgenv()["OnCharacterAdded"] then
 	getgenv()["OnCharacterAdded"]:Disconnect()
 	getgenv()["OnCharacterAdded"] = nil
+end
+if getgenv()["PerformanceBind"] then
+	getgenv()["PerformanceBind"]:Disconnect()
+	getgenv()["PerformanceBind"] = nil
 end
 
 getgenv()["BuildHighlight"] = CreateInstance("Highlight", {
@@ -2032,6 +2046,26 @@ getgenv()["BlockBarrelBind"] = UserInputService.InputBegan:Connect(function(Key,
 
             local Enabled = (getgenv()["_BlockBarrel"].Parent == ReplicatedStorage) and "enabled" or "disabled"
 			print(`[INFO # BlockBarrelBind]: Barrel blocking is now {Enabled}.`)
+		end
+	end
+end)
+
+getgenv()["PerformanceBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
+	if not Process then 
+		if (Key.KeyCode == Binds["PerformanceBind_Bind"]) then 
+			for _, Replication:ModuleScript in pairs(ZombieReplications:GetChildren()) do
+				if not Replication then
+					continue
+				end
+				local Outfits = Replication:FindFirstChild("Outfits")
+				if not Outfits or not Outfits:IsA("ModuleScript") then
+					continue
+				end
+
+				require(Outfits).apply = EmptyApplyFunction
+			end
+
+			print(`[INFO # PerformanceBind]: Ran performance changes.`)
 		end
 	end
 end)
