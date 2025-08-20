@@ -508,7 +508,7 @@ local Remotes:Folder = (ReplicatedStorage:FindFirstChild("Remotes") or Replicate
 local AFKSignal:RemoteEvent = (Remotes:FindFirstChild("OnAFKSignalReceived") or Remotes:WaitForChild("OnAFKSignalReceived", math.huge))::RemoteEvent
 
 local ZombieReplication:LocalScript = (ReplicatedFirst:FindFirstChild("ZombieReplication") or ReplicatedFirst:WaitForChild("ZombieReplication", math.huge))::LocalScript
-local ZombieReplications:Folder = (ReplicatedFirst:FindFirstChild("ZombieReplication") or ZombieReplication:WaitForChild("ZombieReplications", math.huge))::Folder
+local ZombieReplications:Folder = (ZombieReplication:FindFirstChild("ZombieReplications") or ZombieReplication:WaitForChild("ZombieReplications", math.huge))::Folder
 
 local ZombiesFolder:Folder = (Workspace:FindFirstChild("Zombies") or Workspace:WaitForChild("Zombies", math.huge))::Folder
 local BotsFolder:Folder = (Workspace:FindFirstChild("Bots"))::Folder
@@ -2062,6 +2062,7 @@ getgenv()["PerformanceBind"] = UserInputService.InputBegan:Connect(function(Key,
 					continue
 				end
 
+				print(`[INFO # PerformanceBind]: Applying performance changes to zombie type {Replication.Name}.`)
 				require(Outfits).apply = EmptyApplyFunction
 			end
 
