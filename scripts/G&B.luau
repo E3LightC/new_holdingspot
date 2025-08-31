@@ -113,6 +113,12 @@ local OldIndex = nil
 
 local vector:VectorLibrary = (getfenv().vector) --// Since Wave doesn't have Lua's global "vector" class?
 local debug:DebugLibrary = (getfenv().debug) --// Since debug.info isn't registered for some reason?
+
+local Vector3_new = Vector3.new
+local vector_create = vector.create
+local math_abs = math.abs
+local math_random = math.random
+
 local unpack:(
 	list:{any},
 	i:number?,
@@ -381,6 +387,8 @@ end
 
     Example Usage:
     ```lua
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
     local Event = WaitForChildWhichIsA(ReplicatedStorage, "RemoteEvent", "GameRemote", 3)
     if Event then
         Event:FireServer("Fire", Vector3.new())
@@ -402,7 +410,6 @@ end
     - Logs and returns `nil` if `Parent` is not an `Instance`.
     - Logs and returns `nil` if `ClassName` is not a `string`.
     - Returns `nil` if the timeout is reached or if `Parent` is destroyed mid-wait.
-
 ]=]
 local function WaitForChildWhichIsA(
     Parent:Instance, 
@@ -438,7 +445,7 @@ local function WaitForChildWhichIsA(
 				end
 			until ((typeof(InstanceToReturn) == "Instance") or EndedEarly or not Parent or not Parent.Parent)
 		else
-			local AbsTimeOut:number = math.abs(TimeOut or 1)
+			local AbsTimeOut:number = math_abs(TimeOut or 1)
 			local StartTime:number = os.clock()
 
 			repeat
@@ -538,7 +545,7 @@ local TimeSinceLastBeat:number = 0
 local ShoveRange:number = 15 --// default range variable used for shoving.
 local MurderRange:number = 11 --// used as a backup if can't find weapon range.
 
-local HeadSizeToUse:Vector3 = (UseVectorLibrary and vector.create(6, 9, 4.5)) or Vector3.new(6, 9, 4.5)
+local HeadSizeToUse:Vector3 = (UseVectorLibrary and vector_create(6, 9, 4.5)) or Vector3_new(6, 9, 4.5)
 local HeadTransparency:number = 0.6
 
 local PreferredWeapon:{string} = {"Pike";"Lance"}
@@ -722,7 +729,6 @@ getgenv()["BuildHighlight"] = CreateInstance("Highlight", {
     - Logs an error and aborts if `Character` is not a valid `Model`.
     - Skips re-highlighting if the character already has the `Highlighted_` tag.
     - Retries automatically if no highlights are currently available from the pool.
-
 ]=]
 local function AddEsp(
     Character:Model, 
@@ -773,7 +779,7 @@ local function AddEsp(
 			AlwaysOnTop = true;
 			ZIndex = 10;
 			Color3 = ESPColors[Type];
-			Size = (UseVectorLibrary and vector.create(3, 5, 3)) or Vector3.new(3, 5, 3);
+			Size = (UseVectorLibrary and vector_create(3, 5, 3)) or Vector3_new(3, 5, 3);
 			Transparency = 0.6;
 			Adornee = PrimaryPart;
 			Parent = Character;
@@ -823,7 +829,6 @@ end
     Edge Cases:
     - If `RemoteEventToUse` is not a `RemoteEvent`, logs an error and returns an empty coroutine.
     - If `BeatWaitTime` is not a number, NaN, ≤ 0, or ≥ 5, the default of `0.15` is used.
-
 ]=]
 local function SetupFakeAccuracyBeat(
     RemoteEventToUse:RemoteEvent, 
@@ -1075,7 +1080,6 @@ end
     - `AgentTypeList` is a table mapping agent types (string) to booleans indicating whether to ignore them (`true` to ignore).
     - `ClientSubtitles` and `GenerateText` are used for user feedback on errors.
     - The function can return `false` in the results list where invalid or filtered agents are found; this may be intentional for debugging or could be filtered out as needed.
-	
 ]=]
 local function GetAgentsInRange(
     Position:(Vector3|nil?), 
@@ -1130,12 +1134,12 @@ local function GetAgentsInRange(
 					local Distance:number = 0
 					if UseVectorLibrary then
 						Distance = (not UsePosition)
-							and (vector.create(CharHRP.Position.X, 0, CharHRP.Position.Z) - vector.create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-							or (vector.create(CharHRP.X, 0, CharHRP.Z) - vector.create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+							and (vector_create(CharHRP.Position.X, 0, CharHRP.Position.Z) - vector_create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+							or (vector_create(CharHRP.X, 0, CharHRP.Z) - vector_create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
 					else
 						Distance = (not UsePosition)
-							and (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-							or (Vector3.new(CharHRP.X, 0, CharHRP.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+							and (Vector3_new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3_new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+							or (Vector3_new(CharHRP.X, 0, CharHRP.Z) - Vector3_new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
 					end
 
 
@@ -1168,12 +1172,12 @@ local function GetAgentsInRange(
 
 					if UseVectorLibrary then
 						Distance = (not UsePosition)
-							and (vector.create(CharHRP.Position.X, 0, CharHRP.Position.Z) - vector.create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-							or (vector.create(CharHRP.X, 0, CharHRP.Z) - vector.create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+							and (vector_create(CharHRP.Position.X, 0, CharHRP.Position.Z) - vector_create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+							or (vector_create(CharHRP.X, 0, CharHRP.Z) - vector_create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
 					else
 						Distance = (not UsePosition)
-							and (Vector3.new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-							or (Vector3.new(CharHRP.X, 0, CharHRP.Z) - Vector3.new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+							and (Vector3_new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3_new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+							or (Vector3_new(CharHRP.X, 0, CharHRP.Z) - Vector3_new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
 					end
 
 					if (Distance <= Range) then 
@@ -1238,7 +1242,6 @@ end
     - This function can be useful for running operations on many items concurrently to improve responsiveness.
     - Be cautious with side-effects or shared state when using asynchronous iteration.
     - Input validation helps prevent silent failures and aids debugging.
-
 ]=]
 local function IterateWithFunction(
     Table:{[any]:any}, 
@@ -1313,7 +1316,6 @@ end
     Notes:
     - Assumes `BuildingsFolder` is a global or previously defined folder containing player buildings grouped by UserId.
     - Assumes `ClientSubtitles` and `GenerateText` are available for client-side notifications.
-
 ]=]
 local function GetBuildingWithLeastHealth():(any)
 	local LocalPlayerUserId:number = LocalPlayer.UserId
@@ -1399,7 +1401,6 @@ end
     - A "Bound" part is assumed to be a unique marker under each building model used for proximity checks.
     - The `BuildingHealth` NumberValue must be a direct child of the building model for this function to succeed.
     - Health check uses `(Value >= MaxHealth)` logic to determine if a building should be ignored.
-
 ]=]
 local function GetClosestBuilding():(any)
 	if not LocalPlayer.Character or not LocalPlayer.Character.Parent then
@@ -1426,9 +1427,9 @@ local function GetClosestBuilding():(any)
 		table.sort(Bounds, function(Arg1, Arg2)
 			if UseVectorLibrary then
 				return (
-					(Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or vector.create(0, 0, 0)) 
+					(Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or vector_create(0, 0, 0)) 
 						< 
-						(Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or vector.create(0, 0, 0))
+						(Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or vector_create(0, 0, 0))
 				)
 			end
 
@@ -1494,7 +1495,6 @@ end
     Notes:
     - This function is not limited to arrays or numerical indices; it supports any Lua table.
     - The function name may imply array indexing (`#` operator), but it uses a custom count, making it more reliable for dictionaries.
-
 ]=]
 local function GetMaxIndexOfTable(
     Table:{[any]: any}
@@ -1536,12 +1536,12 @@ local function GetRandomPlayer():(Player?)
 		return nil
 	end
 
-	local ChosenPlayer = PlayerList[math.random(1, AmountOfPlayers)]
+	local ChosenPlayer = PlayerList[math_random(1, AmountOfPlayers)]
 	if (ChosenPlayer ~= LocalPlayer) then
 		return ChosenPlayer
 	else
 		repeat
-			ChosenPlayer = PlayerList[math.random(1, AmountOfPlayers)]
+			ChosenPlayer = PlayerList[math_random(1, AmountOfPlayers)]
 			task.wait()
 		until (ChosenPlayer ~= LocalPlayer)
 	end
@@ -1591,7 +1591,7 @@ local function AddZombieEsp(
 
 		if Head then
 			Head.Massless = true
-			Head.Size = HeadSizeToUse or (UseVectorLibrary and vector.create(3, 3, 3)) or Vector3.new(3, 3, 3)
+			Head.Size = HeadSizeToUse or (UseVectorLibrary and vector_create(3, 3, 3)) or Vector3_new(3, 3, 3)
 			Head.Transparency = HeadTransparency
 		end
 
@@ -1961,9 +1961,9 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 											Agent,
 											(PrimaryPart.CFrame * CFrame.new(0, 0, -2.5)).Position,
 											true,
-											(UseVectorLibrary and vector.create(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096))) or Vector3.new(math.random(-4096, 4096), math.random(-4096, 4096), math.random(-4096, 4096)),
+											(UseVectorLibrary and vector_create(math_random(-4096, 4096), math_random(-4096, 4096), math_random(-4096, 4096))) or Vector3_new(math_random(-4096, 4096), math_random(-4096, 4096), math_random(-4096, 4096)),
 											((Agent:FindFirstChild("Head") and "Head") or "HumanoidRootPart"),
-											(UseVectorLibrary and vector.create(0, 1, 0)) or Vector3.new(0, 1, 0)
+											(UseVectorLibrary and vector_create(0, 1, 0)) or Vector3_new(0, 1, 0)
 										)
 									end
 								end)
