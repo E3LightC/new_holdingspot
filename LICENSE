@@ -1,25 +1,21 @@
-Everyone is permitted to copy and distribute copies of this license document, but changing the contents of this license is prohibited.
+MIT License
 
-Definition of "Code":
-"Code" refers to all files with their filename ending in `.luau` or `.iy` located in the 
-GitHub repository: https://github.com/E3LightC/new_holdingspot
+Copyright (c) 2025 BlankLight
 
-Permissions:
-The Code may be modified. The individual or entity (hereafter referred to as 
-the "acquirer") may change, alter, or adapt the software and its source code 
-to suit their specific needs, under the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Conditions for Modification and Use:
-1. The acquirer must register and document any modifications made to the original Code.
-2. These documented changes must be publicly accessible and distributed 
-   alongside the derivative version.
-   Example: via a public GitHub repository that forks https://github.com/E3LightC/new_holdingspot and includes the modifications.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-Restrictions:
-- Redistribution of this license document is permitted only in its original, 
-  unmodified form.
-- The Code must not be relicensed or sublicensed under terms that conflict with this license.
-
-
-Disclaimer:
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
