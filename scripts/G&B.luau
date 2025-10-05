@@ -22,6 +22,8 @@
 --//        [Numpad 1] — Toggle auto-repair system.
 --//        [Numpad 2] — Switch auto-repair targeting mode.
 --//        [Numpad 3] — Allow/disallow "Barrel" agents targeting.
+--//        [Numpad 4] — Enable performance mode.
+--//        [Numpad 5] — Allow/disallow being able to take fall damage
 --//        [U], [F], [G], [H], [J], [Y], [T]: Triggers playback of a predefined fife or drum song. Song mappings are configurable via the `MusicSelections` table.
 --// [Combat Behavior]
 --//        All melee attacks are forcibly registered as headshots, in which the base melee module that controls said weapon on the server side will apply either the weapon’s specific headshot multiplier 
@@ -43,6 +45,7 @@
 --//        [Numpad 2] — Switch auto-repair targeting mode.
 --//        [Numpad 3] — Allow/disallow "Barrel" zombie targeting.
 --//        [Numpad 4] — Enable performance mode.
+--//        [Numpad 5] — Allow/disallow being able to take fall damage
 --// [Music]
 --//        [U, F, G, H, J, Y, T] — Play fife/drum songs; mapped via `MusicSelections`.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
