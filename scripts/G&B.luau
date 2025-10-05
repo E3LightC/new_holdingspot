@@ -1,6 +1,6 @@
 --//// Discord: @_x4yz \\\\--
 --// https://www.roblox.com/games/12334109280/Guts-Blackpowder
---//    Made with Wave, Swift, and Zenith. [https://getwave.gg] [https://getswift.gg] [https://zenith.win] | This script should work with most executors, as most of it is standard Roblox Luau.
+--//    Made with Wave, Swift, and Zenith. | This script should work with most executors, as most of it is standard Roblox Luau.
 --//    Each function has a description if whoever is reading this is curious about what they do.
 --//    * This script is entirely made from boredom and my passion for exploiting/pen-testing! *
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
@@ -8,6 +8,7 @@
 --//// Recent Changes \\\\--
 --//        Added performance mode bind [Numpad 4].
 --//        Updated `GenerateText` function to have more features.
+--//        Added no fall damage bind [Numpad 5].
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
@@ -27,10 +28,9 @@
 --//   or a default multiplier of 2.3x for increased damage output.
 --// [Visuals / ESP System]
 --//        Agents are highlighted using Roblox's `Highlight` based on type, with colors from `ESPColors`. 
---//   Tags prevent redundant highlights.
+--//        Tags prevent redundant highlights.
 --// [Tool Manipulation / Exploit Behavior]
---//        RemoteEvents `OnAFKSignalReceived` and `ForceKill` are locally blocked (external exploit calls not affected).
---//        Auto-repair uses a hammer tool and checks character proximity, not the tool’s proximity when repairing structures.
+--//        RemoteEvents `OnAFKSignalReceived`, `ForceKill`, and `ForceSelfDamage` are locally blocked (exploit calls aren't affected).
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Key Bindings Overview \\\\--
@@ -322,35 +322,39 @@ local function CreateInstance(
     if (type(Class) ~= "string") then
         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# CreateInstance] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
         warn(`[FAIL # CreateInstance]: "Class" parameter is not a string.  ||| Current script line: {debug.info(1, "l")}`)
-
         return false
     end
-    local UseProperties = (type(Properties) == "table")
 
+    local UseProperties = (type(Properties) == "table")
     local Success, NewInstance = pcall(function()
         return Instance.new(Class)
     end)
-    if not Success or not NewInstance then
+    if not Success 
+		or not NewInstance 
+	then
         return false
     end
 
-    if UseProperties then
-        local ParentPropertyToSet:Instance
-        for Property:string, Value:any? in pairs(Properties) do 
-            if (Property ~= "Parent") then
-                task.spawn(pcall, function()
-                    NewInstance[Property] = Value
-                end)
-            elseif (Property == "Parent") and (typeof(Value) == "Instance") then
-                ParentPropertyToSet = Value
-            end
-        end
+    if not UseProperties then
+		return NewInstance
+    end
 
-        if ParentPropertyToSet then
-            NewInstance.Parent = ParentPropertyToSet
+    local ParentPropertyToSet:Instance
+    for Property:string, Value:any? in pairs(Properties) do 
+        if (Property ~= "Parent") then
+            task.spawn(pcall, function()
+                NewInstance[Property] = Value
+            end)
+        elseif (Property == "Parent") 
+			and (typeof(Value) == "Instance") 
+		then
+            ParentPropertyToSet = Value
         end
     end
 
+    if ParentPropertyToSet then
+        NewInstance.Parent = ParentPropertyToSet
+    end
     return NewInstance
 end
 
@@ -417,9 +421,15 @@ local function WaitForChildWhichIsA(
     Name:string?, 
     TimeOut:number?
 ):(Instance|nil)
-	if (typeof(Parent) == "Instance") and (type(ClassName) == "string") then
+	if (typeof(Parent) == "Instance") 
+		and (type(ClassName) == "string") 
+	then
 		local InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
-		if (type(Name) == "string") and InstanceToReturn and (InstanceToReturn.Name == Name) or InstanceToReturn then
+		if (type(Name) == "string") 
+			and InstanceToReturn 
+			and (InstanceToReturn.Name == Name) 
+			or InstanceToReturn 
+		then
 			return InstanceToReturn
 		end
 
@@ -429,18 +439,29 @@ local function WaitForChildWhichIsA(
 
 		if not UseTimeOut then
 			repeat
-				if not Parent or not Parent.Parent then
+				if not Parent 
+					or not Parent.Parent 
+				then
 					EndedEarly = true
 					break
 				end
+
                 InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
-				if (type(Name) == "string") and InstanceToReturn and (InstanceToReturn.Name == Name) or InstanceToReturn then
+				if (type(Name) == "string") 
+					and InstanceToReturn 
+					and (InstanceToReturn.Name == Name) 
+					or InstanceToReturn 
+				then
 					return InstanceToReturn
 				end
 
                 task.wait()
 				InstanceToReturn = Parent and Parent:FindFirstChildWhichIsA(ClassName)
-				if (type(Name) == "string") and InstanceToReturn and (InstanceToReturn.Name == Name) or InstanceToReturn then
+				if (type(Name) == "string") 
+					and InstanceToReturn 
+					and (InstanceToReturn.Name == Name) 
+					or InstanceToReturn 
+				then
 					return InstanceToReturn
 				end
 			until ((typeof(InstanceToReturn) == "Instance") or EndedEarly or not Parent or not Parent.Parent)
@@ -454,18 +475,29 @@ local function WaitForChildWhichIsA(
 					EndedEarly = true
 					break
 				end
-				if not Parent or not Parent.Parent then
+				if not Parent 
+					or not Parent.Parent 
+				then
 					EndedEarly = true
 					break
 				end
+
                 InstanceToReturn = Parent:FindFirstChildWhichIsA(ClassName)
-				if (type(Name) == "string") and InstanceToReturn and (InstanceToReturn.Name == Name) or InstanceToReturn then
+				if (type(Name) == "string") 
+					and InstanceToReturn 
+					and (InstanceToReturn.Name == Name) 
+					or InstanceToReturn 
+				then
 					return InstanceToReturn
 				end
-
                 task.wait()
+
 				InstanceToReturn = Parent and Parent:FindFirstChildWhichIsA(ClassName)
-				if (type(Name) == "string") and InstanceToReturn and (InstanceToReturn.Name == Name) or InstanceToReturn then
+				if (type(Name) == "string") 
+					and InstanceToReturn 
+					and (InstanceToReturn.Name == Name) 
+					or InstanceToReturn 
+				then
 					return InstanceToReturn
 				end
 			until ((typeof(InstanceToReturn) == "Instance") or EndedEarly or (os.clock() - StartTime) >= AbsTimeOut)
@@ -499,8 +531,6 @@ local function WaitForChildWhichIsA(
 			return nil
 		end
 	end
-
-	return nil
 end
 
 if not Players.LocalPlayer then
@@ -527,7 +557,7 @@ local DebugPrints:boolean = false
 local UseVectorLibrary:boolean = true
 
 local Enable_AntiRunnerTackle:boolean = false
-local Enable_SmallerSapperHitbox:boolean = false
+local Enable_SmallerSapperHitbox:boolean = true
 
 local CanRepair:boolean = true
 local BuildingBindEnabled:boolean = false
@@ -587,6 +617,7 @@ local Binds = {
 	["BuildingFetchTypeBind_Bind"] = Enum.KeyCode.KeypadTwo;
 	["BlockBarrelBind_Bind"] = Enum.KeyCode.KeypadThree;
 	["PerformanceBind_Bind"] = Enum.KeyCode.KeypadFour;
+	["NoFallDamageBind_Bind"] = Enum.KeyCode.KeypadFive;
 }
 local ESPColors = {
 	["Igniter"] = Color3.fromRGB(255, 255, 0);
@@ -612,54 +643,58 @@ setmetatable(ESPColors, {
 local function EmptyApplyFunction(ZData:{any}) end
 
 --// disconnection of previous script connections if executed more than once.
-if getgenv()["FlameTouchRemover"] ~= nil then 
+if getgenv()["FlameTouchRemover"] then 
 	getgenv()["FlameTouchRemover"]:Disconnect()
 	getgenv()["FlameTouchRemover"] = nil
 end
-if getgenv()["ShoveBind"] ~= nil then 
+if getgenv()["ShoveBind"] then 
 	getgenv()["ShoveBind"]:Disconnect()
 	getgenv()["ShoveBind"] = nil
 end
-if getgenv()["ShoveEquipper"] ~= nil then
+if getgenv()["ShoveEquipper"] then
 	getgenv()["ShoveEquipper"]:Disconnect()
 	getgenv()["ShoveEquipper"] = nil
 end
-if getgenv()["MurderBind"] ~= nil then 
+if getgenv()["MurderBind"] then 
 	getgenv()["MurderBind"]:Disconnect()
 	getgenv()["MurderBind"] = nil
 end
-if getgenv()["MusicBind"] ~= nil then
+if getgenv()["MusicBind"] then
 	getgenv()["MusicBind"]:Disconnect()
 	getgenv()["MusicBind"] = nil
 end
-if getgenv()["FakeAccuracyBeat"] ~= nil then
-	coroutine.close(getgenv()["FakeAccuracyBeat"])
+if getgenv()["FakeAccuracyBeat"] then
+	pcall(coroutine.close, getgenv()["FakeAccuracyBeat"])
 	getgenv()["FakeAccuracyBeat"] = nil
 end
-if getgenv()["OnCameraDescendantAdded"] ~= nil then 
+if getgenv()["OnCameraDescendantAdded"] then 
 	getgenv()["OnCameraDescendantAdded"]:Disconnect()
 	getgenv()["OnCameraDescendantAdded"]= nil
 end
-if getgenv()["BuildingBind"] ~= nil then
+if getgenv()["BuildingBind"] then
 	getgenv()["BuildingBind"]:Disconnect()
 	getgenv()["BuildingBind"] = nil
 end
-if getgenv()["BuildingBindFunc"] ~= nil then
+if getgenv()["BuildingBindFunc"] then
 	getgenv()["BuildingBindFunc"]:Disconnect()
 	getgenv()["BuildingBindFunc"] = nil
 end
-if getgenv()["BuildHighlight"] ~= nil then
+if getgenv()["BuildHighlight"] then
 	getgenv()["BuildHighlight"].Enabled = false
 	getgenv()["BuildHighlight"]:Destroy()
 	getgenv()["BuildHighlight"] = nil
 end
-if getgenv()["BuildingFetchTypeBind"] ~= nil then 
+if getgenv()["BuildingFetchTypeBind"] then 
 	getgenv()["BuildingFetchTypeBind"]:Disconnect()
 	getgenv()["BuildingFetchTypeBind"] = nil
 end
-if getgenv()["BlockBarrelBind"] ~= nil then 
+if getgenv()["BlockBarrelBind"] then 
 	getgenv()["BlockBarrelBind"]:Disconnect()
 	getgenv()["BlockBarrelBind"] = nil
+end
+if getgenv()["NoFallDamageBind"] then 
+	getgenv()["NoFallDamageBind"]:Disconnect()
+	getgenv()["NoFallDamageBind"] = nil
 end
 if getgenv()["OnCharacterAdded"] then
 	getgenv()["OnCharacterAdded"]:Disconnect()
@@ -738,9 +773,12 @@ local function AddEsp(
     IsSapper:boolean?, 
     IsBomber:boolean?, 
     IsHeadless:boolean?, 
-    IsCuirassier:boolean?
+    IsCuirassier:boolean?,
+	RetryAttempt:number?
 ):()
-	if (typeof(Character) ~= "Instance") or not Character:IsA("Model") then
+	if (typeof(Character) ~= "Instance") 
+		or not Character:IsA("Model") 
+	then
         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# AddEsp] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
         warn(`[FAIL # AddEsp]: "Character" parameter is not an Instance, nor a Model.  ||| Current script line: {debug.info(1, "l")}`)
 
@@ -758,19 +796,38 @@ local function AddEsp(
 		or (IsCuirassier and "Cuirassier")
         or "None"
 
-	if (type(Type) == "string") and (Type ~= "None") then
+	if (type(Type) == "string") 
+		and (Type ~= "None") 
+	then
         local PrimaryPart = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
-        if not PrimaryPart then 
-            task.delay(ZombieESPWait, AddEsp, 
-                Character, 
-                Head, 
-                IsIgniter, 
-                IsRunner, 
-                IsSapper, 
-                IsBomber, 
-                IsHeadless, 
-                IsCuirassier
-            )
+        if not PrimaryPart then
+			if (type(RetryAttempt) ~= "number") then
+				task.delay(ZombieESPWait, AddEsp, 
+					Character, 
+					Head, 
+					IsIgniter, 
+					IsRunner, 
+					IsSapper, 
+					IsBomber, 
+					IsHeadless, 
+					IsCuirassier,
+					1
+				)
+			elseif (type(RetryAttempt) == "number") 
+				and (RetryAttempt <= 2) 
+			then
+				task.delay(ZombieESPWait, AddEsp, 
+					Character, 
+					Head, 
+					IsIgniter, 
+					IsRunner, 
+					IsSapper, 
+					IsBomber, 
+					IsHeadless, 
+					IsCuirassier,
+					(RetryAttempt + 1)
+				)
+			end
             return
         end
 
@@ -785,7 +842,10 @@ local function AddEsp(
 			Parent = Character;
 		})
 		
-		if Head and (typeof(Head) == "Instance") and Head:IsA("BasePart") then
+		if Head 
+			and (typeof(Head) == "Instance") 
+			and Head:IsA("BasePart") 
+		then
 			Head.Color = ESPColors[Type]
 		end
 	end
@@ -867,7 +927,7 @@ local function SetupFakeAccuracyBeat(
 			task.wait(BeatWaitTime)
 		end
 	end)
-	coroutine.resume(NewThread)
+	pcall(coroutine.resume, NewThread)
 
 	return NewThread
 end
@@ -952,7 +1012,7 @@ local function GetMeleeWeapon(
 		return
 	end
 
-	if (Character.Parent == nil) then
+	if not Character.Parent then
         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetMeleeWeapon] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 		warn(`[FAIL # GetMeleeWeapon]: Your character's parent is equal to \`nil\`.  ||| Current script line: {debug.info(1, "l")}`)
 
@@ -973,7 +1033,10 @@ local function GetMeleeWeapon(
 
 	if Character:FindFirstChildWhichIsA("Tool") then
 		for _, Tool in ipairs(Character:GetChildren()) do 
-			if (typeof(Tool) == "Instance") and Tool:IsA("Tool") and Tool.Parent then 
+			if (typeof(Tool) == "Instance") 
+				and Tool:IsA("Tool") 
+				and Tool.Parent 
+			then 
 				if Tool:FindFirstChild("MeleeBase") then 
 					if ListTools then
 						table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
@@ -982,7 +1045,10 @@ local function GetMeleeWeapon(
 
 					return {{Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")}}
 				else
-					if (Tool.Name == "Musket") or (Tool.Name == "Shovel") or (Tool.Name == "Rifle") then 
+					if (Tool.Name == "Musket") 
+						or (Tool.Name == "Shovel") 
+						or (Tool.Name == "Rifle") 
+					then 
 						if ListTools then
 							table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
 							continue
@@ -998,7 +1064,10 @@ local function GetMeleeWeapon(
     Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
 	if Backpack:FindFirstChildWhichIsA("Tool") then
 		for _, Tool in ipairs(Backpack:GetChildren()) do 
-			if (typeof(Tool) == "Instance") and Tool:IsA("Tool") and Tool.Parent then 
+			if (typeof(Tool) == "Instance") 
+				and Tool:IsA("Tool") 
+				and Tool.Parent 
+			then 
 				if Tool:FindFirstChild("MeleeBase") then
 					if ListTools then
 						table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
@@ -1007,7 +1076,10 @@ local function GetMeleeWeapon(
 
 					return {{Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")}}
 				else
-					if (Tool.Name == "Musket") or (Tool.Name == "Shovel") or (Tool.Name == "Rifle") then 
+					if (Tool.Name == "Musket") 
+						or (Tool.Name == "Shovel") 
+						or (Tool.Name == "Rifle") 
+					then 
 						if ListTools then
 							table.insert(List, {Tool, Tool:FindFirstChildWhichIsA("RemoteEvent"), Tool:FindFirstChild("Configuration") and (Tool:FindFirstChild("Configuration")::Configuration):GetAttribute("LimitRange")})
 							continue
@@ -1094,7 +1166,9 @@ local function GetAgentsInRange(
         return AgentsInRange
 	end
 
-	if (Range == 0) or (Range ~= Range) then 
+	if (Range == 0) 
+		or (Range ~= Range) 
+	then 
 		Range = 4
 	elseif (Range < 0) then 
 		Range = -Range
@@ -1104,7 +1178,9 @@ local function GetAgentsInRange(
 	local CharHRP:any
 	if not UsePosition then
 		local Character = LocalPlayer.Character
-		if not Character or not Character.Parent then
+		if not Character 
+			or not Character.Parent 
+		then
             ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetAgentsInRange] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetAgentsInRange]: You do not have a character?  ||| Current script line: {debug.info(1, "l")}`)
 
@@ -1112,7 +1188,9 @@ local function GetAgentsInRange(
 		end
 
 		CharHRP = (Character:FindFirstChild("HumanoidRootPart") or Character.PrimaryPart)::BasePart
-		if not CharHRP or CharHRP:IsA("Model") then 
+		if not CharHRP 
+			or CharHRP:IsA("Model") 
+		then 
             ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetAgentsInRange] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetAgentsInRange]: No HumanoidRootPart/PrimaryPart found inside the player's character.  ||| Current script line: {debug.info(1, "l")}`)
 
@@ -1124,13 +1202,19 @@ local function GetAgentsInRange(
 
 	if (#ZombiesFolder:GetChildren() > 0) then 
 		for _, Agent in ipairs(ZombiesFolder:GetChildren()) do 
-			if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and not Agent:FindFirstChildWhichIsA("ForceField") then 
+			if (typeof(Agent) == "Instance") 
+				and Agent:IsA("Model") 
+				and Agent.Parent 
+				and not Agent:FindFirstChildWhichIsA("ForceField") 
+			then 
 				local HRP = Agent.PrimaryPart or Agent:FindFirstChild("HumanoidRootPart")
-
 				local ZombieType = Agent:GetAttribute("Type")
 				local IgnoreVal = AgentTypeList[ZombieType]
 
-				if HRP and (type(IgnoreVal) == "boolean") and not IgnoreVal then 
+				if HRP 
+					and (type(IgnoreVal) == "boolean") 
+					and not IgnoreVal 
+				then 
 					local Distance:number = 0
 					if UseVectorLibrary then
 						Distance = (not UsePosition)
@@ -1142,11 +1226,12 @@ local function GetAgentsInRange(
 							or (Vector3_new(CharHRP.X, 0, CharHRP.Z) - Vector3_new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
 					end
 
-
 					if (Distance <= Range) then 
 						table.insert(AgentsInRange, Agent)
 					end
-				elseif HRP and (type(IgnoreVal) ~= "boolean") then
+				elseif HRP 
+					and (type(IgnoreVal) ~= "boolean") 
+				then
 					--// incase the agent's type is *new*, or not in the list.
 					table.insert(AgentsInRange, Agent)
 				end
@@ -1161,13 +1246,19 @@ local function GetAgentsInRange(
 	end
 	if BotsFolder and (#BotsFolder:GetChildren() > 0) then 
 		for _, Agent in ipairs(BotsFolder:GetChildren()) do 
-			if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and not Agent:FindFirstChildWhichIsA("ForceField") then 
+			if (typeof(Agent) == "Instance") 
+				and Agent:IsA("Model") 
+				and Agent.Parent 
+				and not Agent:FindFirstChildWhichIsA("ForceField") 
+			then 
 				local HRP = Agent.PrimaryPart or Agent:FindFirstChild("HumanoidRootPart")
-
 				local BotType = Agent:GetAttribute("Type")
 				local IgnoreVal = AgentTypeList[BotType]
 
-				if HRP and (type(IgnoreVal) == "boolean") and not IgnoreVal then 
+				if HRP 
+					and (type(IgnoreVal) == "boolean") 
+					and not IgnoreVal 
+				then 
 					local Distance:number = 0
 
 					if UseVectorLibrary then
@@ -1183,7 +1274,9 @@ local function GetAgentsInRange(
 					if (Distance <= Range) then 
 						table.insert(AgentsInRange, Agent)
 					end
-				elseif HRP and (type(IgnoreVal) ~= "boolean") then 
+				elseif HRP 
+					and (type(IgnoreVal) ~= "boolean") 
+				then 
 					--// incase the agent's type is *new*, or not in the list.
 					table.insert(AgentsInRange, Agent)
 				end
@@ -1339,7 +1432,7 @@ local function GetBuildingWithLeastHealth():(any)
 			return (
 				(Arg1.Value / (Arg1:GetAttribute("MaxHealth") or Arg1.Value))
 					< 
-					(Arg2.Value / (Arg2:GetAttribute("MaxHealth") or Arg2.Value))
+				(Arg2.Value / (Arg2:GetAttribute("MaxHealth") or Arg2.Value))
 			)
 		end)
 
@@ -1348,11 +1441,8 @@ local function GetBuildingWithLeastHealth():(any)
 		else
             ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetBuildingWithLeastHealth] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetBuildingWithLeastHealth]: Failed to get a "BuildingHealth" NumberValue.  ||| Current script line: {debug.info(1, "l")}`)
-			
             return false
 		end
-	else
-		warn(`[FAIL # GetBuildingWithLeastHealth]: No buildings found?  ||| Current script line: {debug.info(1, "l")}`)
 	end 
 
 	return false
@@ -1429,21 +1519,22 @@ local function GetClosestBuilding():(any)
 				return (
 					(Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or vector_create(0, 0, 0)) 
 						< 
-						(Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or vector_create(0, 0, 0))
+					(Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or vector_create(0, 0, 0))
 				)
 			end
 
 			return (
 				(Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or Vector3.zero) 
 					< 
-					(Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or Vector3.zero)
+				(Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or Vector3.zero)
 			)
 		end)
 
-		if (typeof(Bounds[1]) == "Instance") and Bounds[1].Parent then 
+		if (typeof(Bounds[1]) == "Instance") 
+			and Bounds[1].Parent 
+		then 
 			local BuildingHealth:NumberValue = (((Bounds[1].Parent)::Part):WaitForChild("BuildingHealth")::NumberValue)
-
-			if (BuildingHealth.Value >= ((BuildingHealth:GetAttribute("MaxHealth")::number) or BuildingHealth.Value))  then 
+			if (BuildingHealth.Value >= ((BuildingHealth:GetAttribute("MaxHealth")::number) or BuildingHealth.Value)) then 
 				return false
 			end
 
@@ -1451,11 +1542,8 @@ local function GetClosestBuilding():(any)
 		else
             ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetClosestBuilding] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 			warn(`[FAIL # GetClosestBuilding]: Failed to find the closest building.  ||| Current script line: {debug.info(1, "l")}`)
-			
             return false
 		end
-	else
-		warn(`[FAIL # GetClosestBuilding]: No buildings found?  ||| Current script line: {debug.info(1, "l")}`)
 	end 
 
 	return false
@@ -1499,34 +1587,21 @@ end
 local function GetMaxIndexOfTable(
     Table:{[any]: any}
 ):(number)
-	if (Table ~= nil) then 
-		if (type(Table) ~= "table") then
-            ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetMaxIndexOfTable] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
-			warn(`[FAIL # GetMaxIndexOfTable]: "Table" is not a table. Returning 0.  ||| Current script line: {debug.info(1, "l")}`)
-
-			return 0
-		end
-
-		local CountToReturn = 0
-		for i, v in pairs(Table) do 
-			if i then
-				CountToReturn += 1
-			else
-				continue
-			end
-		end
-
-		return CountToReturn
-	else
+	if (type(Table) ~= "table") then
         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# GetMaxIndexOfTable] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
-		if (Table == nil) then 
-			warn(`[FAIL # GetMaxIndexOfTable]: "Table" is equal to \`nil\`. Returning 0.  ||| Current script line: {debug.info(1, "l")}`)
-
-			return 0
-		end
+		warn(`[FAIL # GetMaxIndexOfTable]: "Table" is not a table. Returning 0.  ||| Current script line: {debug.info(1, "l")}`)
+		return 0
 	end
 
-	return 0
+	local CountToReturn = 0
+	for i, _ in pairs(Table) do 
+		if i then
+			CountToReturn += 1
+		else
+			continue
+		end
+	end
+	return CountToReturn
 end
 
 local function GetRandomPlayer():(Player?)
@@ -1551,7 +1626,7 @@ end
 
 local function AddZombieEsp(
 	ZombieOrig:ObjectValue
-)
+):()
 	if ZombieOrig and ZombieOrig:IsA("ObjectValue") and (ZombieOrig.Name == "Orig") then 
 		repeat
 			task.wait()
@@ -1581,7 +1656,10 @@ local function AddZombieEsp(
 			Head = (Character:FindFirstChild("Head") or Character:WaitForChild("Head", 3))::BasePart
 		else
 			for _, Part:any in pairs(Character:GetChildren()) do 
-				if Part and Part:IsA("Part") and (Part.Name == "Head") then
+				if Part 
+					and Part:IsA("Part") 
+					and (Part.Name == "Head") 
+				then
 					Head = Part
 					Part = nil
 					break
@@ -1595,59 +1673,74 @@ local function AddZombieEsp(
 			Head.Transparency = HeadTransparency
 		end
 
-		if Agent and Agent.Parent and Agent.PrimaryPart then
-			if IsRunner and Enable_AntiRunnerTackle then
-				local AgentPrimaryPart = Agent.PrimaryPart
-				local FakePart = Instance.new("Part")
-				FakePart.Name = "FakeHead"
-				FakePart.Size = Head.Size
-				FakePart.Transparency = Head.Transparency
-				FakePart.CFrame = Head.CFrame
-				FakePart.CanCollide = false
-				FakePart.Parent = Character
+		if Agent 
+			and Agent.Parent 
+			and Agent.PrimaryPart 
+		then
+			local AgentPrimaryPart = Agent.PrimaryPart
 
-				local Weld = Instance.new("Weld")
-				Weld.Part0 = AgentPrimaryPart
-				Weld.Part1 = FakePart
-				Weld.Parent = AgentPrimaryPart
+			if IsRunner 
+				and Enable_AntiRunnerTackle 
+			then
+				local FakePart = CreateInstance("Part", {
+					Name = "FakeHead";
+					Size = Head.Size;
+					Transparency = Head.Transparency;
+					CFrame = Head.CFrame;
+					CanCollide = false;
+					Parent = Character;
+				})
+				local Weld = CreateInstance("Weld", {
+					Part0 = AgentPrimaryPart;
+					Part1 = FakePart;
+					Parent = AgentPrimaryPart;
+				})
 
 				Agent.ChildAdded:Connect(function(Hitbox:Instance)
-					if Hitbox:IsA("Model") and string.find(Hitbox.Name, "_Reb_") then
+					if Hitbox:IsA("Model") 
+						and string.find(Hitbox.Name, "_Reb_") 
+					then
 						repeat 
 							task.wait() 
 						until not Hitbox or Hitbox:FindFirstChild("HumanoidRootPart")
 						
 						local PrimaryPart = Hitbox and Hitbox:IsDescendantOf(Workspace) and Hitbox:FindFirstChild("HumanoidRootPart")
-
 						if PrimaryPart then
 							PrimaryPart.Anchored = true
+							PrimaryPart = nil
 						end
 					end
 				end)
-			elseif IsSapper and Enable_SmallerSapperHitbox then
-				local AgentPrimaryPart = Agent.PrimaryPart
-				local FakePart = Instance.new("Part")
-				FakePart.Name = "FakeHead"
-				FakePart.Size = Head.Size
-				FakePart.Transparency = Head.Transparency
-				FakePart.CFrame = Head.CFrame
-				FakePart.CanCollide = false
-				FakePart.Parent = Character
-
-				local Weld = Instance.new("Weld")
-				Weld.Part0 = AgentPrimaryPart
-				Weld.Part1 = FakePart
-				Weld.Parent = AgentPrimaryPart
+			elseif IsSapper 
+				and Enable_SmallerSapperHitbox 
+			then
+				local FakePart = CreateInstance("Part", {
+					Name = "FakeHead";
+					Size = Head.Size;
+					Transparency = Head.Transparency;
+					CFrame = Head.CFrame;
+					CanCollide = false;
+					Parent = Character;
+				})
+				local Weld = CreateInstance("Weld", {
+					Part0 = AgentPrimaryPart;
+					Part1 = FakePart;
+					Parent = AgentPrimaryPart;
+				})
 
 				Agent.ChildAdded:Connect(function(Hitbox:Instance)
-					if Hitbox:IsA("Model") and string.find(Hitbox.Name, "_Bink_") then
+					if Hitbox:IsA("Model") 
+						and string.find(Hitbox.Name, "_Bink_") 
+					then
 						repeat 
 							task.wait() 
 						until not Hitbox or Hitbox:FindFirstChild("HumanoidRootPart")
 						local PrimaryPart = Hitbox and Hitbox:IsDescendantOf(Workspace) and Hitbox:FindFirstChild("HumanoidRootPart")
 
 						if PrimaryPart then
-							local Target = GetRandomPlayer()
+							PrimaryPart.Anchored = true
+							PrimaryPart = nil
+							--[[local Target = GetRandomPlayer()
 							print(Target)
 							repeat
 								if not PrimaryPart then
@@ -1660,14 +1753,14 @@ local function AddZombieEsp(
 								PrimaryPart.AssemblyAngularVelocity = Vector3.zero
 								PrimaryPart.CFrame = (TargetCFrame * CFrame.new(0, 0, 0))
 								task.wait()
-							until not PrimaryPart or not PrimaryPart:IsDescendantOf(Workspace)
+							until not PrimaryPart or not PrimaryPart:IsDescendantOf(Workspace)]]
 						end
 					end
 				end)
 			end
 		end
 
-		coroutine.wrap(pcall)(AddEsp, Character, Head,
+		coroutine.wrap(AddEsp)(Character, Head,
 			IsIgniter,
 			IsRunner,
 			IsSapper,
@@ -1680,13 +1773,20 @@ end
 
 getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(AddZombieEsp)
 for _, ZombieOrig:ObjectValue in pairs(Camera:GetDescendants()) do 
-	if ZombieOrig and ZombieOrig:IsA("ObjectValue") and (ZombieOrig.Name == "Orig") then
-		task.spawn(AddZombieEsp, ZombieOrig)
+	if not ZombieOrig 
+		or not ZombieOrig:IsA("ObjectValue") 
+		or (ZombieOrig.Name ~= "Orig") 
+	then
+		continue
 	end
+
+	task.spawn(AddZombieEsp, ZombieOrig)
 end
 
 getgenv()["BuildingBindFunc"] = RunService.Stepped:Connect(function()
-	if BuildingBindEnabled and LocalPlayer.Character then 
+	if BuildingBindEnabled 
+		and LocalPlayer.Character 
+	then 
 		local Character = LocalPlayer.Character
 		Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
 
@@ -1694,13 +1794,17 @@ getgenv()["BuildingBindFunc"] = RunService.Stepped:Connect(function()
 			or Character:FindFirstChildWhichIsA("Tool")
 			or Character:FindFirstChildWhichIsA("HopperBin")
 
-		if Hammer and (Hammer.Name == "Hammer") then
+		if Hammer 
+			and (Hammer.Name == "Hammer") 
+		then
 			local Remote = Hammer:FindFirstChild("RemoteEvent")
-
 			if Remote then 
 				local BuildingFound:NumberValue = (BuildingFetchType == "LeastHealth" and GetBuildingWithLeastHealth()) or GetClosestBuilding()
 
-				if (type(BuildingFound) == "boolean") or not CanRepair or (BuildingFound.Value >= ((BuildingFound:GetAttribute("MaxHealth")::number) or BuildingFound.Value)) then 
+				if (type(BuildingFound) == "boolean") 
+					or not CanRepair 
+					or (BuildingFound.Value >= ((BuildingFound:GetAttribute("MaxHealth")::number) or BuildingFound.Value)) 
+				then 
 					if not CanRepair then 
 						return
 					end
@@ -1744,26 +1848,25 @@ getgenv()["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Proce
 		if (type(SongName) == "string") then 
 			local FoundInstrument:Tool
 
-			for i:string, v:boolean in pairs(AllowedInstruments) do 
-				if (type(i) == "string") and v then 
-					FoundInstrument = (Character:FindFirstChild(tostring(i)) or Backpack:FindFirstChild(tostring(i)))::Tool
+			for i:string, v:boolean in pairs(AllowedInstruments) do
+				if (type(i) ~= "string") or not v then
+					continue
+				end 
 
-					if FoundInstrument then 
-						print(`[INFO # MusicBind]: Found instrument "{FoundInstrument.Name}".`)
-						break
-					end
+				FoundInstrument = (Character:FindFirstChild(tostring(i)) or Backpack:FindFirstChild(tostring(i)))::Tool
+				if FoundInstrument then 
+					print(`[INFO # MusicBind]: Found instrument "{FoundInstrument.Name}".`)
+					break
 				end
 			end
 
-			if( typeof(FoundInstrument) == "Instance") and FoundInstrument:IsA("Tool") then                 
+			if (typeof(FoundInstrument) == "Instance") and FoundInstrument:IsA("Tool") then                 
 				local Remote = (FoundInstrument:FindFirstChild("RemoteEvent"))::RemoteEvent
-
 				if Remote then 
-					if (getgenv()["FakeAccuracyBeat"] ~= nil) then 
-						coroutine.close(getgenv()["FakeAccuracyBeat"])
+					if (getgenv()["FakeAccuracyBeat"]) then 
+						pcall(coroutine.close, getgenv()["FakeAccuracyBeat"])
 						getgenv()["FakeAccuracyBeat"] = nil
 					end
-
 					print(`[INFO # MusicBind]: Attempted to play "{SongName}" with {FoundInstrument.Name}.`)
 
 					Remote:FireServer("Stop")
@@ -1772,19 +1875,19 @@ getgenv()["MusicBind"] = UserInputService.InputBegan:Connect(function(Key, Proce
 
 					local Connection
 					Connection = FoundInstrument:GetPropertyChangedSignal("Parent"):Connect(function()
-						if FoundInstrument.Parent and ((FoundInstrument.Parent).Name == "Backpack") then 
-							if (getgenv()["FakeAccuracyBeat"] ~= nil) then 
-								coroutine.close(getgenv()["FakeAccuracyBeat"])
+						if FoundInstrument.Parent 
+							and ((FoundInstrument.Parent).Name == "Backpack") 
+						then 
+							if (getgenv()["FakeAccuracyBeat"]) then 
+								pcall(coroutine.close, getgenv()["FakeAccuracyBeat"])
 								getgenv()["FakeAccuracyBeat"] = nil
 							end
-
 							Connection:Disconnect()
 						elseif not FoundInstrument.Parent then 
-							if (getgenv()["FakeAccuracyBeat"] ~= nil) then 
-								coroutine.close(getgenv()["FakeAccuracyBeat"])
+							if (getgenv()["FakeAccuracyBeat"]) then 
+								pcall(coroutine.close, getgenv()["FakeAccuracyBeat"])
 								getgenv()["FakeAccuracyBeat"] = nil
 							end
-
 							Connection:Disconnect()
 						end
 					end)
@@ -1806,10 +1909,12 @@ getgenv()["ShoveEquipper"] = UserInputService.InputBegan:Connect(function(Key, P
 			local Character:Model = LocalPlayer.Character
 			Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
 
-			local Weapon:Tool = (Backpack:FindFirstChild("Axe") 
+			local Weapon:Tool = (
+				Backpack:FindFirstChild("Axe") 
 				or Backpack:FindFirstChild("Carbine")
 				or Backpack:FindFirstChild("Navy Pistol")
-				or Backpack:FindFirstChild("Pickaxe"))::Tool
+				or Backpack:FindFirstChild("Pickaxe")
+			)::Tool
 
 			if Weapon then
 				Weapon.Parent = Character
@@ -1821,7 +1926,9 @@ end)
 getgenv()["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if (Key.KeyCode == Binds["ShoveBind_Bind"]) then 
-			if LocalPlayer.Character and LocalPlayer.Character.Parent then
+			if LocalPlayer.Character 
+				and LocalPlayer.Character.Parent 
+			then
 				local Character = LocalPlayer.Character
 				local HRP = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
 				local AgentsInRange = GetAgentsInRange(nil, ShoveRange * 2)
@@ -1829,13 +1936,11 @@ getgenv()["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Proce
 				if (type(AgentsInRange) ~= "table") then
                     ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# ShoveBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4) 
 					warn(`[FAIL # ShoveBind]: AgentsInRange is not a table.  ||| Current script line: {debug.info(1, "l")}  ||| Current script line: {debug.info(1, "l")}`)
-
 					return
 				end
 
 				if (#AgentsInRange <= 0) then
 					warn(`[FAIL # ShoveBind]: No agents found within a range of {ShoveRange} studs.  ||| Current script line: {debug.info(1, "l")}`)
-
 					return
 				end
 
@@ -1857,7 +1962,10 @@ getgenv()["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Proce
 					or Backpack:FindFirstChild("Navy Pistol")
 					or Backpack:FindFirstChild("Pickaxe"))::Tool
 
-				if Weapon and (typeof(Weapon) == "Instance") and Weapon.Parent then
+				if Weapon 
+					and (typeof(Weapon) == "Instance") 
+					and Weapon.Parent 
+				then
 					local Remote = Weapon:FindFirstChildWhichIsA("RemoteEvent")
 
 					if Remote then
@@ -1867,29 +1975,36 @@ getgenv()["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Proce
                             Weapon.Parent = Character
                         end
 
-						if (Weapon.Name == "Axe") or (Weapon.Name == "Pickaxe") then
+						if (Weapon.Name == "Axe") 
+							or (Weapon.Name == "Pickaxe") 
+						then
 							Remote:FireServer("BraceBlock")
-
 							task.spawn(function()
 								task.wait(0.25)
-								if Remote and Remote.Parent then
+								if Remote 
+									and Remote.Parent 
+								then
 									Remote:FireServer("StopBraceBlock")
 								end
 							end)
-						elseif (Weapon.Name == "Carbine") or (Weapon.Name == "Navy Pistol") then
+						elseif (Weapon.Name == "Carbine") 
+							or (Weapon.Name == "Navy Pistol") 
+						then
 							Remote:FireServer("Shove")
 						end
 
 						IterateWithFunction(AgentsInRange, function(Key, Agent)
-							if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
+							if (typeof(Agent) == "Instance") 
+								and Agent:IsA("Model") 
+								and Agent.Parent 
+								and Agent:FindFirstChild("State") 
+							then 
 								Remote:FireServer("FeedbackStun", 
 									Agent,
 									(HRP.CFrame * CFrame.new(0, 0, -2.5)).Position
 								)
 							end
-
-							task.wait()
-						end)
+						end, true)
 
                         if ParentWasBackpack then 
 							task.wait(0.0125)
@@ -1917,7 +2032,9 @@ end)
 getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if (Key.KeyCode == Binds["MurderBind_BindOne"]) or (Key.KeyCode == Binds["MurderBind_BindTwo"]) then 
-			if LocalPlayer.Character and LocalPlayer.Character.Parent then
+			if LocalPlayer.Character 
+				and LocalPlayer.Character.Parent 
+			then
                 local Character = LocalPlayer.Character
                 local PrimaryPart = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
                 if not PrimaryPart then 
@@ -1925,30 +2042,32 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
                 end
 
 				local List:{{}} = GetMeleeWeapon(false)
-
 				for _, Table in pairs(List) do 
 					local Weapon = Table[1]
 					local WeaponRemote = Table[2]
 					local LimitRange = Table[3]
 
-					if Weapon and (typeof(Weapon) == "Instance") then 
+					if Weapon 
+						and (typeof(Weapon) == "Instance") 
+					then 
 						local AgentsInRange:{[number]:Model} = GetAgentsInRange(nil, (LimitRange and (LimitRange * 1.8)) or MurderRange)
-
 						if (type(AgentsInRange) ~= "table") then 
                             ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# MurderBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4)
 							warn(`[FAIL # MurderBind]: AgentsInRange is not a table.  ||| Current script line: {debug.info(1, "l")}`)
-
 							continue
 						end
 
 						if (#AgentsInRange <= 0) then
 							warn(`[FAIL # MurderBind]: No agents found within a range of {LimitRange and (LimitRange * 1.8) or MurderRange} studs.  ||| Current script line: {debug.info(1, "l")}`)
-
 							continue
 						end
 
-						if WeaponRemote and WeaponRemote:IsA("RemoteEvent") then			
-							if (Weapon.Name ~= "Musket") and (Weapon.Name ~= "Rifle") then
+						if WeaponRemote 
+							and WeaponRemote:IsA("RemoteEvent") 
+						then			
+							if (Weapon.Name ~= "Musket") 
+								and (Weapon.Name ~= "Rifle") 
+							then
 								if (Weapon.Name == "Spade") then 
 									WeaponRemote:FireServer("Swing", "Over")
 								else
@@ -1956,7 +2075,11 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 								end
 
 								IterateWithFunction(AgentsInRange, function(Key:any, Agent:Model) 
-									if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
+									if (typeof(Agent) == "Instance") 
+										and Agent:IsA("Model") 
+										and Agent.Parent 
+										and Agent:FindFirstChild("State") 
+									then 
 										WeaponRemote:FireServer("HitZombie",
 											Agent,
 											(PrimaryPart.CFrame * CFrame.new(0, 0, -2.5)).Position,
@@ -1967,11 +2090,16 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 										)
 									end
 								end)
-							elseif (Weapon.Name == "Musket") or (Weapon.Name == "Rifle") then
+							elseif (Weapon.Name == "Musket") 
+								or (Weapon.Name == "Rifle") 
+							then
 								WeaponRemote:FireServer("ThrustBayonet")
-
 								for _, Agent in pairs(AgentsInRange) do 
-									if (typeof(Agent) == "Instance") and Agent:IsA("Model") and Agent.Parent and Agent:FindFirstChild("State") then 
+									if (typeof(Agent) == "Instance") 
+										and Agent:IsA("Model") 
+										and Agent.Parent 
+										and Agent:FindFirstChild("State") 
+									then 
 										WeaponRemote:FireServer("Bayonet_HitZombie",
 											Agent,
 											(PrimaryPart.CFrame * CFrame.new(0, 0, -2.5)).Position,
@@ -1993,7 +2121,6 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 						end
 					else
 						warn(`[FAIL # MurderBind]: "Weapon" if statement failed.  ||| Current script line: {debug.info(1, "l")}`)
-
 						continue
 					end
 
@@ -2050,6 +2177,27 @@ getgenv()["BlockBarrelBind"] = UserInputService.InputBegan:Connect(function(Key,
 	end
 end)
 
+getgenv()["NoFallDamageBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
+	if not Process then 
+		if (Key.KeyCode == Binds["NoFallDamageBind_Bind"]) then 
+			if not ReplicatedStorage:FindFirstChild("NoFallDamage") then
+                if not getgenv()["_NoFallDamage"] then
+                    getgenv()["_NoFallDamage"] = CreateInstance("BoolValue", {
+						Name = "NoFallDamage";
+					})
+                end
+
+                getgenv()["_NoFallDamage"].Parent = ReplicatedStorage
+            elseif ReplicatedStorage:FindFirstChild("NoFallDamage") then 
+                getgenv()["_NoFallDamage"].Parent = ReplicatedFirst
+            end
+
+            local Enabled = (getgenv()["_NoFallDamage"].Parent == ReplicatedStorage) and "enabled" or "disabled"
+			print(`[INFO # NoFallDamageBind]: Fall damage blocking is now {Enabled}.`)
+		end
+	end
+end)
+
 getgenv()["PerformanceBind"] = UserInputService.InputBegan:Connect(function(Key, Process)
 	if not Process then 
 		if (Key.KeyCode == Binds["PerformanceBind_Bind"]) then 
@@ -2094,7 +2242,9 @@ if Debug then
             local MaxAttempts:number = 10
 
             repeat
-                if NewCharacter and NewCharacter:FindFirstChild("GrabRemote") then 
+                if NewCharacter 
+					and NewCharacter:FindFirstChild("GrabRemote") 
+				then 
                     GrabRemote = (NewCharacter:FindFirstChild("GrabRemote"))::RemoteEvent
                     break
                 else
@@ -2121,14 +2271,16 @@ if Debug then
     end)]]
 end
 
-if (getgenv()["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNameCallMethod and CanUseGetCheckCaller then 
+if not (getgenv()["AlreadyActive"]) and CanUseHookMetamethod and CanUseGetNameCallMethod and CanUseGetCheckCaller then 
 	getgenv()["AlreadyActive"] = true
 
 	OldNameCall = hookmetamethod(game, "__namecall", function(Remote, ...)
 		local Parameters = {...}
 		local NamecallMethod = getnamecallmethod()
 
-		if (Remote == LocalPlayer) and (NamecallMethod:lower() == "kick") then
+		if (Remote == LocalPlayer) 
+			and (NamecallMethod:lower() == "kick") 
+		then
 			print(`[INFO # AntiKick]: An attempt to kick the "LocalPlayer" was just prevented.`)
 			return
 		end
@@ -2138,20 +2290,36 @@ if (getgenv()["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNam
 				--// always returns "nil" technically
 				--// (OldNameCall(Remote, unpack(Parameters)) == nil) = true / (Remote:FireServer(unpack(Parameters)) == nil) = true
 				
-				if (Remote == AFKSignal) or (Remote.Name == "OnAFKSignalReceived") then
+				if (Remote == AFKSignal) 
+					or (Remote.Name == "OnAFKSignalReceived") 
+				then
 					print(`[INFO # Namecall Hook]: "OnAFKSignalReceived" attempted to fire.`)
 					return nil
 				elseif (Remote.Name == "ForceKill") then 
 					print(`[INFO # Namecall Hook]: "ForceKill" remote attempted to fire.`)
 					return nil
+				elseif (Remote.Name == "ForceSelfDamage") then
+					if ReplicatedStorage:FindFirstChild("NoFallDamage") then
+						print("[INFO # Namecall Hook]: Attempt to take fall damage just occured, blocking request and replacing with request with nil.")
+						return nil
+					else
+						Remote["FireServer"](Remote, unpack(Parameters))
+						return nil
+					end
 				else
-					if (Parameters[1] ~= nil) then 
+					if (type(Parameters[1]) == "string") then 
 						if (Parameters[1] == "UpdateAccuracy") then 
 							Remote["FireServer"](Remote, "UpdateAccuracy", 100)
 
 							return nil
-						elseif (Parameters[1] == "HitZombie") or (Parameters[1] == "Bayonet_HitZombie") then 
-							if (Parameters[2] ~= nil) and Parameters[2].Parent and (Parameters[2]:GetAttribute("Type") == "Barrel") and ReplicatedStorage:FindFirstChild("BlockBarrel") then
+						elseif (Parameters[1] == "HitZombie") 
+							or (Parameters[1] == "Bayonet_HitZombie") 
+						then 
+							if (typeof(Parameters[2]) == "Instance") 
+								and Parameters[2].Parent 
+								and (Parameters[2]:GetAttribute("Type") == "Barrel") 
+								and ReplicatedStorage:FindFirstChild("BlockBarrel") 
+							then
 								print("[INFO # Namecall Hook]: Player just attempted to hit a barrel zombie, blocking request and replacing with request with nil.")
 								return nil
 							end
@@ -2167,22 +2335,30 @@ if (getgenv()["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNam
 									else
 										Parameters[6] = (Parameters[2] and Parameters[2]:FindFirstChild("Head") and "Head") or Parameters[6]
 									end
-									Remote["FireServer"](Remote, unpack(Parameters))
 
+									Remote["FireServer"](Remote, unpack(Parameters))
 									return nil
 								end
-
 								return nil
 							end
 
 							return Remote["FireServer"](Remote, unpack(Parameters))
-						elseif (Parameters[1] == "ChargeBayonet") or (Parameters[1] == "ThrustCharge")  then 
-							local Agent = Parameters[2] and Parameters[2].Parent and (Parameters[2]:IsA("BindableEvent") and Parameters[2].Parent) or Parameters[2]
+						elseif (Parameters[1] == "ChargeBayonet") 
+							or (Parameters[1] == "ThrustCharge") 
+						then 
+							local Agent = Parameters[2] 
+								and Parameters[2].Parent 
+								and (Parameters[2]:IsA("BindableEvent") 
+								and Parameters[2].Parent) 
+								or Parameters[2]
 							if not Agent then 
 								return nil
 							end
 
-							if Agent.Parent and (Agent:GetAttribute("Type") == "Barrel") and ReplicatedStorage:FindFirstChild("BlockBarrel") then
+							if Agent.Parent 
+								and (Agent:GetAttribute("Type") == "Barrel") 
+								and ReplicatedStorage:FindFirstChild("BlockBarrel") 
+							then
 								print("[INFO # Namecall Hook]: Player just attempted to hit a barrel zombie, blocking request and replacing with request with nil.")
 								return nil
 							end
@@ -2194,30 +2370,33 @@ if (getgenv()["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNam
 							return nil
 						elseif (Parameters[1] == "Swing") then 
 							local Character = LocalPlayer.Character
-
-							if Character then 
-								local ToolFound = (
-									Character:FindFirstChild("Spade") 
-									    or Character:FindFirstChild("Axe")
-                                        or Character:FindFirstChild("Pickaxe")
-										or Character:FindFirstChild("Sabre") 
-										or Character:FindFirstChild("Officer's Sabre") 
-										or Character:FindFirstChild("Heavy Sabre")
-								)::Tool
-
-								if ToolFound then 
-									if (ToolFound.Name == "Heavy Sabre") then 
-										Parameters[2] = "Thrust"
-									else
-										Parameters[2] = "Over"
-									end
-									Remote["FireServer"](Remote, Parameters[1], Parameters[2])
-
-									return nil
-								end
+							if not Character then 
+								return Remote["FireServer"](Remote, ...)
 							end
 
-							return Remote["FireServer"](Remote, ...)
+							local ToolFound = (
+								Character:FindFirstChild("Spade") 
+								    or Character:FindFirstChild("Axe")
+                                    or Character:FindFirstChild("Pickaxe")
+									or Character:FindFirstChild("Sabre") 
+									or Character:FindFirstChild("Officer's Sabre") 
+									or Character:FindFirstChild("Heavy Sabre")
+							)::Tool
+
+							if not ToolFound 
+								or not ToolFound.Parent 
+							then 
+								return Remote["FireServer"](Remote, ...) 
+							end
+
+							if (ToolFound.Name == "Heavy Sabre") then 
+								Parameters[2] = "Thrust"
+							else
+								Parameters[2] = "Over"
+							end
+
+							Remote["FireServer"](Remote, Parameters[1], Parameters[2])
+							return nil
 						end
 					end
 				end
@@ -2228,7 +2407,9 @@ if (getgenv()["AlreadyActive"] == nil) and CanUseHookMetamethod and CanUseGetNam
 	end)
 
 	OldIndex = hookmetamethod(game, "__index", function(Self, Method)
-		if (Self == LocalPlayer) and (Method:lower() == "kick") then
+		if (Self == LocalPlayer) 
+			and (Method:lower() == "kick") 
+		then
 			if not getgenv()["__PlaceholderFunction"] then
 				getgenv()["__PlaceholderFunction"] = (function()
 					print("[INFO # AntiKick]: An attempt to kick the LocalPlayer was just prevented.")
@@ -2261,10 +2442,16 @@ warn(
 		(DebugPrints and "enabled" or "disabled"),
 		(function():(string)
 			local ReturnString:string = "\n                "
-
 			local MaxIndexes:number = GetMaxIndexOfTable(MusicSelections)
 			local CurrentIndex:number = 0
+
 			for i:string, v:string in pairs(MusicSelections) do 
+				if (type(i) ~= "string") then
+					continue
+				end
+				if (type(v) ~= "string") then
+					continue
+				end
 				CurrentIndex += 1
 
 				if (CurrentIndex < MaxIndexes) then   
