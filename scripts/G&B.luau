@@ -6,9 +6,9 @@
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Recent Changes \\\\--
---//        Added performance mode bind [Numpad 4].
 --//        Updated `GenerateText` function to have more features.
 --//        Added no fall damage bind [Numpad 5].
+--//        Updated performance bind to also remove accessories from players.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
@@ -22,7 +22,7 @@
 --//        [Numpad 1] — Toggle auto-repair system.
 --//        [Numpad 2] — Switch auto-repair targeting mode.
 --//        [Numpad 3] — Allow/disallow being able to hit "Barrel" zombies.
---//        [Numpad 4] — Enable performance mode.
+--//        [Numpad 4] — Run performance changes.
 --//        [Numpad 5] — Allow/disallow being able to take fall damage.
 --//        [U], [F], [G], [H], [J], [Y], [T]: Triggers playback of a predefined fife or drum song. Song mappings are configurable via the `MusicSelections` table.
 --// [Combat Behavior]
@@ -44,7 +44,7 @@
 --//        [Numpad 1] — Toggle auto-repair system.
 --//        [Numpad 2] — Switch auto-repair targeting mode.
 --//        [Numpad 3] — Allow/disallow being able to hit "Barrel" zombies.
---//        [Numpad 4] — Enable performance mode.
+--//        [Numpad 4] — Run performance changes.
 --//        [Numpad 5] — Allow/disallow being able to take fall damage.
 --// [Music]
 --//        [U, F, G, H, J, Y, T] — Play fife/drum songs; mapped via `MusicSelections`.
@@ -2215,6 +2215,23 @@ getgenv()["PerformanceBind"] = UserInputService.InputBegan:Connect(function(Key,
 
 				print(`[INFO # PerformanceBind]: Applying performance changes to zombie type {Replication.Name}.`)
 				require(Outfits).apply = EmptyApplyFunction
+			end
+
+			for _, Player:Player in pairs(Players:GetPlayers()) do 
+				if not Player then
+					continue
+				end
+				local Character = Player.Character
+				if not Character then
+					continue
+				end
+
+				for _, Hat:Accessory in pairs(Character:GetChildren()) do 
+					if not Hat or not Hat:IsA("Accessory") or not Hat.Parent then
+						continue
+					end
+					Hat:Destroy()
+				end
 			end
 
 			print(`[INFO # PerformanceBind]: Ran performance changes.`)
