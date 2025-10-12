@@ -3,6 +3,7 @@
 --//    Made with Wave, Swift, and Zenith. | This script should work with most executors, as most of it is standard Roblox Luau.
 --//    Each function has a description if whoever is reading this is curious about what they do.
 --//    * This script is entirely made from boredom and my passion for exploiting/pen-testing! *
+--//    * I have a habit of making sure checking stuff in functions and such to avoid errors, at the cost of my sanity! *
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Recent Changes \\\\--
@@ -2076,6 +2077,7 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 								else
 									WeaponRemote:FireServer("Swing", "Side")
 								end
+								WeaponRemote:FireServer("PrepareSwing")
 
 								IterateWithFunction(AgentsInRange, function(Key:any, Agent:Model) 
 									if (typeof(Agent) == "Instance") 
@@ -2093,6 +2095,8 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 										)
 									end
 								end)
+
+								WeaponRemote:FireServer("PrepareSwing")
 							elseif (Weapon.Name == "Musket") 
 								or (Weapon.Name == "Rifle") 
 							then
