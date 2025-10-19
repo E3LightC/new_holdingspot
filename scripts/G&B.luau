@@ -2087,7 +2087,7 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 									then 
 										WeaponRemote:FireServer("HitZombie",
 											Agent,
-											(PrimaryPart.CFrame * CFrame.new(0, 0, -2.5)).Position,
+											(PrimaryPart.CFrame * CFrame.new(0, 1.5, -2.5)).Position,
 											true,
 											(UseVectorLibrary and vector_create(math_random(-4096, 4096), math_random(-4096, 4096), math_random(-4096, 4096))) or Vector3_new(math_random(-4096, 4096), math_random(-4096, 4096), math_random(-4096, 4096)),
 											((Agent:FindFirstChild("Head") and "Head") or "HumanoidRootPart"),
@@ -2109,7 +2109,7 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 									then 
 										WeaponRemote:FireServer("Bayonet_HitZombie",
 											Agent,
-											(PrimaryPart.CFrame * CFrame.new(0, 0, -2.5)).Position,
+											(PrimaryPart.CFrame * CFrame.new(0, 1.5, -2.5)).Position,
 											true,
                                             ((Agent:FindFirstChild("Head") and "Head") or "HumanoidRootPart")
 										)
