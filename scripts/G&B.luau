@@ -3,7 +3,7 @@
 --//    Made with Wave, Swift, and Zenith. | This script should work with most executors, as most of it is standard Roblox Luau.
 --//    Each function has a description if whoever is reading this is curious about what they do.
 --//    * This script is entirely made from boredom and my passion for exploiting/pen-testing! *
---//    * I have a habit of making sure checking stuff in functions and such to avoid errors, at the cost of my sanity! *
+--//    * I have a habit of making sure to check stuff in functions and such to avoid errors, at the cost of my sanity! *
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Recent Changes \\\\--
