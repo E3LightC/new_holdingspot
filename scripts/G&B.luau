@@ -214,7 +214,7 @@ end
     Example Usage:
     ```lua
     local Text = GenerateText("[1] won against [2]!", 
-        {Text = "Player1", Color = Color3.new(1, 1, 0), Bold = true, Italic = true, Superscript = true}, 
+        {Text = "Player1", Color = Color3.new(1, 1, 0), Bold = true, Italic = true}, 
         {Text = "Boss", Color = "#008000", Underline = true, Strikethrough = true}
     )
     SomeTextLabel.Text = Text
