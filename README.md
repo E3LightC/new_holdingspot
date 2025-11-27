@@ -1,5 +1,5 @@
 * **discord: @_x4yz**
-# *holding spot for scripts i've made for roblox games*
+# *holding spot for scripts i've made for roblox games!*
 
 # *functioning scripts*
  * [Guts & Blackpowder (PC only)](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/G%26B.luau)
@@ -26,13 +26,14 @@
 --//// Key Bindings Overview \\\\--
 --// [Combat]
 --//        [Q] — Shove nearby agents (if tool allows).
---//        [Z] / [X] — AoE melee attack.
+--//        [Z] / [X] — Gets nearby agents and attempts to hit them.
 --//        [G] — Auto-equip shove-capable tool from Backpack.
 --// [Utility]
---//        [Numpad 1] — Retrieve logs (Berezina map only).
---//        [Numpad 2] — Toggle auto-repair system.
---//        [Numpad 3] — Switch auto-repair targeting mode.
---//        [Numpad 4] — Allow/disallow "Barrel" zombie targeting.
+--//        [Numpad 1] — Toggle auto-repair system.
+--//        [Numpad 2] — Switch auto-repair targeting mode.
+--//        [Numpad 3] — Allow/disallow being able to hit "Barrel" zombies.
+--//        [Numpad 4] — Run performance changes.
+--//        [Numpad 5] — Allow/disallow being able to take fall damage.
 --// [Music]
 --//        [U, F, G, H, J, Y, T] — Play fife/drum songs; mapped via `MusicSelections`.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
