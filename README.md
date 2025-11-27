@@ -1,5 +1,5 @@
 * **discord: @_x4yz**
-# *holding spot for scripts i've made*
+# *holding spot for scripts i've made for roblox games*
 
 # *functioning scripts*
  * [Guts & Blackpowder (PC only)](https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/G%26B.luau)
