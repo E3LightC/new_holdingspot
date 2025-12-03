@@ -7,9 +7,8 @@
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Recent Changes \\\\--
---//        Updated `GenerateText` function to have more features.
---//        Added no fall damage bind [Numpad 5].
 --//        Updated performance bind to also remove accessories from players.
+--//        Refactored vector creation.
 --||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||--
 
 --//// Feature Overview \\\\--
@@ -364,6 +363,78 @@ end
 
 --[=[
     Description:
+    Safely constructs a new `Vector3` using the provided numeric components.
+    Validates each component, attempts creation through the appropriate vector
+    constructor, and guarantees a fallback value on failure.
+
+    Parameters:
+    - `XAxis: number`: The X coordinate component.
+    - `YAxis: number`: The Y coordinate component.
+    - `ZAxis: number`: The Z coordinate component.
+
+    Returns:
+    - `Vector3`: The constructed vector if successful, otherwise `vector.zero`.
+
+    Behavior:
+    - Ensures all inputs are numeric; returns `vector.zero` if any are invalid.
+    - Attempts to create the vector using either a custom vector library
+      (`vector_create`) or the standard `Vector3.new`, depending on environment.
+    - Wraps construction logic inside `pcall` to prevent runtime errors.
+    - Returns a safe zero vector if construction fails at any point.
+
+    Example Usage:
+    ```lua
+    --// Create a position vector for a part
+    local Position:Vector3 = CreateVector3(10, 5, -3)
+
+    if (Position ~= vector.zero) then
+        print("Vector created:", Position)
+    else
+        warn("Failed to create Vector3.")
+    end
+    ```
+
+    Edge Cases:
+    - Any non-number input immediately results in `vector.zero`.
+    - Errors thrown by the vector creation function are caught and handled.
+    - Guarantees a valid `Vector3` return value on all paths.
+]=]
+local function CreateVector3(
+    XAxis:number,
+    YAxis:number,
+    ZAxis:number
+):(Vector3)
+    if (type(XAxis) ~= "number") then
+        return vector.zero
+    end
+    if (type(YAxis) ~= "number") then
+        return vector.zero
+    end
+    if (type(ZAxis) ~= "number") then
+        return vector.zero
+    end
+
+    local NewVector:Vector3
+    local Success, _ = pcall(function()
+        NewVector = (UseVectorLibrary and vector_create(
+            XAxis,
+            YAxis,
+            ZAxis
+        )) or Vector3_new(
+            XAxis,
+            YAxis,
+            ZAxis
+        )
+    end)
+
+    if not Success then
+        return vector.zero
+    end
+    return NewVector
+end
+
+--[=[
+    Description:
     Waits for a child of a specific class type (`ClassName`) under the given `Parent` instance.
     Optionally accepts a `Name` to match and a `TimeOut` duration to limit how long to wait.
     Returns the found instance if successful, or `nil` if the inputs are invalid or if the wait fails.
@@ -571,7 +642,7 @@ local HammerWarnDelay:number = 1.5
 local WaitTimeUntilRepair:number = 0.125
 
 local DefaultBeatWaitTime:number = 0.15
-local ZombieESPWait:number = 0.25
+local ZombieApplyWait:number = 0.25
 
 local LastBeatTick:number = 0
 local TimeSinceLastBeat:number = 0
@@ -579,7 +650,7 @@ local TimeSinceLastBeat:number = 0
 local ShoveRange:number = 15 --// default range variable used for shoving.
 local MurderRange:number = 11 --// used as a backup if can't find weapon range.
 
-local HeadSizeToUse:Vector3 = (UseVectorLibrary and vector_create(6, 9, 4.5)) or Vector3_new(6, 9, 4.5)
+local HeadSizeToUse:Vector3 = CreateVector3(6, 9, 4.5)
 local HeadTransparency:number = 0.6
 
 local PreferredWeapon:{string} = {"Pike";"Lance"}
@@ -806,7 +877,7 @@ local function AddEsp(
         local PrimaryPart = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
         if not PrimaryPart then
 			if (type(RetryAttempt) ~= "number") then
-				task.delay(ZombieESPWait, AddEsp, 
+				task.delay(ZombieApplyWait, AddEsp, 
 					Character, 
 					Head, 
 					IsIgniter, 
@@ -820,7 +891,7 @@ local function AddEsp(
 			elseif (type(RetryAttempt) == "number") 
 				and (RetryAttempt <= 2) 
 			then
-				task.delay(ZombieESPWait, AddEsp, 
+				task.delay(ZombieApplyWait, AddEsp, 
 					Character, 
 					Head, 
 					IsIgniter, 
@@ -840,7 +911,7 @@ local function AddEsp(
 			AlwaysOnTop = true;
 			ZIndex = 10;
 			Color3 = ESPColors[Type];
-			Size = (UseVectorLibrary and vector_create(3, 5, 3)) or Vector3_new(3, 5, 3);
+			Size = CreateVector3(3, 5, 3);
 			Transparency = 0.6;
 			Adornee = PrimaryPart;
 			Parent = Character;
@@ -1219,16 +1290,9 @@ local function GetAgentsInRange(
 					and (type(IgnoreVal) == "boolean") 
 					and not IgnoreVal 
 				then 
-					local Distance:number = 0
-					if UseVectorLibrary then
-						Distance = (not UsePosition)
-							and (vector_create(CharHRP.Position.X, 0, CharHRP.Position.Z) - vector_create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-							or (vector_create(CharHRP.X, 0, CharHRP.Z) - vector_create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-					else
-						Distance = (not UsePosition)
-							and (Vector3_new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3_new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-							or (Vector3_new(CharHRP.X, 0, CharHRP.Z) - Vector3_new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-					end
+					local Distance:number = (not UsePosition)
+                        and (CreateVector3(CharHRP.Position.X, 0, CharHRP.Position.Z) - CreateVector3(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+						or (CreateVector3(CharHRP.X, 0, CharHRP.Z) - CreateVector3(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
 
 					if (Distance <= Range) then 
 						table.insert(AgentsInRange, Agent)
@@ -1263,17 +1327,9 @@ local function GetAgentsInRange(
 					and (type(IgnoreVal) == "boolean") 
 					and not IgnoreVal 
 				then 
-					local Distance:number = 0
-
-					if UseVectorLibrary then
-						Distance = (not UsePosition)
-							and (vector_create(CharHRP.Position.X, 0, CharHRP.Position.Z) - vector_create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-							or (vector_create(CharHRP.X, 0, CharHRP.Z) - vector_create(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-					else
-						Distance = (not UsePosition)
-							and (Vector3_new(CharHRP.Position.X, 0, CharHRP.Position.Z) - Vector3_new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-							or (Vector3_new(CharHRP.X, 0, CharHRP.Z) - Vector3_new(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
-					end
+					local Distance:number = (not UsePosition) 
+						and (CreateVector3(CharHRP.Position.X, 0, CharHRP.Position.Z) - CreateVector3(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
+						or (CreateVector3(CharHRP.X, 0, CharHRP.Z) - CreateVector3(HRP.Position.X, 0, HRP.Position.Z)).Magnitude
 
 					if (Distance <= Range) then 
 						table.insert(AgentsInRange, Agent)
@@ -1519,18 +1575,10 @@ local function GetClosestBuilding():(any)
 
 	if (#Bounds > 0) then 
 		table.sort(Bounds, function(Arg1, Arg2)
-			if UseVectorLibrary then
-				return (
-					(Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or vector_create(0, 0, 0)) 
-						< 
-					(Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or vector_create(0, 0, 0))
-				)
-			end
-
 			return (
-				(Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or Vector3.zero) 
+				(Arg1 and LocalPlayer:DistanceFromCharacter(Arg1.Position) or CreateVector3(0, 0, 0)) 
 					< 
-				(Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or Vector3.zero)
+				(Arg2 and LocalPlayer:DistanceFromCharacter(Arg2.Position) or CreateVector3(0, 0, 0))
 			)
 		end)
 
@@ -1628,7 +1676,7 @@ local function GetRandomPlayer():(Player?)
 	return ChosenPlayer
 end
 
-local function AddZombieEsp(
+local function ApplyZombieChanges(
 	ZombieOrig:ObjectValue
 ):()
 	if ZombieOrig and ZombieOrig:IsA("ObjectValue") and (ZombieOrig.Name == "Orig") then 
@@ -1638,7 +1686,7 @@ local function AddZombieEsp(
 		if not ZombieOrig then
 			return
 		end
-		task.wait(ZombieESPWait)
+		task.wait(ZombieApplyWait)
 
 		local Character:Model = (ZombieOrig.Parent::Model)
 		local Agent:Model = (ZombieOrig.Value::Model)
@@ -1661,11 +1709,11 @@ local function AddZombieEsp(
 		else
 			for _, Part:any in pairs(Character:GetChildren()) do 
 				if Part 
+                    and Part.Parent 
 					and Part:IsA("Part") 
 					and (Part.Name == "Head") 
 				then
 					Head = Part
-					Part = nil
 					break
 				end
 			end
@@ -1673,7 +1721,7 @@ local function AddZombieEsp(
 
 		if Head then
 			Head.Massless = true
-			Head.Size = HeadSizeToUse or (UseVectorLibrary and vector_create(3, 3, 3)) or Vector3_new(3, 3, 3)
+			Head.Size = HeadSizeToUse or CreateVector3(3, 3, 3)
 			Head.Transparency = HeadTransparency
 		end
 
@@ -1775,7 +1823,7 @@ local function AddZombieEsp(
 	end
 end
 
-getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(AddZombieEsp)
+getgenv()["OnCameraDescendantAdded"] = Camera.DescendantAdded:Connect(ApplyZombieChanges)
 for _, ZombieOrig:ObjectValue in pairs(Camera:GetDescendants()) do 
 	if not ZombieOrig 
 		or not ZombieOrig:IsA("ObjectValue") 
@@ -1784,7 +1832,7 @@ for _, ZombieOrig:ObjectValue in pairs(Camera:GetDescendants()) do
 		continue
 	end
 
-	task.spawn(AddZombieEsp, ZombieOrig)
+	task.spawn(ApplyZombieChanges, ZombieOrig)
 end
 
 getgenv()["BuildingBindFunc"] = RunService.Stepped:Connect(function()
@@ -2089,9 +2137,9 @@ getgenv()["MurderBind"] = UserInputService.InputBegan:Connect(function(Key, Proc
 											Agent,
 											(PrimaryPart.CFrame * CFrame.new(0, 1.5, -2.5)).Position,
 											true,
-											(UseVectorLibrary and vector_create(math_random(-4096, 4096), math_random(-4096, 4096), math_random(-4096, 4096))) or Vector3_new(math_random(-4096, 4096), math_random(-4096, 4096), math_random(-4096, 4096)),
+											CreateVector3(math_random(-4096, 4096), math_random(-4096, 4096), math_random(-4096, 4096)),
 											((Agent:FindFirstChild("Head") and "Head") or "HumanoidRootPart"),
-											(UseVectorLibrary and vector_create(0, 1, 0)) or Vector3_new(0, 1, 0)
+											CreateVector3(0, 1, 0)
 										)
 									end
 								end)
