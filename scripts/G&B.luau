@@ -1404,14 +1404,12 @@ local function IterateWithFunction(
 	if (type(Instant) ~= "boolean") then
 		Instant = true
 	end
-
 	if (type(Table) ~= "table") then 
         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# IterateWithFunction] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
 		warn(`[FAIL # IterateWithFunction]: "Table" is not a table.  ||| Current script line: {debug.info(1, "l")}`)
 
 		return
 	end
-
 	if (type(Function) ~= "function") then 
         ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# IterateWithFunction] Invalid parameters were identified, check developer console for more information.   "; Color = "#FF5555";}), 4)
 		warn(`[FAIL # IterateWithFunction]: "Function" is not a function.  ||| Current script line: {debug.info(1, "l")}`)
@@ -1983,7 +1981,7 @@ getgenv()["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Proce
 			then
 				local Character = LocalPlayer.Character
 				local HRP = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso")
-				local AgentsInRange = GetAgentsInRange(nil, ShoveRange * 2)
+				local AgentsInRange = GetAgentsInRange(nil, (ShoveRange * 2))
 
 				if (type(AgentsInRange) ~= "table") then
                     ClientSubtitles:Fire(GenerateText("[1]", {Text = "   [# ShoveBind] A if statement has failed, check developer console for more information.   "; Color = "#FF5555";}), 4) 
@@ -2005,14 +2003,18 @@ getgenv()["ShoveBind"] = UserInputService.InputBegan:Connect(function(Key, Proce
 				end
 
 				Backpack = (LocalPlayer:FindFirstChildWhichIsA("Backpack") or WaitForChildWhichIsA(LocalPlayer, "Backpack"))::Backpack
-				local Weapon:Tool = (Character:FindFirstChild("Axe") 
+				local Weapon:Tool = (
+					Character:FindFirstChild("Axe") 
 					or Character:FindFirstChild("Carbine") 
 					or Character:FindFirstChild("Navy Pistol")
 					or Character:FindFirstChild("Pickaxe")
+					or Character:FindFirstChild("Baguette")
 					or Backpack:FindFirstChild("Axe") 
 					or Backpack:FindFirstChild("Carbine")
 					or Backpack:FindFirstChild("Navy Pistol")
-					or Backpack:FindFirstChild("Pickaxe"))::Tool
+					or Backpack:FindFirstChild("Pickaxe")
+					or Backpack:FindFirstChild("Baguette")
+				)::Tool
 
 				if Weapon 
 					and (typeof(Weapon) == "Instance") 
