@@ -30,7 +30,7 @@ local NaN = (0/0)
 local PointCooldownTime = 0.025
 local MaxWaitedTimePerZomb = 0.03
 
-local Flags = {
+local ACFlags = {
     "AC Tamper",
     "MemCheck",
     "ZombieBox",
@@ -40,51 +40,51 @@ local Flags = {
     "W3"
 }
 
-if getgenv()["__MainInputBegin"] then
-    getgenv()["__MainInputBegin"]:Disconnect()
-    getgenv()["__MainInputBegin"] = nil
+if shared["__MainInputBegin"] then
+    shared["__MainInputBegin"]:Disconnect()
+    shared["__MainInputBegin"] = nil
 end
-if getgenv()["__MainInputEnd"] then
-    getgenv()["__MainInputEnd"]:Disconnect()
-    getgenv()["__MainInputEnd"] = nil
+if shared["__MainInputEnd"] then
+    shared["__MainInputEnd"]:Disconnect()
+    shared["__MainInputEnd"] = nil
 end
-if getgenv()["__WorkspaceDescendantAdded"] then
-    getgenv()["__WorkspaceDescendantAdded"]:Disconnect()
-    getgenv()["__WorkspaceDescendantAdded"] = nil
+if shared["__WorkspaceDescendantAdded"] then
+    shared["__WorkspaceDescendantAdded"]:Disconnect()
+    shared["__WorkspaceDescendantAdded"] = nil
 end
-if not getgenv().MysteryBoxHighlight then
-    getgenv().MysteryBoxHighlight = Instance.new("BoxHandleAdornment")
-    getgenv().MysteryBoxHighlight.Name = "__MysteryBoxHighlight"
-    getgenv().MysteryBoxHighlight.AlwaysOnTop = true
-    getgenv().MysteryBoxHighlight.ZIndex = 8
-    getgenv().MysteryBoxHighlight.Transparency = 0.6
+if not shared.MysteryBoxHighlight then
+    shared.MysteryBoxHighlight = Instance.new("BoxHandleAdornment")
+    shared.MysteryBoxHighlight.Name = "__MysteryBoxHighlight"
+    shared.MysteryBoxHighlight.AlwaysOnTop = true
+    shared.MysteryBoxHighlight.ZIndex = 8
+    shared.MysteryBoxHighlight.Transparency = 0.6
 end
-if not getgenv().MysteryBoxBillboard then
-    getgenv().MysteryBoxBillboard = Instance.new("BillboardGui")
-    getgenv().MysteryBoxBillboard.Name = "__EspLabel"
-    getgenv().MysteryBoxBillboard.Size = UDim2.new(0, 100, 0, 40)
-    getgenv().MysteryBoxBillboard.StudsOffset = Vector3.new(0, 2.5, 0)
-    getgenv().MysteryBoxBillboard.AlwaysOnTop = true
+if not shared.MysteryBoxBillboard then
+    shared.MysteryBoxBillboard = Instance.new("BillboardGui")
+    shared.MysteryBoxBillboard.Name = "__EspLabel"
+    shared.MysteryBoxBillboard.Size = UDim2.new(0, 100, 0, 40)
+    shared.MysteryBoxBillboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    shared.MysteryBoxBillboard.AlwaysOnTop = true
 
-    getgenv().MysteryBoxLabel = Instance.new("TextLabel")
-    getgenv().MysteryBoxLabel.Size = UDim2.new(1, 0, 1, 0)
-    getgenv().MysteryBoxLabel.BackgroundTransparency = 1
-    getgenv().MysteryBoxLabel.Text = "Mystery Box"
-    getgenv().MysteryBoxLabel.TextColor3 = Color3.fromRGB(255, 165, 0)
-    getgenv().MysteryBoxLabel.TextStrokeTransparency = 0.5
-    getgenv().MysteryBoxLabel.TextScaled = true
-    getgenv().MysteryBoxLabel.Font = Enum.Font.SourceSansBold
+    shared.MysteryBoxLabel = Instance.new("TextLabel")
+    shared.MysteryBoxLabel.Size = UDim2.new(1, 0, 1, 0)
+    shared.MysteryBoxLabel.BackgroundTransparency = 1
+    shared.MysteryBoxLabel.Text = "Mystery Box"
+    shared.MysteryBoxLabel.TextColor3 = Color3.fromRGB(255, 165, 0)
+    shared.MysteryBoxLabel.TextStrokeTransparency = 0.5
+    shared.MysteryBoxLabel.TextScaled = true
+    shared.MysteryBoxLabel.Font = Enum.Font.SourceSansBold
 end
-getgenv().IsLoopKillEnabled = false
-getgenv().PointCooldown = false
-getgenv().PointBegin = false
+shared.IsLoopKillEnabled = false
+shared.PointCooldown = false
+shared.PointBegin = false
 
 hookfunction(gcinfo, function()
 	return math.random(1550, 1650)
 end)
 
-if (type(getgenv()["DamageKey"] ) ~= "number") then
-    getgenv()["DamageKey"]  = -1
+if (type(getgenv()["DamageKey"]) ~= "number") then
+    getgenv()["DamageKey"] = -1
 
     local OldNameCall
     OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
@@ -93,7 +93,9 @@ if (type(getgenv()["DamageKey"] ) ~= "number") then
 
         if not checkcaller() and (typeof(Self) == "Instance") then
             if (Method == "InvokeServer") then
-                if (Self.Name == "UpdateDamageKey") and (type(Parameters[1]) == "number") then
+                if (Self.Name == "UpdateDamageKey") 
+                    and (type(Parameters[1]) == "number") 
+                then
                     getgenv()["DamageKey"] = Parameters[1]
                 end
             elseif (Method == "FireServer") then
@@ -101,17 +103,21 @@ if (type(getgenv()["DamageKey"] ) ~= "number") then
                     local DamageData = Parameters[1]
                     local DamageKeyFromLocal = Parameters[2]
 
-                    if (type(DamageData) == "table") and DamageData["Damage"] and (type(DamageKeyFromLocal) == "number") then
+                    if (type(DamageData) == "table") 
+                        and DamageData["Damage"] 
+                        and (type(DamageKeyFromLocal) == "number") 
+                    then
                         getgenv()["DamageKey"] = DamageKeyFromLocal
 
                         local DamageMultiplier = getgenv()["DamageMulti"]
-                        DamageData["Damage"] = ((type(DamageMultiplier) == "number") and (DamageData["Damage"] * DamageMultiplier)) or DamageData["Damage"]
+                        DamageData["Damage"] = ((type(DamageMultiplier) == "number") and (DamageData["Damage"] * DamageMultiplier)) 
+                            or DamageData["Damage"]
 
                         Self["FireServer"](Self, DamageData, getgenv()["DamageKey"])
                         return nil
                     end
                 elseif (Self.Name == "SendData") then
-                    if table.find(Flags, tostring(Parameters[1])) then
+                    if table.find(ACFlags, tostring(Parameters[1])) then
                         return nil
                     end
                 end 
@@ -122,7 +128,15 @@ if (type(getgenv()["DamageKey"] ) ~= "number") then
     end)
 end
 
-local function AttemptToDamage(DamageRemote:RemoteEvent, BodyPart:BasePart, WeaponName:string?, Damage:number?, TimesToFire:number?, UseCustomParams:boolean?, CustomParams:{}?)
+local function AttemptToDamage(
+    DamageRemote:RemoteEvent, 
+    BodyPart:BasePart, 
+    WeaponName:string?, 
+    Damage:number?, 
+    TimesToFire:number?, 
+    UseCustomParams:boolean?, 
+    CustomParams:{}?
+):()
     if (typeof(DamageRemote) ~= "Instance") or not (DamageRemote.Name == "Damage") then
         return
     end
@@ -132,7 +146,10 @@ local function AttemptToDamage(DamageRemote:RemoteEvent, BodyPart:BasePart, Weap
             return
         end
 
-        if (type(TimesToFire) == "number") and (TimesToFire == TimesToFire) and (math.abs(TimesToFire) ~= math.huge) then
+        if (type(TimesToFire) == "number") 
+            and (TimesToFire == TimesToFire) 
+            and (math.abs(TimesToFire) ~= math.huge) 
+        then
             for _ = 1, TimesToFire do 
                 DamageRemote:FireServer(unpack(CustomParams))
             end
@@ -144,7 +161,7 @@ local function AttemptToDamage(DamageRemote:RemoteEvent, BodyPart:BasePart, Weap
         return
     end
 
-    if (type(getgenv()["DamageKey"] ) ~= "number") or (getgenv()["DamageKey"]  == -1) then
+    if (type(getgenv()["DamageKey"]) ~= "number") or (getgenv()["DamageKey"] == -1) then
         return
     end
     if (typeof(BodyPart) ~= "Instance") or not BodyPart:IsA("BasePart") then
@@ -159,7 +176,10 @@ local function AttemptToDamage(DamageRemote:RemoteEvent, BodyPart:BasePart, Weap
         BodyPart = BodyPart;
     }
 
-    if (type(TimesToFire) == "number") and (TimesToFire == TimesToFire) and (math.abs(TimesToFire) ~= math.huge) then
+    if (type(TimesToFire) == "number") 
+        and (TimesToFire == TimesToFire) 
+        and (math.abs(TimesToFire) ~= math.huge) 
+    then
         for _ = 1, TimesToFire do 
             if not DamageRemote or not DamageRemote.Parent then
                 break
@@ -173,14 +193,47 @@ local function AttemptToDamage(DamageRemote:RemoteEvent, BodyPart:BasePart, Weap
     DamageRemote:FireServer(DamageData, getgenv()["DamageKey"])
 end
 
+local function ApplyMysteryBoxESP(
+    Model:Model
+):(boolean)
+    if (typeof(Model) ~= "Instance") or not Model:IsA("Model") then
+        return false
+    end
+    if (Model.Name ~= "MysteryBox") then
+        return false
+    end
+
+    repeat
+        task.wait()
+    until not Model or Model.PrimaryPart
+    local PrimaryPart = Model and Model.PrimaryPart
+    if PrimaryPart then
+        shared.MysteryBoxHighlight.Parent = Model
+        shared.MysteryBoxHighlight.Adornee = Model
+        shared.MysteryBoxHighlight.Size = Vector3.new(8.4, 5.5, 5.2)
+        shared.MysteryBoxHighlight.Color3 = Color3.fromRGB(255, 165, 0)
+
+        shared.MysteryBoxBillboard.Parent = PrimaryPart
+        shared.MysteryBoxLabel.Parent = shared.MysteryBoxBillboard
+
+        Model:GetPropertyChangedSignal("Parent"):Connect(function()
+            shared.MysteryBoxHighlight.Parent = nil
+            shared.MysteryBoxBillboard.Parent = nil
+            shared.MysteryBoxLabel.Parent = nil
+        end)
+
+        return true
+    end
+end
+
 local BindFunctions = {
     [Enum.KeyCode.KeypadOne] = (function(Status:string)
 		if (Status ~= "Begin") then
 			return
 		end
-        getgenv().IsLoopKillEnabled = not getgenv().IsLoopKillEnabled
+        shared.IsLoopKillEnabled = not shared.IsLoopKillEnabled
 
-        if getgenv().IsLoopKillEnabled then
+        if shared.IsLoopKillEnabled then
             local NewRandom = Random.new()
             repeat
                 local ZombChildren = Baddies:GetChildren()
@@ -203,34 +256,41 @@ local BindFunctions = {
                     local DamageRemote = Humanoid and Humanoid:FindFirstChild("Damage")
 
                     if DamageRemote and BodyPart then
-                        if not getgenv().IsLoopKillEnabled then
+                        if not shared.IsLoopKillEnabled then
                             break
                         end
-                        task.spawn(AttemptToDamage, DamageRemote, BodyPart, WeaponName, NaN)
+                        task.spawn(AttemptToDamage, 
+                            DamageRemote, 
+                            BodyPart, 
+                            WeaponName, 
+                            NaN
+                        )
 
                         local WaitedTime = 0
                         repeat
                             WaitedTime += task.wait()
-                        until (WaitedTime >= MaxWaitedTimePerZomb) or (Zombie.Parent ~= Baddies) or not getgenv().IsLoopKillEnabled
+                        until (WaitedTime >= MaxWaitedTimePerZomb) 
+                            or (Zombie.Parent ~= Baddies) 
+                            or not shared.IsLoopKillEnabled
                     end
                 end
 
-                if not getgenv().IsLoopKillEnabled then
+                if not shared.IsLoopKillEnabled then
                     break
                 end
                 task.wait()
-            until not getgenv().IsLoopKillEnabled
+            until not shared.IsLoopKillEnabled
         end
     end);
     [Enum.KeyCode.Z] = (function(Status:string)
 		if (Status == "Begin") then
-			getgenv().PointBegin = true
+			shared.PointBegin = true
 			repeat
-				if getgenv().PointCooldown then
+				if shared.PointCooldown then
 					task.wait()
 					continue
 				end
-				getgenv().PointCooldown = true
+				shared.PointCooldown = true
 
 				local Zombie = Baddies:FindFirstChild("Zombie")
 				local LocalPlayer_Character = LocalPlayer.Character
@@ -244,15 +304,21 @@ local BindFunctions = {
 					local DamageRemote = Humanoid and Humanoid:FindFirstChild("Damage")
 
 					if DamageRemote and BodyPart then
-						task.spawn(AttemptToDamage, DamageRemote, BodyPart, WeaponName, nil, 5)
+						task.spawn(AttemptToDamage, 
+                            DamageRemote, 
+                            BodyPart, 
+                            WeaponName, 
+                            nil, 
+                            5
+                        )
 					end
 				end
 
 				task.wait(PointCooldownTime)
-				getgenv().PointCooldown = false
-			until not getgenv().PointBegin
+				shared.PointCooldown = false
+			until not shared.PointBegin
 		elseif (Status == "End") then
-			getgenv().PointBegin = false
+			shared.PointBegin = false
 		end
     end);
     [Enum.KeyCode.E] = (function(Status:string)
@@ -276,7 +342,12 @@ local BindFunctions = {
             local DamageRemote = Humanoid and Humanoid:FindFirstChild("Damage")
 
             if DamageRemote and BodyPart then
-                task.spawn(AttemptToDamage, DamageRemote, BodyPart, WeaponName, NaN)
+                task.spawn(AttemptToDamage, 
+                    DamageRemote, 
+                    BodyPart, 
+                    WeaponName, 
+                    NaN
+                )
             end
         end
     end);
@@ -299,13 +370,9 @@ local BindFunctions = {
 		end
 
         local MouseHitPosition = Mouse.Hit.Position
-		local Params = {
-			"Absolute Zero",
-			MouseHitPosition
-		}
 		
 		for _ = 1, 3 do 
-			WeaponImpact:FireServer(unpack(Params))
+			WeaponImpact:FireServer("Absolute Zero", MouseHitPosition)
 		end
     end);
     [Enum.KeyCode.KeypadTwo] = (function(Status:string)
@@ -316,7 +383,10 @@ local BindFunctions = {
 		local CurrentlyEquipped = getrenv()["_G"]["Equipped"]
 
 		if (type(CurrentlyEquipped) == "table") then
-			if (type(CurrentlyEquipped["Ammo"]) == "number") and (type(CurrentlyEquipped["MaxAmmo"]) == "number") and (type(CurrentlyEquipped["MagSize"]) == "number") then
+			if (type(CurrentlyEquipped["Ammo"]) == "number") 
+                and (type(CurrentlyEquipped["MaxAmmo"]) == "number") 
+                and (type(CurrentlyEquipped["MagSize"]) == "number") 
+            then
 				CurrentlyEquipped["MagSize"] = math.huge
 				CurrentlyEquipped["Ammo"] = math.huge
 				CurrentlyEquipped["MaxAmmo"] = math.huge
@@ -331,7 +401,10 @@ local BindFunctions = {
 				CurrentlyEquipped["Spread"]["Max"] = 0
 			end
 
-			if (type(CurrentlyEquipped["ViewKick"]) == "table") and (type(CurrentlyEquipped["ViewKick"]["Yaw"]) == "table") and (type(CurrentlyEquipped["ViewKick"]["Pitch"]) == "table") then
+			if (type(CurrentlyEquipped["ViewKick"]) == "table") 
+                and (type(CurrentlyEquipped["ViewKick"]["Yaw"]) == "table") 
+                and (type(CurrentlyEquipped["ViewKick"]["Pitch"]) == "table") 
+            then
 				CurrentlyEquipped["ViewKick"]["Yaw"]["Min"] = 0
 				CurrentlyEquipped["ViewKick"]["Yaw"]["Max"] = 0
 				CurrentlyEquipped["ViewKick"]["Pitch"]["Min"] = 0
@@ -341,7 +414,7 @@ local BindFunctions = {
     end);
 }
 
-getgenv()["__MainInputBegin"] = UserInputService.InputBegan:Connect(function(Key, Process)
+shared["__MainInputBegin"] = UserInputService.InputBegan:Connect(function(Key, Process)
     if not Process then
         local BindFunction = BindFunctions[Key.KeyCode]
 
@@ -350,7 +423,7 @@ getgenv()["__MainInputBegin"] = UserInputService.InputBegan:Connect(function(Key
         end
     end
 end)
-getgenv()["__MainInputEnd"] = UserInputService.InputEnded:Connect(function(Key, Process)
+shared["__MainInputEnd"] = UserInputService.InputEnded:Connect(function(Key, Process)
     if not Process then
         local BindFunction = BindFunctions[Key.KeyCode]
 
@@ -359,53 +432,27 @@ getgenv()["__MainInputEnd"] = UserInputService.InputEnded:Connect(function(Key, 
         end
     end
 end)
-getgenv()["__WorkspaceDescendantAdded"] = Workspace.DescendantAdded:Connect(function(Model)
-    if Model and Model:IsA("Model") and (Model.Name == "MysteryBox") then
-        repeat
-            task.wait()
-        until not Model or Model.PrimaryPart
 
-        local PrimaryPart = Model and Model.PrimaryPart
-        if PrimaryPart then
-            getgenv().MysteryBoxHighlight.Parent = Model
-            getgenv().MysteryBoxHighlight.Adornee = Model
-            getgenv().MysteryBoxHighlight.Size = Vector3.new(8.4, 5.5, 5.2)
-            getgenv().MysteryBoxHighlight.Color3 = Color3.fromRGB(255, 165, 0)
-
-            getgenv().MysteryBoxBillboard.Parent = PrimaryPart
-            getgenv().MysteryBoxLabel.Parent = getgenv().MysteryBoxBillboard
-
-            Model:GetPropertyChangedSignal("Parent"):Connect(function()
-                getgenv().MysteryBoxHighlight.Parent = nil
-                getgenv().MysteryBoxBillboard.Parent = nil
-                getgenv().MysteryBoxLabel.Parent = nil
-            end)
-        end
+shared["__WorkspaceDescendantAdded"] = Workspace.DescendantAdded:Connect(function(Descendant:Instance)
+    if not Descendant or not Descendant:IsA("Model") then
+        return
     end
+
+    task.spawn(pcall, ApplyMysteryBoxESP, Descendant)
 end)
 for _, Model in pairs(Workspace:GetDescendants()) do 
-    if Model and Model:IsA("Model") and (Model.Name == "MysteryBox") then
-        repeat
-            task.wait()
-        until not Model or Model.PrimaryPart
+    if not Model or not Model:IsA("Model") then
+        return
+    end
+    
+    local Result:boolean?
+    pcall(function()
+        Result = ApplyMysteryBoxESP(Model)
+    end)
 
-        local PrimaryPart = Model and Model.PrimaryPart
-        if PrimaryPart then
-            getgenv().MysteryBoxHighlight.Parent = Model
-            getgenv().MysteryBoxHighlight.Adornee = Model
-            getgenv().MysteryBoxHighlight.Size = Vector3.new(8.4, 5.5, 5.2)
-            getgenv().MysteryBoxHighlight.Color3 = Color3.fromRGB(255, 165, 0)
-
-            getgenv().MysteryBoxBillboard.Parent = PrimaryPart
-            getgenv().MysteryBoxLabel.Parent = getgenv().MysteryBoxBillboard
-
-            Model:GetPropertyChangedSignal("Parent"):Connect(function()
-                getgenv().MysteryBoxHighlight.Parent = nil
-                getgenv().MysteryBoxBillboard.Parent = nil
-                getgenv().MysteryBoxLabel.Parent = nil
-            end)
-        end
-
+    if Result then
         break
+    else 
+        continue
     end
 end
