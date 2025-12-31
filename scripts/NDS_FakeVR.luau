@@ -67,46 +67,65 @@ local NexusVRCharacterModel = ReplicatedStorage:WaitForChild("NexusVRCharacterMo
 local ReplicationReady:RemoteEvent = NexusVRCharacterModel:WaitForChild("ReplicationReady")
 local UpdateInputs:RemoteEvent = NexusVRCharacterModel:WaitForChild("UpdateInputs")
 
+local GhostModePos:CFrame = CFrame.new(0, -9e9, 0)
+
 local DelayPerFire:number = 0.03 --// How long it takes before each input update
-local SmoothFactor:number = 0.35 --// Used for CFrame lerping
+local SmoothFactor:number = 1 --// Used for CFrame lerping
 
 local CurrentRArm:CFrame
 local CurrentLArm:CFrame
+
+local MinHeadDistance = 2
+local MaxHeadDistance = 6
+local MinHeadTransparency = 1
+local MaxHeadTransparency = 0.4
 
 local PlayingEmote = nil --// Emote data
 local EmoteStartTime:number = 0 --// Time(os.clock) when emote was started
 local Emotes = {
     ["Wave"] = {
-        {0.0;  CFrame.new(-0.5, -1.2, -1.8);  nil};
-        {0.2;  (CFrame.new(-0.5, -0.6, -1.6) * NewAngles(0, 0, 60));  nil};
-        {0.4;  CFrame.new(-0.5, -1.2, -1.8);  nil};
-        {0.6;  (CFrame.new(-0.5, -0.6, -1.6) * NewAngles(0, 0, 60));  nil};
-        {0.8;  CFrame.new(-0.5, -1.2, -1.8);  nil};
-        {1;  (CFrame.new(-0.5, -0.6, -1.6) * NewAngles(0, 0, 60));  nil};
-		{1.2;  CFrame.new(-0.5, -1.2, -1.8);  nil};
+        {0.0;  nil;  CFrame.new(-0.5, -1.2, -1.8)};
+        {0.2;  nil;  (CFrame.new(-0.5, -0.6, -1.6) * NewAngles(0, 0, 60))};
+        {0.4;  nil;  CFrame.new(-0.5, -1.2, -1.8);};
+        {0.6;  nil;  (CFrame.new(-0.5, -0.6, -1.6) * NewAngles(0, 0, 60));};
+        {0.8;  nil;  CFrame.new(-0.5, -1.2, -1.8)};
+        {1;  nil;  (CFrame.new(-0.5, -0.6, -1.6) * NewAngles(0, 0, 60))};
+		{1.2;  nil;  CFrame.new(-0.5, -1.2, -1.8)};
     };
 
 	["Point"] = {
-		{0.0;  CFrame.new(-0.8, -1.5, -2.1);  nil};
-		{0.2;  CFrame.new(-0.5, -1.2, -1.8);  nil};
-		{0.4;  (CFrame.new(-0.3, -0.6, -2.2) * NewAngles(-15, 0, 0));  nil};
-		{0.7;  (CFrame.new(-0.3, -0.6, -2.2) * NewAngles(-15, 0, 0));  nil};
-		{1.1;  CFrame.new(-0.5, -1.2, -1.8);  nil};
+		{0.0;  nil;  CFrame.new(-0.8, -1.5, -2.1)};
+		{0.2;  nil;  CFrame.new(-0.5, -1.2, -1.8)};
+		{0.4;  nil;  (CFrame.new(-0.3, -0.6, -2.2) * NewAngles(-15, 0, 0))};
+		{0.7;  nil;  (CFrame.new(-0.3, -0.6, -2.2) * NewAngles(-15, 0, 0))};
+		{1.1;  nil;  CFrame.new(-0.5, -1.2, -1.8)};
 	};
 
 	["Cheer"] = {
 		{0.0;  nil;  nil};
-		{0.3;  (CFrame.new(-1.2, 1, -1.5) * NewAngles(60, 0, 0));  (CFrame.new(1.2, 1, -1.5) * NewAngles(60, 0, 0))};
-		{0.45;  (CFrame.new(-1.2, 1.2, -1.5) * NewAngles(60, 0, 0));  (CFrame.new(1.2, 1.2, -1.5) * NewAngles(60, 0, 0))};
-		{0.7;  (CFrame.new(-1.2, 1.4, -1.2) * NewAngles(60, 0, 0));  (CFrame.new(1.2, 1.4, -1.2) * NewAngles(60, 0, 0))};
-		{1.1;  (CFrame.new(-1.2, 1.4, -1.2) * NewAngles(60, 0, 0));  (CFrame.new(1.2, 1.4, -1.2) * NewAngles(60, 0, 0))};
-		{1.45;  nil;  nil};
+		{0.3;  (CFrame.new(1.2, 1, -1.5) * NewAngles(60, 0, 0));  (CFrame.new(-1.2, 1, -1.5) * NewAngles(60, 0, 0))};
+		{0.45;  (CFrame.new(1.2, 1.2, -1.5) * NewAngles(60, 0, 0));  (CFrame.new(-1.2, 1.2, -1.5) * NewAngles(60, 0, 0))};
+		{0.7;  (CFrame.new(1.2, 1.4, -1.2) * NewAngles(60, 0, 0));  (CFrame.new(-1.2, 1.4, -1.2) * NewAngles(60, 0, 0))};
+		{1.1;  (CFrame.new(1.2, 1.4, -1.2) * NewAngles(60, 0, 0));  (CFrame.new(-1.2, 1.4, -1.2) * NewAngles(60, 0, 0))};
+		{1.45; nil;  nil};
+	};
+
+	["Punch"] = {
+		{0.0;  nil;  (CFrame.new(-0.6, -1.4, -1.6) * NewAngles(-10, 0, 20))};
+		{0.12; nil;  (CFrame.new(-0.3, -1.1, -3.2) * NewAngles(-5, 0, 0))};
+		{0.22; nil;  (CFrame.new(-0.6, -1.4, -1.6) * NewAngles(-10, 0, 20))};
+		{0.32; (CFrame.new(0.6, -1.4, -1.6) * NewAngles(-10, 0, -20));  nil};
+		{0.44; (CFrame.new(0.3, -1.1, -3.2) * NewAngles(-5, 0, 0));   nil};
+		{0.54; (CFrame.new(0.6, -1.4, -1.6) * NewAngles(-10, 0, -20));  nil};
+		{0.7;  nil;  nil};
 	};
 }
+
 local EmoteKeys = {
-	[Enum.KeyCode.E] = "Wave";
+	[Enum.KeyCode.G] = "Wave";
 	[Enum.KeyCode.F] = "Point";
 	[Enum.KeyCode.C] = "Cheer";
+	[Enum.KeyCode.R] = "Punch";
 }
 
 if shared.InputCoroutine then
@@ -153,7 +172,7 @@ local function GetInputs(
 	end
 
     if shared.GhostMode and (Type == "Server") then
-        return CFrame.new(0, -9e9, 0), CFrame.new(0, -9e9, 0), CFrame.new(0, -9e9, 0)
+        return GhostModePos, GhostModePos, GhostModePos
     end
 
 	local Camera = Workspace.CurrentCamera
@@ -165,8 +184,8 @@ local function GetInputs(
 	end
 
     local Character = LocalPlayer.Character
-    local Head:BasePart = Character and Character:FindFirstChild("Head")
-    if not Head then
+    local HumanoidRootPart:BasePart = Character and Character:FindFirstChild("HumanoidRootPart")
+    if not HumanoidRootPart then
         return CFrame.identity, CFrame.identity, CFrame.identity
     end
     
@@ -179,34 +198,32 @@ local function GetInputs(
 	end
 	local YawOnly:CFrame = CFrame.lookAt(Vector3.zero, ForwardXZ.Unit)
 
-	local RightPressed:boolean = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
-	local LeftPressed:boolean = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2)
+	local LeftPressed:boolean = UserInputService:IsKeyDown(Enum.KeyCode.Q)
+	local RightPressed:boolean = UserInputService:IsKeyDown(Enum.KeyCode.E)
 	local CtrlPressed:boolean = UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)
 
-	local HeadInputOffset:CFrame = CFrame.new(0, 0.3, 0)
-	if CtrlPressed then
-		HeadInputOffset = CFrame.new(0, -1, 0)
-	end
-    
-    local HeadPos:Vector3 = (Head.CFrame * HeadInputOffset).Position
+	local HeadInputOffset:CFrame = if CtrlPressed then CFrame.new(0, -1, 0) else CFrame.new(0, 0.3, 0)
+    local HeadPos:Vector3 = (
+		((HumanoidRootPart.CFrame * CFrame.new(Vector3.new(0, HumanoidRootPart.Size.Y, 0) / 1.6)) * HeadInputOffset)
+	).Position
     local HeadInput:CFrame = (CFrame.new(HeadPos) * CurrentCameraCFrame.Rotation)
 
-	local TargetR:CFrame = not RightPressed and (
+	local TargetL:CFrame = not LeftPressed and (
 		((CFrame.new(HeadPos) * YawOnly) * CFrame.new(-1.75, -3, 0)) * NewAngles(-65, 0, 0)
 	) or (HeadInput * CFrame.new(-0.75, -1.5, 0))
-	local TargetL:CFrame = not LeftPressed and (
+	local TargetR:CFrame = not RightPressed and (
 		((CFrame.new(HeadPos) * YawOnly) * CFrame.new(1.75, -3, 0)) * NewAngles(-65, 0, 0)
 	) or (HeadInput * CFrame.new(0.75, -1.5, 0))
 
-	if RightPressed then
-		TargetR *= (CFrame.new(-0.5, 1, -2) * NewAngles(-15, 0, 0))
-	end
 	if LeftPressed then
-		TargetL *= (CFrame.new(0.5, 1, -2) * NewAngles(-15, 0, 0))
+		TargetL *= (CFrame.new(-0.5, 1, -2) * NewAngles(-15, 0, 0))
 	end
-	if RightPressed and LeftPressed then
-		TargetR *= NewAngles(0, 15, 0)
-		TargetL *= NewAngles(0, -15, 0)
+	if RightPressed then
+		TargetR *= (CFrame.new(0.5, 1, -2) * NewAngles(-15, 0, 0))
+	end
+	if LeftPressed and RightPressed then
+		TargetL *= NewAngles(0, 15, 0)
+		TargetR *= NewAngles(0, -15, 0)
 	end
 
 	if PlayingEmote then
@@ -231,14 +248,14 @@ local function GetInputs(
 			local Alpha = ((Elapsed - LastFrame[1])) / ((NextFrame[1] - LastFrame[1]))
 
 			if LastFrame[2] or NextFrame[2] then
-				local RLast = LastFrame[2] or (CurrentCameraCFrame:Inverse() * TargetR)
-				local RNext = NextFrame[2] or (CurrentCameraCFrame:Inverse() * TargetR)
-				TargetR = (CurrentCameraCFrame * RLast:Lerp(RNext, Alpha))
+				local RLast = LastFrame[2] or (HeadInput:Inverse() * TargetR)
+				local RNext = NextFrame[2] or (HeadInput:Inverse() * TargetR)
+				TargetR = (HeadInput * RLast:Lerp(RNext, Alpha))
 			end
 			if LastFrame[3] or NextFrame[3] then
-				local LLast = LastFrame[3] or (CurrentCameraCFrame:Inverse() * TargetL)
-				local LNext = NextFrame[3] or (CurrentCameraCFrame:Inverse() * TargetL)
-				TargetL = (CurrentCameraCFrame * LLast:Lerp(LNext, Alpha))
+				local LLast = LastFrame[3] or (HeadInput:Inverse() * TargetL)
+				local LNext = NextFrame[3] or (HeadInput:Inverse() * TargetL)
+				TargetL = (HeadInput * LLast:Lerp(LNext, Alpha))
 			end
 		end
 
@@ -247,17 +264,17 @@ local function GetInputs(
 		end
 	end
 
-	if not CurrentRArm then
-		CurrentRArm = TargetR
-	end
 	if not CurrentLArm then
 		CurrentLArm = TargetL
 	end
+	if not CurrentRArm then
+		CurrentRArm = TargetR
+	end
 
-	CurrentRArm = CurrentRArm:Lerp(TargetR, SmoothFactor)
 	CurrentLArm = CurrentLArm:Lerp(TargetL, SmoothFactor)
+	CurrentRArm = CurrentRArm:Lerp(TargetR, SmoothFactor)
 
-	return HeadInput, CurrentRArm, CurrentLArm
+	return HeadInput, CurrentLArm, CurrentRArm
 end
 
 ReplicationReady:FireServer()
@@ -319,6 +336,22 @@ do
 				HeadProxy.CFrame = CurH
 				RightHandProxy.CFrame = CurR
 				LeftHandProxy.CFrame  = CurL
+
+				local Camera = Workspace.CurrentCamera
+				if Camera then
+					local Distance:CFrame = (Camera.CFrame.Position - HeadProxy.Position).Magnitude
+					local Alpha:number = math.clamp(
+						(Distance - MinHeadDistance) / (MaxHeadDistance - MinHeadDistance),
+						0,
+						1
+					)
+
+					HeadProxy.Transparency = (
+						MinHeadTransparency + (
+							(MaxHeadTransparency - MinHeadTransparency) * Alpha
+						)
+					)
+				end
 
 				if shared.GhostMode then
 					HeadProxy.Color = Color3.new(0, 1, 0)
