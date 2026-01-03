@@ -1,5 +1,3 @@
-local Script = [=[
-local Script = %q
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -106,12 +104,3 @@ shared.Loop = coroutine.create(function()
 	end
 end)
 coroutine.resume(shared.Loop)
-
-queue_on_teleport(
-	("loadstring(%%s)()"):format(Script)
-)
-]=]
-
-Script = string.format(Script, Script)
-
-loadstring(Script)()
