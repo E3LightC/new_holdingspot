@@ -53,7 +53,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/E3LightC/new_holdings
 --//// Key Bindings Overview \\\\--
 --// [Combat]
 --//        [Keypad 1] — Toggle loop-kill on random zombies.
---//        [Z] — Hold to farm points on a zombie named "Zombie".
+--//        [Z] — Hold to farm points.
 --//        [E] — Deal direct damage to the zombie under your mouse.
 --//        [T] — Trigger Absolute Zero weapon effect at mouse position.
 --// [Utility]
