@@ -105,4 +105,4 @@ shared.Loop = coroutine.create(function()
 end)
 coroutine.resume(shared.Loop)
 
-queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/test.luau'))()")
+queue_on_teleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/test.luau'))()")
