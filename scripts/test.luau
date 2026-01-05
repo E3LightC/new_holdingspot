@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local TeleportService = game:GetService("TeleportService")
 
+queue_on_teleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/test.luau'))()")
 if (game.PlaceId == 79147397944745) then
 	print("Teleport to nullverse")
 	TeleportService:Teleport(72294458653015)
@@ -93,7 +94,7 @@ shared.Loop = coroutine.create(function()
 	while true do 
 		task.spawn(KillEnemy, nil, Workspace)
 		task.spawn(KillEnemy, nil, Workspace)
-		task.wait(0.25)
+		task.wait(0.1)
 
 		local Portal = Workspace:FindFirstChild("Portal")
 		if Portal and (Portal.Transparency == 0) then
@@ -104,5 +105,3 @@ shared.Loop = coroutine.create(function()
 	end
 end)
 coroutine.resume(shared.Loop)
-
-queue_on_teleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/E3LightC/new_holdingspot/refs/heads/main/scripts/test.luau'))()")
