@@ -146,7 +146,7 @@ shared.Loop = coroutine.create(function()
 				task.wait()
 			end
 
-			task.wait(4)
+			task.wait(6)
 
 			print("Teleporting to holding place main")
 			TeleportService:Teleport(79147397944745)
