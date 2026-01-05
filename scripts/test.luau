@@ -17,10 +17,13 @@ else
 	end
 end
 
+local Chests = Workspace:WaitForChild("chests")
+
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local AxeRemote = Remotes:WaitForChild("Axe")
 
 local LocalPlayer = Players.LocalPlayer
+local Backpack = LocalPlayer.Backpack
 
 if shared.Loop then
 	coroutine.close(shared.Loop)
@@ -87,8 +90,26 @@ local function KillEnemy(
 			and (Humanoid.MaxHealth + 10000)
 		) or math.huge
 	})
-	print("killing", Enemy.Name)
 end
+
+shared.PlayerJoined = Players.PlayerAdded:Connect(function(NewPlayer)
+	if (LocalPlayer == NewPlayer) then
+		return
+	end
+
+	local Character = NewPlayer.Character or NewPlayer.CharacterAdded:Wait()
+	if Character then
+		task.spawn(KillEnemy, Character, nil)
+
+		repeat
+			Character = NewPlayer.Character or NewPlayer.CharacterAdded:Wait()
+			if Character.Parent then
+				task.spawn(KillEnemy, Character, nil)
+			end
+			task.wait(0.1)
+		until not NewPlayer
+	end
+end)
 
 shared.Loop = coroutine.create(function()
 	while true do 
@@ -98,6 +119,35 @@ shared.Loop = coroutine.create(function()
 
 		local Portal = Workspace:FindFirstChild("Portal")
 		if Portal and (Portal.Transparency == 0) then
+			local Character = LocalPlayer.Character
+			local PrimaryPart = Character:WaitForChild("HumanoidRootPart")
+
+			for _, Chest in pairs(Chests:GetChildren()) do 
+				if not Chest or Chest:IsA("Tool") then
+					continue
+				end
+				local Prompt = Chest and Chest:FindFirstChild("ProximityPrompt")
+				if not Prompt then
+					continue
+				end
+
+				PrimaryPart.CFrame = CFrame.new(Chest.Position)
+				task.wait(0.1)
+				replicatesignal(Prompt.TriggeredActionReplicated, LocalPlayer)
+			end
+
+			for _, Tool in pairs(Backpack:GetChildren()) do 
+				if not Tool or not Tool:IsA("Tool") then
+					continue
+				end
+				Tool.Parent = Character
+				Tool:Activate()
+				
+				task.wait()
+			end
+
+			task.wait(4)
+
 			print("Teleporting to holding place main")
 			TeleportService:Teleport(79147397944745)
 			break
