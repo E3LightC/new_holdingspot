@@ -98,7 +98,6 @@ local function OpenChest(OpenAll:boolean)
 
 	if not OpenAll then
 		local Chest = Chests:GetChildren()[1]
-		print(Chest.ClassName)
 		if not Chest or Chest:IsA("Tool") then
 			return
 		end
@@ -176,8 +175,10 @@ shared.Loop = coroutine.create(function()
 		else
 			task.spawn(OpenChest, false)
 		end
-
-		task.wait(0.05)
+		
+		task.spawn(KillEnemy, nil, Workspace)
+		task.spawn(KillEnemy, nil, Workspace)
+		task.wait(0.01)
 	end
 end)
 coroutine.resume(shared.Loop)
