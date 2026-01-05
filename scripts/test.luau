@@ -92,6 +92,41 @@ local function KillEnemy(
 	})
 end
 
+local function OpenChest(OpenAll:boolean)
+	local Character = LocalPlayer.Character
+	local PrimaryPart = Character:WaitForChild("HumanoidRootPart")
+
+	if not OpenAll then
+		local Chest = Chests:GetChildren()[1]
+		print(Chest.ClassName)
+		if not Chest or Chest:IsA("Tool") then
+			return
+		end
+		local Prompt = Chest and Chest:FindFirstChild("ProximityPrompt")
+		if not Prompt then
+			return
+		end
+
+		PrimaryPart.CFrame = CFrame.new(Chest.Position)
+		task.wait(0.1)
+		replicatesignal(Prompt.TriggeredActionReplicated, LocalPlayer)
+	elseif OpenAll then
+		for _, Chest in pairs(Chests:GetChildren()) do 
+			if not Chest or Chest:IsA("Tool") then
+				continue
+			end
+			local Prompt = Chest and Chest:FindFirstChild("ProximityPrompt")
+			if not Prompt then
+				continue
+			end
+
+			PrimaryPart.CFrame = CFrame.new(Chest.Position)
+			task.wait(0.1)
+			replicatesignal(Prompt.TriggeredActionReplicated, LocalPlayer)
+		end
+	end
+end
+
 shared.PlayerJoined = Players.PlayerAdded:Connect(function(NewPlayer)
 	if (LocalPlayer == NewPlayer) then
 		return
@@ -115,26 +150,13 @@ shared.Loop = coroutine.create(function()
 	while true do 
 		task.spawn(KillEnemy, nil, Workspace)
 		task.spawn(KillEnemy, nil, Workspace)
-		task.wait(0.1)
 
 		local Portal = Workspace:FindFirstChild("Portal")
 		if Portal and (Portal.Transparency == 0) then
 			local Character = LocalPlayer.Character
 			local PrimaryPart = Character:WaitForChild("HumanoidRootPart")
 
-			for _, Chest in pairs(Chests:GetChildren()) do 
-				if not Chest or Chest:IsA("Tool") then
-					continue
-				end
-				local Prompt = Chest and Chest:FindFirstChild("ProximityPrompt")
-				if not Prompt then
-					continue
-				end
-
-				PrimaryPart.CFrame = CFrame.new(Chest.Position)
-				task.wait(0.1)
-				replicatesignal(Prompt.TriggeredActionReplicated, LocalPlayer)
-			end
+			OpenChest(true)
 
 			for _, Tool in pairs(Backpack:GetChildren()) do 
 				if not Tool or not Tool:IsA("Tool") then
@@ -151,7 +173,11 @@ shared.Loop = coroutine.create(function()
 			print("Teleporting to holding place main")
 			TeleportService:Teleport(79147397944745)
 			break
+		else
+			task.spawn(OpenChest, false)
 		end
+
+		task.wait(0.05)
 	end
 end)
 coroutine.resume(shared.Loop)
