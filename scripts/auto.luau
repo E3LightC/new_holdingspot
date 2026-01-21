@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local TextChatService = game:GetService("TextChatService")
+local GuiService = game:GetService("GuiService")
 
 local Channel = TextChatService:WaitForChild("TextChannels"):WaitForChild("RBXGeneral")
 
@@ -13,7 +14,11 @@ local PrimaryPart = Character:WaitForChild("HumanoidRootPart")
 
 local ShopPos:CFrame = CFrame.new(-996, 5, 90)
 
-local ProximityPrompt:ProximityPrompt = Workspace["Map folder"].Seller.Liltroll.PromptInteract.ProximityPrompt
+local MapFolder = Workspace:WaitForChild("Map folder")
+local SellerFolder = MapFolder:WaitForChild("Seller")
+local LilTroll = SellerFolder:WaitForChild("Liltroll")
+local LilTrollInteract = LilTroll:WaitForChild("PromptInteract")
+local TrollPrompt:ProximityPrompt = LilTrollInteract:WaitForChild("ProximityPrompt")
 
 if shared.epic then
 	coroutine.close(shared.epic)
@@ -31,7 +36,7 @@ local function OpenAll()
 			v.Parent = Character
 			v:Activate()
 
-			if (Count >= 12) then
+			if (Count >= 15) then
 				task.wait()
 			end
 		end
@@ -42,9 +47,13 @@ local function OpenShop()
 	PrimaryPart.CFrame = ShopPos
 	task.wait(0.25)
 
-	local ShopGui
+	local ShopGui = PlayerGui:FindFirstChild("Shopguis")
+	if ShopGui then 
+		return ShopGui
+	end
+
 	repeat
-		replicatesignal(ProximityPrompt.TriggeredActionReplicated, LocalPlayer)
+		replicatesignal(TrollPrompt.TriggeredActionReplicated, LocalPlayer)
 		task.wait(0.1)
 		ShopGui = PlayerGui:FindFirstChild("Shopguis")
 	until ShopGui
@@ -59,20 +68,25 @@ local function GetShard()
 	end
 
 	local ShopGui = OpenShop()
+	local MainFrame = ShopGui:WaitForChild("MainsFrame")
+	local ItemSelections = MainFrame:WaitForChild("ItemSelections")
+	local MainShop = ItemSelections:WaitForChild("MainShop")
+	local ScrollingFrame = ItemSelections:WaitForChild("ScrollingFrame")
 	task.wait(2)
-	
-	local BuyButton = ShopGui.MainsFrame.ItemSelections.MainShop.Buy
-	local DarkChestButton = ShopGui.MainsFrame.ItemSelections.ScrollingFrame["Dark Chest"]
+	local BuyButton = MainShop:WaitForChild("Buy")
+	local ChestButton = ScrollingFrame:WaitForChild("Dark Chest")
 	print("hey im buying ok? [game]: ok")
 
 	for _ = 1, 3 do 
-		replicatesignal(DarkChestButton.MouseButton1Down, 50, 50)
+		replicatesignal(ChestButton.MouseButton1Down, 50, 50)
 		task.wait()
 	end
 
-	LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Shopguis"):WaitForChild("MainsFrame"):WaitForChild("ItemSelections"):WaitForChild("MainShop"):WaitForChild("DisabledWord"):WaitForChild("RemoteEvent"):FireServer(150)
+	MainShop:WaitForChild("DisabledWord"):WaitForChild("RemoteEvent"):FireServer(175)
 
 	repeat
+		replicatesignal(ChestButton.MouseButton1Down, 50, 50)
+		task.wait()
 		replicatesignal(BuyButton.MouseButton1Down, 50, 50)
 		task.wait(3)
 		OpenAll()
@@ -99,26 +113,26 @@ shared.epic = coroutine.create(function()
 			Shard.Parent = Character
 			Shard:Activate()
 
-			local Fist = Character:WaitForChild("Clenching Fist", 3) or Backpack:WaitForChild("Clenching Fist", 3)
-			local Determination = Character:WaitForChild("Determination", 3) or Backpack:WaitForChild("Determination", 3)
-			local Remote = Fist:WaitForChild("GrabAnimation"):WaitForChild("Start")
-
 			local Nightmare = workspace["Map Boss"]["Nightmare Boss Map"]:WaitForChild("Nightmare")
+			local NightmarePrimary = Nightmare.PrimaryPart or Nightmare:WaitForChild("HumanoidRootPart")
 			local Humanoid = Nightmare:WaitForChild("Humanoid")
 
-			Remote:FireServer()
-			task.wait(2)
+			task.wait(0.1)
 			repeat
-				if Determination and Determination.Parent ~= Character then
-					Determination.Parent = Character
+				PrimaryPart.CFrame = NightmarePrimary.CFrame
+				if Nightmare and Nightmare.Parent then
+					if not Humanoid or not NightmarePrimary then 
+						break
+					end
+					if isnetworkowner(NightmarePrimary) then
+						Humanoid.Health = 0
+					end
 				end
-				Determination:Activate()
-				Remote:FireServer()
-				PrimaryPart.CFrame = Nightmare.PrimaryPart.CFrame
-				task.wait(0.2)
-			until not Nightmare or not Nightmare.Parent or not Humanoid or (Humanoid.Health <= 0)
 
-			task.wait(0.5)
+				task.wait(0.05)
+			until not Nightmare or not Nightmare.Parent or not Humanoid or (Humanoid.Health <= 0) or not NightmarePrimary
+
+			task.wait(2)
 
 			for _, Chest in pairs(Workspace:GetChildren()) do 
 				if not Chest then
@@ -129,15 +143,22 @@ shared.epic = coroutine.create(function()
 					if not Handle then
 						continue
 					end
-					local Prox = Handle:FindFirstChild("ProximityPrompt")
-					if not Prox then
+					local ChestPrompt = Handle:FindFirstChild("ProximityPrompt")
+					if not ChestPrompt then
 						continue
 					end
 
 					PrimaryPart.CFrame = Handle.CFrame
 					task.wait(0.125)
-					replicatesignal(Prox.TriggeredActionReplicated, LocalPlayer)
-					task.wait()
+					repeat
+						if not ChestPrompt or not Handle then
+							break
+						end
+
+						PrimaryPart.CFrame = Handle.CFrame
+						fireproximityprompt(ChestPrompt)
+						task.wait(0.05)
+					until not ChestPrompt or not Handle or not Handle.CFrame
 				end
 			end
 		end
