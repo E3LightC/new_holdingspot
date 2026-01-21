@@ -19,6 +19,9 @@ local SellerFolder = MapFolder:WaitForChild("Seller")
 local LilTroll = SellerFolder:WaitForChild("Liltroll")
 local LilTrollInteract = LilTroll:WaitForChild("PromptInteract")
 local TrollPrompt:ProximityPrompt = LilTrollInteract:WaitForChild("ProximityPrompt")
+local ChestFolder = Workspace:WaitForChild("ChestFolderThing")
+
+local KilledTimes:number = 0
 
 if shared.epic then
 	coroutine.close(shared.epic)
@@ -31,7 +34,13 @@ local function OpenAll()
 		if not v then
 			continue
 		end
-		if (v.Name == "Dark Chest") then
+		if 
+			(v.Name == "Dark Chest") 
+			or (v.Name == "Light Chest")
+			or (v.Name == "Chest")
+			or (v.Name == "Radioactive Chest")
+			or (v.Name == "Fish Chest")
+		then
 			Count += 1
 			v.Parent = Character
 			v:Activate()
@@ -108,59 +117,101 @@ end
 
 shared.epic = coroutine.create(function()
 	while true do
-		local Shard = GetShard()
-		if Shard then
+		local Nightmare = workspace["Map Boss"]["Nightmare Boss Map"]:FindFirstChild("Nightmare")
+		
+		if not Nightmare then
+			local Shard = GetShard()
+			if not Shard then
+				return
+			end
 			Shard.Parent = Character
 			Shard:Activate()
 
-			local Nightmare = workspace["Map Boss"]["Nightmare Boss Map"]:WaitForChild("Nightmare")
-			local NightmarePrimary = Nightmare.PrimaryPart or Nightmare:WaitForChild("HumanoidRootPart")
-			local Humanoid = Nightmare:WaitForChild("Humanoid")
+			Nightmare = workspace["Map Boss"]["Nightmare Boss Map"]:WaitForChild("Nightmare")
+		end
 
-			task.wait(0.1)
-			repeat
-				PrimaryPart.CFrame = NightmarePrimary.CFrame
-				if Nightmare and Nightmare.Parent then
-					if not Humanoid or not NightmarePrimary then 
-						break
-					end
-					if isnetworkowner(NightmarePrimary) then
-						Humanoid.Health = 0
-					end
+		local NightmarePrimary = Nightmare.PrimaryPart or Nightmare:WaitForChild("HumanoidRootPart")
+		local Humanoid = Nightmare:WaitForChild("Humanoid")
+
+		task.wait(0.1)
+		repeat
+			PrimaryPart.CFrame = NightmarePrimary.CFrame
+			if Nightmare and Nightmare.Parent then
+				if not Humanoid or not NightmarePrimary then 
+					break
 				end
+				if isnetworkowner(NightmarePrimary) then
+					Humanoid.Health = 0
+				else 
+					setsimulationradius(1024)
+					task.wait()
+					setsimulationradius(math.huge)
+				end
+			end
 
-				task.wait(0.05)
-			until not Nightmare or not Nightmare.Parent or not Humanoid or (Humanoid.Health <= 0) or not NightmarePrimary
+			task.wait(0.05)
+		until not Nightmare or not Nightmare.Parent or not Humanoid or (Humanoid.Health <= 0) or not NightmarePrimary
 
-			task.wait(2)
+		KilledTimes += 1
+		task.wait(2)
 
-			for _, Chest in pairs(Workspace:GetChildren()) do 
-				if not Chest then
+		for _, Chest in pairs(Workspace:GetChildren()) do 
+			if not Chest then
+				continue
+			end
+			if (Chest.Name == "DarkChest_Spawn") or (Chest.Name == "VoidChest_p") then
+				local Handle = Chest:IsA("Model") and Chest.PrimaryPart or Chest
+				if not Handle then
 					continue
 				end
-				if (Chest.Name == "DarkChest_Spawn") or (Chest.Name == "VoidChest_p") then
-					local Handle = Chest:IsA("Model") and Chest.PrimaryPart or Chest
-					if not Handle then
-						continue
-					end
-					local ChestPrompt = Handle:FindFirstChild("ProximityPrompt")
-					if not ChestPrompt then
-						continue
+				local ChestPrompt = Handle:FindFirstChild("ProximityPrompt")
+				if not ChestPrompt then
+					continue
+				end
+
+				PrimaryPart.CFrame = Handle.CFrame
+				task.wait(0.125)
+				repeat
+					if not ChestPrompt or not ChestPrompt.Parent or not Handle or not Handle then
+						break
 					end
 
 					PrimaryPart.CFrame = Handle.CFrame
-					task.wait(0.125)
-					repeat
-						if not ChestPrompt or not Handle then
-							break
-						end
-
-						PrimaryPart.CFrame = Handle.CFrame
-						fireproximityprompt(ChestPrompt)
-						task.wait(0.05)
-					until not ChestPrompt or not Handle or not Handle.CFrame
-				end
+					fireproximityprompt(ChestPrompt)
+					task.wait(0.05)
+				until not ChestPrompt or not Handle or not Handle.CFrame
 			end
+		end
+
+		if (KilledTimes < 3) then 
+			continue
+		end
+		KilledTimes = 0
+		for _, Chest in pairs(ChestFolder:GetChildren()) do 
+			if not Chest or not Chest:IsA("Model") or (Chest.Name == "__BadChest") then 
+				continue
+			end
+			local Handle = Chest.PrimaryPart or Chest:FindFirstChild("Handle")
+			if not Handle then
+				continue
+			end
+			local ChestPrompt = Handle:FindFirstChild("ProximityPrompt")
+			if not ChestPrompt then
+				continue
+			end
+			if Handle.Anchored then
+				Chest.Name = "__BadChest"
+				continue
+			end
+			repeat
+				if not Chest or not Chest.Parent or not Handle or not ChestPrompt then
+					break
+				end
+				ChestPrompt.HoldDuration = 0
+				PrimaryPart.CFrame = Handle.CFrame
+				fireproximityprompt(ChestPrompt)
+				task.wait(0.05)
+			until not Chest or not Chest.Parent
 		end
 		task.wait()
 	end
