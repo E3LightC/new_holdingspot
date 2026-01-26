@@ -313,10 +313,14 @@ shared.MainAutoLoop = coroutine.create(function()
 		end
 		KilledTimes = 0
 		for _, Chest in pairs(ChestFolder:GetChildren()) do 
-			if not Chest or not Chest:IsA("Model") or (Chest.Name == "__BadChest") then 
+			if not Chest then
 				continue
 			end
-			local Handle = Chest.PrimaryPart or Chest:FindFirstChild("Handle")
+			if not Chest:IsA("Model") and not Chest:IsA("BasePart") then
+				continue
+			end
+			local Handle = (Chest:IsA("Model") and (Chest.PrimaryPart or Chest:FindFirstChild("Handle")))
+				or (Chest:IsA("BasePart") and Chest)
 			if not Handle then
 				continue
 			end
@@ -329,7 +333,11 @@ shared.MainAutoLoop = coroutine.create(function()
 				continue
 			end
 			repeat
-				if not Chest or not Chest.Parent or not Handle or not ChestPrompt then
+				if not ChestPrompt 
+					or not ChestPrompt.Parent 
+					or not Handle 
+					or not Handle.Parent 
+				then
 					break
 				end
 				ChestPrompt.HoldDuration = 0
